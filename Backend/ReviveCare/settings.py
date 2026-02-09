@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-mley0n12f)4+9u16iu+2$t(4=l%r)j9r%o$3sk2e)4cgk3dler
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1',"revive-care.vercel.app","revivecare-production.up.railway.app"]
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'corsheaders',  # CORS support for React frontend
     'Home',
     'Doctor' , 
@@ -44,10 +45,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # Must be before CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware', # Add at the top
+    'django.middleware.common.CommonMiddleware',# Must be before CommonMiddleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -58,6 +59,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite dev server default
     "http://127.0.0.1:5173",
+    "https://revive-care.vercel.app/",
+    "https://revive-care-*.vercel.app/",
     "http://localhost:3000",  # In case you use different port
     "http://127.0.0.1:3000",
 ]
@@ -69,6 +72,8 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://revive-care.vercel.app/",
+    "https://revive-care-*.vercel.app/",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
