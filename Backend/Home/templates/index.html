@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViveCare - Post-Discharge Recovery Support</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-teal: #00A8A8;
+            --primary-teal-dark: #008B8B;
+            --primary-teal-light: #B2E5E5;
+            --accent-navy: #1E3A5F;
+            --accent-blue: #4A90A4;
+            --text-dark: #2C3E50;
+            --text-gray: #6B7B8C;
+            --bg-light: #F8FBFC;
+            --white: #ffffff;
+            --gradient-teal: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 50%, #80CBC4 100%);
+            --shadow-soft: 0 4px 20px rgba(0, 168, 168, 0.15);
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            background: var(--bg-light);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: var(--accent-navy);
+            color: white;
+            padding: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .top-bar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar-left {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .top-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .top-bar-item span {
+            opacity: 0.9;
+        }
+
+        /* Header */
+        header {
+            background: var(--white);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 168, 168, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-teal);
+        }
+
+        .logo-text span {
+            color: var(--accent-navy);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            align-items: center;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-teal);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-teal);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .appointment-btn {
+            background: var(--gradient-teal);
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 168, 168, 0.3);
+        }
+
+        .appointment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 168, 168, 0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, rgba(0, 168, 168, 0.95) 0%, rgba(77, 182, 172, 0.9) 100%),
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 800"><circle cx="1200" cy="400" r="400" fill="rgba(255,255,255,0.1)"/><circle cx="200" cy="600" r="200" fill="rgba(255,255,255,0.05)"/></svg>');
+            color: white;
+            padding: 5rem 2rem;
+            position: relative;
+            overflow: hidden;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        .hero-content {
+            animation: fadeInLeft 0.8s ease;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero h1 .highlight {
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.95;
+            line-height: 1.8;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .hero-btn.primary {
+            background: var(--white);
+            color: var(--primary-teal);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .hero-btn.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .hero-btn.secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .hero-btn.secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: white;
+        }
+
+        .hero-image {
+            position: relative;
+            animation: fadeInRight 0.8s ease;
+        }
+
+        .hero-img-placeholder {
+            width: 100%;
+            height: 450px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .floating-card {
+            position: absolute;
+            background: white;
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .floating-card.card-1 {
+            top: 20%;
+            right: -20px;
+            animation-delay: 0s;
+        }
+
+        .floating-card.card-2 {
+            bottom: 20%;
+            left: -20px;
+            animation-delay: 1.5s;
+        }
+
+        .floating-card-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-teal);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .floating-card h4 {
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .floating-card p {
+            color: var(--text-gray);
+            font-size: 0.75rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* World Leader Section */
+        .leader-section {
+            padding: 5rem 2rem;
+            background: var(--white);
+        }
+
+        .leader-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        .leader-content {
+            background: var(--gradient-teal);
+            padding: 3rem;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .leader-content h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+        }
+
+        .leader-content p {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .leader-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: white;
+            color: var(--primary-teal);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .leader-btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .service-card {
+            background: var(--white);
+            padding: 2rem 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #E8F0F0;
+            cursor: pointer;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-card);
+            border-color: var(--primary-teal-light);
+        }
+
+        .service-card.active {
+            border-color: var(--primary-teal);
+            box-shadow: 0 8px 30px rgba(0, 168, 168, 0.15);
+        }
+
+        .service-card-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 1.2rem;
+            background: var(--bg-light);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary-teal);
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover .service-card-icon {
+            background: var(--gradient-teal);
+            color: white;
+        }
+
+        .service-card h3 {
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        /* Why Choose Section */
+        .why-choose {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .why-choose-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .why-choose-content h3 {
+            color: var(--primary-teal);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .why-choose-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+        }
+
+        .why-choose-content p {
+            color: var(--text-gray);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .read-more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--primary-teal);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.8rem 1.8rem;
+            border: 2px solid var(--primary-teal);
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .read-more-btn:hover {
+            background: var(--primary-teal);
+            color: white;
+        }
+
+        /* Specializations */
+        .specializations {
+            text-align: left;
+        }
+
+        .spec-header h3 {
+            color: var(--primary-teal);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .spec-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+        }
+
+        .spec-circles {
+            display: flex;
+            gap: 2rem;
+            justify-content: flex-start;
+        }
+
+        .spec-circle {
+            text-align: center;
+        }
+
+        .circle-progress {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-teal) var(--progress), #E8F0F0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .circle-progress::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .circle-value {
+            position: relative;
+            z-index: 1;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-teal);
+        }
+
+        .circle-label {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+        }
+
+        /* Portal Section */
+        .portal-section {
+            padding: 5rem 2rem;
+            background: var(--white);
+        }
+
+        .portal-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .portal-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .portal-header p {
+            color: var(--text-gray);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .portal-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .portal-btn {
+            padding: 1.5rem 3rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 280px;
+            justify-content: center;
+        }
+
+        .portal-btn.patient {
+            background: var(--gradient-teal);
+            color: white;
+            box-shadow: 0 8px 30px rgba(0, 168, 168, 0.3);
+        }
+
+        .portal-btn.patient:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 168, 168, 0.4);
+        }
+
+        .portal-btn.doctor {
+            background: var(--accent-navy);
+            color: white;
+            box-shadow: 0 8px 30px rgba(30, 58, 95, 0.3);
+        }
+
+        .portal-btn.doctor:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(30, 58, 95, 0.4);
+        }
+
+        .portal-btn-icon {
+            font-size: 1.8rem;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .how-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h3 {
+            color: var(--primary-teal);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .step-card {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 168, 168, 0.3);
+        }
+
+        .step-card h3 {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 0.8rem;
+        }
+
+        .step-card p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .step-connector {
+            position: absolute;
+            top: 35px;
+            left: 60%;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-teal), var(--primary-teal-light));
+        }
+
+        .step-card:last-child .step-connector {
+            display: none;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--accent-navy);
+            color: white;
+            padding: 3rem 2rem;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand .logo-text {
+            color: white;
+        }
+
+        .footer-brand .logo-text span {
+            color: var(--primary-teal-light);
+        }
+
+        .footer-brand p {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .footer-col h4 {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-col ul li a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-col ul li a:hover {
+            color: var(--primary-teal-light);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+        }
+
+        /* Animations */
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-content {
+                order: 1;
+            }
+
+            .hero-image {
+                order: 2;
+            }
+
+            .hero p {
+                max-width: none;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .leader-container {
+                grid-template-columns: 1fr;
+            }
+
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .why-choose-container {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .step-connector {
+                display: none;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .top-bar-left {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .spec-circles {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .portal-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-content">
+            <div class="top-bar-left">
+                <div class="top-bar-item">
+                    <span>📞</span>
+                    <span>+91 987656789</span>
+                </div>
+                <div class="top-bar-item">
+                    <span>📍</span>
+                    <span>Available Nationwide, 24/7 Support</span>
+                </div>
+                <div class="top-bar-item">
+                    <span>🕐</span>
+                    <span>Mon-Sun: Always Available</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <nav>
+            <div class="logo">
+                <div class="logo-icon">💚</div>
+                <div class="logo-text">Revive<span>Care</span></div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Features</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+            <a href="#portals" class="appointment-btn">
+                <span>🗓️</span>
+                Get Started
+            </a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">🏥 Post-Discharge Recovery Support</div>
+                <h1>Recovery <span class="highlight">Center</span></h1>
+                <p>Your trusted companion for safe, structured, and supported post-discharge recovery. We bridge the gap between hospital care and home wellness.</p>
+                <div class="hero-buttons">
+                    <a href="#portals" class="hero-btn primary">
+                        <span>🔍</span>
+                        Find Your Portal
+                    </a>
+                    <a href="#how" class="hero-btn secondary">
+                        <span>▶️</span>
+                        Watch Video
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="hero-img-placeholder">👨‍⚕️</div>
+                <div class="floating-card card-1">
+                    <div class="floating-card-icon">✅</div>
+                    <h4>24/7 Support</h4>
+                    <p>Always available</p>
+                </div>
+                <div class="floating-card card-2">
+                    <div class="floating-card-icon">📊</div>
+                    <h4>Progress Tracking</h4>
+                    <p>Real-time updates</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- World Leader Section -->
+    <section class="leader-section">
+        <div class="leader-container">
+            <div class="leader-content">
+                <h2>World Leader in Post-Rehab Care</h2>
+                <p>ReViveCare provides continuous guidance, answers recovery questions, and offers reassurance whenever you need it. Our AI-powered system ensures you never feel alone on your recovery journey.</p>
+                <a href="#portals" class="leader-btn">
+                    Choose Your Portal
+                    <span>→</span>
+                </a>
+            </div>
+            <div class="services-grid">
+                <div class="service-card active">
+                    <div class="service-card-icon">🗣️</div>
+                    <h3>Voice Support</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">❤️</div>
+                    <h3>Cardiology</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">🩸</div>
+                    <h3>Blood Test</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">🧠</div>
+                    <h3>MRI Scanning</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">🏃</div>
+                    <h3>Physiotherapy</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">🦴</div>
+                    <h3>Orthopedic</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">💊</div>
+                    <h3>Medication</h3>
+                </div>
+                <div class="service-card">
+                    <div class="service-card-icon">🩺</div>
+                    <h3>Surgery</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Section -->
+    <section class="why-choose">
+        <div class="why-choose-container">
+            <div class="why-choose-content">
+                <h3>About Us</h3>
+                <h2>Why Patients Choose Our Center</h2>
+                <p>ReViveCare combines cutting-edge AI technology with compassionate care. Our multilingual voice support, smart symptom monitoring, and automated progress reports ensure you receive the best post-discharge care possible.</p>
+                <a href="#" class="read-more-btn">
+                    Read More
+                    <span>+</span>
+                </a>
+            </div>
+            <div class="specializations">
+                <div class="spec-header">
+                    <h3>Our Statistics</h3>
+                    <h2>Our Recovery Rates</h2>
+                </div>
+                <div class="spec-circles">
+                    <div class="spec-circle">
+                        <div class="circle-progress" style="--progress: 306deg;">
+                            <span class="circle-value">85%</span>
+                        </div>
+                        <p class="circle-label">Recovery Rate</p>
+                    </div>
+                    <div class="spec-circle">
+                        <div class="circle-progress" style="--progress: 245deg;">
+                            <span class="circle-value">68%</span>
+                        </div>
+                        <p class="circle-label">AI Accuracy</p>
+                    </div>
+                    <div class="spec-circle">
+                        <div class="circle-progress" style="--progress: 284deg;">
+                            <span class="circle-value">79%</span>
+                        </div>
+                        <p class="circle-label">Patient Satisfaction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portal Section -->
+    <section class="portal-section" id="portals">
+        <div class="portal-container">
+            <div class="portal-header">
+                <h2>Access Your Portal</h2>
+                <p>Choose your role to get started with personalized recovery support</p>
+            </div>
+            <div class="portal-buttons">
+                <a href="{% url 'login' %}" class="portal-btn patient">
+                    <span class="portal-btn-icon">👤</span>
+                    <span>Patient Portal</span>
+                </a>
+                <a href="{% url 'doc_port' %}" class="portal-btn doctor">
+                    <span class="portal-btn-icon">⚕️</span>
+                    <span>Doctor Portal</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how">
+        <div class="how-container">
+            <div class="section-header">
+                <h3>Process</h3>
+                <h2>How It Works</h2>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-connector"></div>
+                    <div class="step-number">1</div>
+                    <h3>Get Discharged</h3>
+                    <p>Receive access to your personalized ReViveCare portal with tailored recovery guidance.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-connector"></div>
+                    <div class="step-number">2</div>
+                    <h3>Ask Questions</h3>
+                    <p>Use the voice-enabled chatbot to get answers to recovery questions 24/7.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-connector"></div>
+                    <div class="step-number">3</div>
+                    <h3>Follow Your Plan</h3>
+                    <p>Complete AI-guided exercises and track your recovery progress.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h3>Stay Connected</h3>
+                    <p>Your doctor receives automated summaries of your progress.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="logo">
+                    <div class="logo-icon">💚</div>
+                    <div class="logo-text">Revive<span>Care</span></div>
+                </div>
+                <p>Making recovery safer, structured, and less isolating. Your trusted partner in post-discharge care.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="#">+1 (800) REVIVE-1</a></li>
+                    <li><a href="#">support@revivecare.com</a></li>
+                    <li><a href="#">24/7 Available</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 ReViveCare. Post-Discharge Recovery Support System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll animation for elements
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.6s ease forwards';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.service-card, .step-card, .spec-circle').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Service card active state toggle
+        document.querySelectorAll('.service-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+Backend/venv/
+Backend/__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+
+# Node modules
+Frontend/node_modules/
+Frontend/dist/
+Frontend/build/
+
+# System
+.DS_Store
+.vscode/
+.idea/
+
+.DS_Store
+Frontend/README.md

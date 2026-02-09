@@ -1,0 +1,836 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViveCare - Bicep Curls Exercise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-teal: #00A8A8;
+            --primary-teal-dark: #008B8B;
+            --primary-teal-light: #B2E5E5;
+            --accent-navy: #1E3A5F;
+            --accent-blue: #4A90A4;
+            --text-dark: #2C3E50;
+            --text-gray: #6B7B8C;
+            --bg-light: #F8FBFC;
+            --white: #ffffff;
+            --gradient-teal: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 50%, #80CBC4 100%);
+            --shadow-soft: 0 4px 20px rgba(0, 168, 168, 0.15);
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --success-green: #4CAF50;
+            --danger-red: #E74C3C;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-light);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* Header */
+        header {
+            background: var(--gradient-teal);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0, 168, 168, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-teal);
+            font-size: 1.4rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .logo-text span {
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: white;
+            color: var(--primary-teal);
+            border-color: white;
+            transform: translateX(-5px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-gray);
+            font-size: 1rem;
+        }
+
+        /* Exercise Layout */
+        .exercise-layout {
+            display: flex;
+            gap: 2.5rem;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        /* Video Section */
+        .video-section {
+            flex-shrink: 0;
+            animation: fadeInLeft 0.6s ease;
+        }
+
+        .video-container {
+            position: relative;
+            background: linear-gradient(135deg, var(--accent-navy) 0%, #2C3E50 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 380px;
+            height: 640px;
+        }
+
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .video-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--gradient-teal);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .video-badge.live {
+            background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+        }
+
+        .video-badge.live::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--shadow-card);
+            animation: fadeInRight 0.6s ease;
+            width: 420px;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 168, 168, 0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--bg-light);
+        }
+
+        .panel-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-teal);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 168, 168, 0.3);
+        }
+
+        .panel-header h2 {
+            color: var(--text-dark);
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .panel-header p {
+            color: var(--text-gray);
+            font-size: 0.85rem;
+        }
+
+        /* Rep Counter */
+        .rep-counter {
+            background: var(--gradient-teal);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 168, 168, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rep-counter::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .rep-counter-label {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .rep-count {
+            color: white;
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .rep-target {
+            color: rgba(255,255,255,0.85);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .rep-progress-bar {
+            margin-top: 1.5rem;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .rep-progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Set Reps Section */
+        .set-reps {
+            margin-bottom: 2rem;
+        }
+
+        .set-reps label {
+            display: block;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .rep-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .rep-btn {
+            background: var(--bg-light);
+            border: 2px solid #E8F0F0;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rep-btn:hover {
+            background: var(--primary-teal);
+            border-color: var(--primary-teal);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .rep-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #E8F0F0;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            text-align: center;
+            font-weight: 700;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .rep-input:focus {
+            outline: none;
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 4px rgba(0, 168, 168, 0.1);
+        }
+
+        /* Quick Set Buttons */
+        .quick-sets {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+        }
+
+        .quick-set-btn {
+            background: var(--bg-light);
+            border: 2px solid #E8F0F0;
+            padding: 0.8rem 0.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .quick-set-btn:hover {
+            background: var(--primary-teal);
+            border-color: var(--primary-teal);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .start-btn {
+            background: var(--gradient-teal);
+            color: white;
+            border: none;
+            padding: 1.3rem;
+            font-size: 1.1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 168, 168, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 168, 168, 0.45);
+        }
+
+        .start-btn.active {
+            background: linear-gradient(135deg, var(--accent-navy) 0%, #2C3E50 100%);
+            box-shadow: 0 8px 25px rgba(30, 58, 95, 0.35);
+        }
+
+        .start-btn.complete {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.35);
+        }
+
+        .reset-btn {
+            background: var(--white);
+            color: var(--danger-red);
+            border: 2px solid var(--danger-red);
+            padding: 1rem;
+            font-size: 1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .reset-btn:hover {
+            background: var(--danger-red);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Instructions Card */
+        .instructions-card {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--primary-teal);
+        }
+
+        .instructions-card h4 {
+            color: var(--primary-teal);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .instructions-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions-card li {
+            color: var(--text-gray);
+            font-size: 0.85rem;
+            padding: 0.4rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .instructions-card li::before {
+            content: '✓';
+            color: var(--primary-teal);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Animations */
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes celebrationPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .celebrating {
+            animation: celebrationPulse 0.5s ease 3;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .exercise-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .control-panel {
+                width: 100%;
+                max-width: 420px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .video-container {
+                width: 320px;
+                height: 533px;
+            }
+
+            .control-panel {
+                padding: 1.5rem;
+            }
+
+            .rep-count {
+                font-size: 4rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-container {
+                width: 280px;
+                height: 470px;
+            }
+
+            .quick-sets {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <div class="logo">
+                <div class="logo-icon">💚</div>
+                <div class="logo-text">Revive<span>Care</span></div>
+            </div>
+            <a href="{% url 'exercise' %}" class="back-btn">
+                ← Back to Exercises
+            </a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🏋️ Bicep Curls Exercise</h1>
+            <p>Follow along with the video and track your repetitions</p>
+        </div>
+
+        <div class="exercise-layout">
+            <!-- Video Section -->
+            <div class="video-section">
+                <div class="video-container">
+                    <div class="video-badge" id="videoBadge">
+                        📹 Exercise Demo
+                    </div>
+                    <video id="exerciseVideo" autoplay loop muted playsinline>
+                        <source src="{% static 'Patients/videos/ar.mp4' %}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">🎯</div>
+                    <div>
+                        <h2>Your Session</h2>
+                        <p>Track your exercise progress</p>
+                    </div>
+                </div>
+
+                <!-- Rep Counter -->
+                <div class="rep-counter" id="repCounterBox">
+                    <div class="rep-counter-label">REPS COMPLETED</div>
+                    <div class="rep-count" id="repCount">0</div>
+                    <div class="rep-target">of <span id="targetReps">10</span> reps</div>
+                    <div class="rep-progress-bar">
+                        <div class="rep-progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <!-- Set Reps -->
+                <div class="set-reps">
+                    <label>Set Your Target Reps</label>
+                    <div class="rep-input-group">
+                        <button class="rep-btn" id="decreaseBtn">−</button>
+                        <input type="number" class="rep-input" id="repInput" value="10" min="1" max="50">
+                        <button class="rep-btn" id="increaseBtn">+</button>
+                    </div>
+                    <div class="quick-sets">
+                        <button class="quick-set-btn" onclick="setReps(5)">5 reps</button>
+                        <button class="quick-set-btn" onclick="setReps(10)">10 reps</button>
+                        <button class="quick-set-btn" onclick="setReps(15)">15 reps</button>
+                        <button class="quick-set-btn" onclick="setReps(20)">20 reps</button>
+                        <button class="quick-set-btn" onclick="setReps(25)">25 reps</button>
+                        <button class="quick-set-btn" onclick="setReps(30)">30 reps</button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="start-btn" id="startBtn">
+                        <span>▶</span>
+                        Start Exercise
+                    </button>
+                    <button class="reset-btn" id="resetBtn">
+                        <span>↺</span>
+                        Reset Counter
+                    </button>
+                </div>
+
+                <!-- Instructions -->
+                <div class="instructions-card">
+                    <h4>💡 Quick Tips</h4>
+                    <ul>
+                        <li>Press SPACE to count a rep</li>
+                        <li>Keep your form steady</li>
+                        <li>Breathe regularly throughout</li>
+                        <li>Rest if you feel any discomfort</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get elements
+        const video = document.getElementById('exerciseVideo');
+        const repCountDisplay = document.getElementById('repCount');
+        const targetRepsDisplay = document.getElementById('targetReps');
+        const repInput = document.getElementById('repInput');
+        const decreaseBtn = document.getElementById('decreaseBtn');
+        const increaseBtn = document.getElementById('increaseBtn');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressFill = document.getElementById('progressFill');
+        const repCounterBox = document.getElementById('repCounterBox');
+        const videoBadge = document.getElementById('videoBadge');
+
+        let currentReps = 0;
+        let targetReps = 10;
+        let isExercising = false;
+
+        // Update progress bar
+        function updateProgress() {
+            const percentage = (currentReps / targetReps) * 100;
+            progressFill.style.width = Math.min(percentage, 100) + '%';
+        }
+
+        // Rep input controls
+        decreaseBtn.addEventListener('click', () => {
+            if (repInput.value > 1) {
+                repInput.value = parseInt(repInput.value) - 1;
+                updateTargetReps();
+            }
+        });
+
+        increaseBtn.addEventListener('click', () => {
+            if (repInput.value < 50) {
+                repInput.value = parseInt(repInput.value) + 1;
+                updateTargetReps();
+            }
+        });
+
+        repInput.addEventListener('change', () => {
+            if (repInput.value < 1) repInput.value = 1;
+            if (repInput.value > 50) repInput.value = 50;
+            updateTargetReps();
+        });
+
+        function setReps(num) {
+            repInput.value = num;
+            updateTargetReps();
+        }
+
+        function updateTargetReps() {
+            targetReps = parseInt(repInput.value);
+            targetRepsDisplay.textContent = targetReps;
+            updateProgress();
+        }
+
+        // Start button
+        startBtn.addEventListener('click', () => {
+            if (!isExercising) {
+                isExercising = true;
+                startBtn.innerHTML = '<span>✓</span> Rep Complete';
+                startBtn.classList.add('active');
+                videoBadge.classList.add('live');
+                videoBadge.innerHTML = '<span></span> LIVE';
+            } else {
+                incrementRep();
+            }
+        });
+
+        function incrementRep() {
+            if (currentReps < targetReps) {
+                currentReps++;
+                repCountDisplay.textContent = currentReps;
+                updateProgress();
+                
+                // Add pulse animation
+                repCounterBox.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    repCounterBox.style.transform = 'scale(1)';
+                }, 150);
+                
+                // Check if completed
+                if (currentReps >= targetReps) {
+                    completeExercise();
+                }
+            }
+        }
+
+        function completeExercise() {
+            startBtn.innerHTML = '<span>🎉</span> Complete!';
+            startBtn.classList.remove('active');
+            startBtn.classList.add('complete');
+            repCounterBox.classList.add('celebrating');
+            videoBadge.classList.remove('live');
+            videoBadge.innerHTML = '✅ Complete';
+            
+            // Celebration effect
+            setTimeout(() => {
+                alert('Great job! You completed all reps! 💪');
+            }, 500);
+        }
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            currentReps = 0;
+            repCountDisplay.textContent = '0';
+            isExercising = false;
+            startBtn.innerHTML = '<span>▶</span> Start Exercise';
+            startBtn.classList.remove('active', 'complete');
+            repCounterBox.classList.remove('celebrating');
+            videoBadge.classList.remove('live');
+            videoBadge.innerHTML = '📹 Exercise Demo';
+            updateProgress();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isExercising) {
+                    incrementRep();
+                } else {
+                    startBtn.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
