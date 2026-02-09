@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViveCare - Patient Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-solid-rounded/css/uicons-solid-rounded.css">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-bold-rounded/css/uicons-bold-rounded.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-teal: #00A8A8;
+            --primary-teal-dark: #008B8B;
+            --primary-teal-light: #B2E5E5;
+            --accent-navy: #1E3A5F;
+            --accent-blue: #4A90A4;
+            --accent-purple: #667eea;
+            --accent-pink: #f093fb;
+            --text-dark: #2C3E50;
+            --text-gray: #6B7B8C;
+            --bg-light: #F8FBFC;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #F8FBFC 0%, #E8F4F4 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 50%, #80CBC4 100%);
+            color: white;
+            padding: 1.2rem 0;
+            box-shadow: 0 4px 20px rgba(0, 168, 168, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-teal);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: rotate(-5deg);
+        }
+
+        .logo-icon i {
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info span {
+            font-weight: 500;
+            opacity: 0.95;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-teal);
+            font-size: 1.1rem;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 0.7rem 1.8rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: white;
+            color: var(--primary-teal);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+
+        .logout-btn i {
+            font-size: 1rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+        }
+
+        /* Welcome Section with Asymmetric Design */
+        .welcome-section {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(0, 168, 168, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .welcome-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-text h1 {
+            font-size: 2.2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .welcome-text p {
+            font-size: 1rem;
+            color: var(--text-gray);
+        }
+
+        .welcome-badge {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: 0 8px 20px rgba(0, 168, 168, 0.3);
+        }
+
+        .welcome-badge i {
+            font-size: 1.8rem;
+        }
+
+        .badge-text {
+            text-align: left;
+        }
+
+        .badge-text span {
+            display: block;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .badge-text strong {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* Dashboard Grid - Asymmetric Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        /* Left Column - Main Actions */
+        .main-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .action-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 168, 168, 0.05) 100%);
+            transform: translateX(100%);
+            transition: transform 0.4s ease;
+        }
+
+        .action-card:hover::after {
+            transform: translateX(0);
+        }
+
+        .action-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .action-icon-wrapper.teal {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 100%);
+            box-shadow: 0 8px 20px rgba(0, 168, 168, 0.3);
+        }
+
+        .action-icon-wrapper.purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-icon-wrapper.pink {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.3);
+        }
+
+        .action-icon-wrapper i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .action-content {
+            flex: 1;
+        }
+
+        .action-content h3 {
+            font-size: 1.4rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .action-content p {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .action-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-gray);
+        }
+
+        .meta-item i {
+            color: var(--primary-teal);
+            font-size: 0.9rem;
+        }
+
+        .action-arrow {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 168, 168, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .action-arrow i {
+            color: var(--primary-teal);
+            font-size: 1.1rem;
+        }
+
+        .action-card:hover .action-arrow {
+            background: var(--primary-teal);
+            transform: translateX(5px);
+        }
+
+        .action-card:hover .action-arrow i {
+            color: white;
+        }
+
+        /* Right Column - Stats & Info */
+        .side-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .stats-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-header i {
+            color: var(--primary-teal);
+            font-size: 1.2rem;
+        }
+
+        .stats-header h3 {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .stat-item {
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid var(--primary-teal);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateX(5px);
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-trend {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            background: rgba(0, 168, 168, 0.1);
+            color: var(--primary-teal);
+            font-weight: 600;
+        }
+
+        /* Tips Card */
+        .tips-card {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            color: white;
+            box-shadow: 0 8px 30px rgba(0, 168, 168, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tips-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .tips-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tips-header i {
+            font-size: 1.3rem;
+        }
+
+        .tips-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .tip-item {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tip-item strong {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .tip-item p {
+            font-size: 0.85rem;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .action-arrow {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .welcome-content {
+                flex-direction: column;
+                gap: 1.5rem;
+                text-align: center;
+            }
+
+            .welcome-text h1 {
+                font-size: 1.8rem;
+            }
+
+            .action-card {
+                padding: 1.5rem;
+            }
+
+            .action-icon-wrapper {
+                width: 70px;
+                height: 70px;
+            }
+
+            .action-icon-wrapper i {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .user-info span {
+                display: none;
+            }
+
+            .container {
+                padding: 2rem 1rem;
+            }
+
+            .welcome-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fi fi-sr-heart-rate"></i>
+                </div>
+                <span class="logo-text">ReViveCare</span>
+            </div>
+            <div class="user-info">
+                <span>{{ patient.name }}</span>
+                <div class="user-avatar">{{ patient.name.0|upper }}</div>
+                <a href="{% url 'patient_logout' %}" class="logout-btn">
+                    <i class="fi fi-rr-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <div class="welcome-text">
+                    <h1>Hey {{ patient.name }}, welcome back! 👋</h1>
+                    <p>Let's continue your recovery journey together</p>
+                </div>
+                <div class="welcome-badge">
+                    <i class="fi fi-sr-flame"></i>
+                    <div class="badge-text">
+                        <span>Current Streak</span>
+                        <strong>12 Days</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Column - Main Actions -->
+            <div class="main-column">
+                <!-- Exercise Card -->
+                <a href="{% url 'exercise' %}" class="action-card">
+                    <div class="action-icon-wrapper teal">
+                        <i class="fi fi-sr-running"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>AI-Guided Exercises</h3>
+                        <p>Personalized rehabilitation routines with real-time posture correction and progress tracking</p>
+                        <div class="action-meta">
+                            <div class="meta-item">
+                                <i class="fi fi-rr-clock"></i>
+                                <span>15-20 min sessions</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fi fi-rr-chart-line-up"></i>
+                                <span>85% completed</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-arrow">
+                        <i class="fi fi-rr-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Chatbot Card -->
+                <a href="{% url 'chatbot' %}" class="action-card">
+                    <div class="action-icon-wrapper purple">
+                        <i class="fi fi-sr-messages"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>24/7 AI Health Assistant</h3>
+                        <p>Get instant answers in your language. Ask about symptoms, medications, or recovery tips</p>
+                        <div class="action-meta">
+                            <div class="meta-item">
+                                <i class="fi fi-rr-globe"></i>
+                                <span>Multi-language support</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fi fi-rr-headset"></i>
+                                <span>Always available</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-arrow">
+                        <i class="fi fi-rr-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Summary Card -->
+                <a href="#" class="action-card">
+                    <div class="action-icon-wrapper pink">
+                        <i class="fi fi-sr-document"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Recovery Insights</h3>
+                        <p>AI-powered analysis of your progress with personalized recommendations and milestones</p>
+                        <div class="action-meta">
+                            <div class="meta-item">
+                                <i class="fi fi-rr-trophy"></i>
+                                <span>8 milestones achieved</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fi fi-rr-calendar"></i>
+                                <span>Updated daily</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-arrow">
+                        <i class="fi fi-rr-arrow-right"></i>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Right Column - Stats & Tips -->
+            <div class="side-column">
+                <!-- Stats Card -->
+                <div class="stats-card">
+                    <div class="stats-header">
+                        <i class="fi fi-sr-chart-histogram"></i>
+                        <h3>Your Progress</h3>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Recovery Status</div>
+                        <div class="stat-value">
+                            Excellent
+                            <span class="stat-trend">↑ 12%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Days Active</div>
+                        <div class="stat-value">
+                            12
+                            <span class="stat-trend">+2 this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Next Checkup</div>
+                        <div class="stat-value" style="font-size: 1.1rem;">
+                            Feb 15, 2026
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Card -->
+                <div class="tips-card">
+                    <div class="tips-header">
+                        <i class="fi fi-sr-lightbulb-on"></i>
+                        <h3>Today's Tips</h3>
+                    </div>
+                    <div class="tip-item">
+                        <strong>💧 Hydration Goal</strong>
+                        <p>Drink 8 glasses of water to support healing</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>🥗 Nutrition Focus</strong>
+                        <p>Include protein-rich foods in every meal</p>
+                    </div>
+                    <div class="tip-item">
+                        <strong>😴 Rest Well</strong>
+                        <p>Aim for 7-8 hours of quality sleep tonight</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

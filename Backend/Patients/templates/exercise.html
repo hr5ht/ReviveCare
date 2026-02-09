@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViveCare - My Exercise Plan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-solid-rounded/css/uicons-solid-rounded.css">
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-bold-rounded/css/uicons-bold-rounded.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-teal: #00A8A8;
+            --primary-teal-dark: #008B8B;
+            --text-dark: #2C3E50;
+            --text-gray: #6B7B8C;
+            --bg-light: #F8FBFC;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #F8FBFC;
+            color: var(--text-dark);
+        }
+
+        /* Sticky Header */
+        header {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 15px rgba(0, 168, 168, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+        }
+
+        .back-link {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1.2rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .back-link:hover {
+            background: white;
+            color: var(--primary-teal);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Welcome Section */
+        .welcome {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-text h1 {
+            font-size: 1.6rem;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        .welcome-text p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .today-goal {
+            background: linear-gradient(135deg, #00A8A8, #4DB6AC);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .today-goal .label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            margin-bottom: 0.2rem;
+        }
+
+        .today-goal .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .progress-percent {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-teal);
+        }
+
+        .progress-bar-bg {
+            background: #E8F4F4;
+            height: 12px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #00A8A8, #4DB6AC);
+            height: 100%;
+            border-radius: 20px;
+            width: 75%;
+            animation: fillProgress 1.5s ease-out;
+            position: relative;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes fillProgress {
+            from { width: 0; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-gray);
+        }
+
+        .stat i {
+            color: var(--primary-teal);
+        }
+
+        /* Exercise List */
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary-teal);
+        }
+
+        .exercise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Exercise Item - Horizontal Card */
+        .exercise-item {
+            background: white;
+            border-radius: 16px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            border: 2px solid transparent;
+        }
+
+        .exercise-item:hover {
+            transform: translateX(8px);
+            box-shadow: 0 4px 20px rgba(0,168,168,0.15);
+            border-color: #B2E5E5;
+        }
+
+        .exercise-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00A8A8, #4DB6AC);
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .exercise-icon {
+            width: 65px;
+            height: 65px;
+            background: #F8FBFC;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .exercise-icon i {
+            font-size: 2rem;
+            color: var(--primary-teal);
+        }
+
+        .exercise-icon.animated {
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .exercise-info {
+            flex: 1;
+        }
+
+        .exercise-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .difficulty {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .difficulty.easy {
+            background: #C6F6D5;
+            color: #22543D;
+        }
+
+        .difficulty.medium {
+            background: #FED7D7;
+            color: #742A2A;
+        }
+
+        .exercise-desc {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .exercise-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .meta-item i {
+            font-size: 0.9rem;
+            color: var(--primary-teal);
+        }
+
+        .exercise-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .status-badge.completed {
+            background: #C6F6D5;
+            color: #22543D;
+        }
+
+        .status-badge.in-progress {
+            background: #FEF3C7;
+            color: #78350F;
+        }
+
+        .status-badge.not-started {
+            background: #E8F4F4;
+            color: #00A8A8;
+        }
+
+        .start-arrow {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .exercise-item:hover .start-arrow {
+            transform: translateX(5px);
+        }
+
+        /* Motivational Card */
+        .motivation-card {
+            background: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .motivation-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1), transparent);
+            border-radius: 50%;
+        }
+
+        .motivation-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .motivation-card p {
+            font-size: 0.95rem;
+            opacity: 0.95;
+            position: relative;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .welcome {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .exercise-item {
+                flex-wrap: wrap;
+            }
+
+            .exercise-status {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .progress-stats {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fi fi-sr-heart-pulse"></i>
+                ReViveCare
+            </div>
+            <a href="{% url 'patient_dashboard' %}" class="back-link">
+                <i class="fi fi-rr-angle-left"></i>
+                Back
+            </a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome">
+            <div class="welcome-text">
+                <h1>Hey {{ patient.name }}, ready to exercise? 💪</h1>
+                <p>You're doing great! Keep up the momentum</p>
+            </div>
+            <div class="today-goal">
+                <div class="label">Today's Goal</div>
+                <div class="value">3/4</div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3>Weekly Progress</h3>
+                <span class="progress-percent">75%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill"></div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat">
+                    <i class="fi fi-rr-flame"></i>
+                    <span>12 day streak</span>
+                </div>
+                <div class="stat">
+                    <i class="fi fi-rr-trophy"></i>
+                    <span>8 exercises completed</span>
+                </div>
+                <div class="stat">
+                    <i class="fi fi-rr-time-forward"></i>
+                    <span>45 min this week</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercise List -->
+        <h2 class="section-title">
+            <i class="fi fi-sr-list-check"></i>
+            Your Exercise Plan
+        </h2>
+
+        <div class="exercise-list">
+            <!-- Exercise 1 -->
+            <a href="{% url 'bc' %}" class="exercise-item">
+                <div class="exercise-number">1</div>
+                <div class="exercise-icon animated">
+                    <i class="fi fi-sr-dumbbell"></i>
+                </div>
+                <div class="exercise-info">
+                    <div class="exercise-title">
+                        Bicep Curls
+                        <span class="difficulty easy">Easy</span>
+                    </div>
+                    <div class="exercise-desc">Rebuild arm strength with controlled movements</div>
+                    <div class="exercise-meta">
+                        <div class="meta-item">
+                            <i class="fi fi-rr-clock"></i>
+                            <span>10-15 min</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fi fi-rr-refresh"></i>
+                            <span>3 sets × 12 reps</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="exercise-status">
+                    <span class="status-badge completed">
+                        <i class="fi fi-rr-check"></i>
+                        Completed
+                    </span>
+                    <div class="start-arrow">
+                        <i class="fi fi-rr-angle-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Exercise 2 -->
+            <a href="{% url 'sr' %}" class="exercise-item">
+                <div class="exercise-number">2</div>
+                <div class="exercise-icon animated" style="animation-delay: 0.2s;">
+                    <i class="fi fi-sr-arms-up"></i>
+                </div>
+                <div class="exercise-info">
+                    <div class="exercise-title">
+                        Side Lateral Raises
+                        <span class="difficulty medium">Medium</span>
+                    </div>
+                    <div class="exercise-desc">Restore shoulder mobility and flexibility</div>
+                    <div class="exercise-meta">
+                        <div class="meta-item">
+                            <i class="fi fi-rr-clock"></i>
+                            <span>12-18 min</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fi fi-rr-refresh"></i>
+                            <span>3 sets × 10 reps</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="exercise-status">
+                    <span class="status-badge in-progress">
+                        <i class="fi fi-rr-time-forward"></i>
+                        In Progress
+                    </span>
+                    <div class="start-arrow">
+                        <i class="fi fi-rr-angle-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Exercise 3 -->
+            <a href="{% url 'jj' %}" class="exercise-item">
+                <div class="exercise-number">3</div>
+                <div class="exercise-icon animated" style="animation-delay: 0.4s;">
+                    <i class="fi fi-sr-running"></i>
+                </div>
+                <div class="exercise-info">
+                    <div class="exercise-title">
+                        Modified Jumping Jacks
+                        <span class="difficulty medium">Medium</span>
+                    </div>
+                    <div class="exercise-desc">Low-impact cardio for stamina building</div>
+                    <div class="exercise-meta">
+                        <div class="meta-item">
+                            <i class="fi fi-rr-clock"></i>
+                            <span>15-20 min</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fi fi-rr-refresh"></i>
+                            <span>4 sets × 15 reps</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="exercise-status">
+                    <span class="status-badge not-started">
+                        <i class="fi fi-rr-play"></i>
+                        Start Now
+                    </span>
+                    <div class="start-arrow">
+                        <i class="fi fi-rr-angle-right"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Exercise 4 -->
+            <a href="{% url 'ar' %}" class="exercise-item">
+                <div class="exercise-number">4</div>
+                <div class="exercise-icon animated" style="animation-delay: 0.6s;">
+                    <i class="fi fi-sr-refresh"></i>
+                </div>
+                <div class="exercise-info">
+                    <div class="exercise-title">
+                        Arm Rotation
+                        <span class="difficulty easy">Easy</span>
+                    </div>
+                    <div class="exercise-desc">Prevent stiffness with circular movements</div>
+                    <div class="exercise-meta">
+                        <div class="meta-item">
+                            <i class="fi fi-rr-clock"></i>
+                            <span>8-12 min</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fi fi-rr-refresh"></i>
+                            <span>3 sets × 20 reps</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="exercise-status">
+                    <span class="status-badge not-started">
+                        <i class="fi fi-rr-play"></i>
+                        Start Now
+                    </span>
+                    <div class="start-arrow">
+                        <i class="fi fi-rr-angle-right"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Motivation Card -->
+        <div class="motivation-card">
+            <h3>🎯 You're almost there!</h3>
+            <p>Just 2 more exercises to complete today's goal. Your recovery journey is looking amazing!</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient Info - ReViveCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-teal: #00A8A8;
+            --primary-teal-dark: #008B8B;
+            --primary-teal-light: #B2E5E5;
+            --accent-navy: #1E3A5F;
+            --accent-blue: #4A90A4;
+            --text-dark: #2C3E50;
+            --text-gray: #6B7B8C;
+            --bg-light: #F8FBFC;
+            --white: #ffffff;
+            --gradient-teal: linear-gradient(135deg, #00A8A8 0%, #4DB6AC 50%, #80CBC4 100%);
+            --shadow-soft: 0 4px 20px rgba(0, 168, 168, 0.15);
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --success-green: #48BB78;
+            --danger-red: #E53E3E;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #E8F4F4 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-dark);
+        }
+
+        /* Header */
+        header {
+            background: var(--gradient-teal);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(0, 168, 168, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-teal);
+            font-size: 1.4rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: white;
+            color: var(--primary-teal);
+            border-color: white;
+            transform: translateX(-5px);
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            width: 100%;
+        }
+
+        .form-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.6s ease;
+            border: 1px solid rgba(0, 168, 168, 0.1);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-header h1 {
+            font-size: 2.2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .form-header p {
+            color: var(--text-gray);
+            font-size: 1rem;
+        }
+
+        .form-icon {
+            width: 85px;
+            height: 85px;
+            background: var(--gradient-teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 168, 168, 0.35);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.6rem;
+        }
+
+        .required {
+            color: var(--danger-red);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            font-size: 1rem;
+            border: 2px solid #E8F0F0;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-light);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 4px rgba(0, 168, 168, 0.1);
+            background: white;
+        }
+
+        .form-group textarea {
+            min-height: 160px;
+            resize: vertical;
+        }
+
+        .char-count {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-top: 0.4rem;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            z-index: 1;
+        }
+
+        .input-icon input {
+            padding-left: 3rem;
+        }
+
+        /* Submit Button */
+        .submit-section {
+            margin-top: 2.5rem;
+            text-align: center;
+        }
+
+        .submit-btn {
+            background: var(--gradient-teal);
+            color: white;
+            border: none;
+            padding: 1.2rem 4rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 168, 168, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 168, 168, 0.45);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            background: #CBD5E0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .submit-btn.loading .spinner {
+            display: inline-block;
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            background: linear-gradient(135deg, #C6F6D5 0%, #9AE6B4 100%);
+            border: 2px solid #68D391;
+            color: #276749;
+            padding: 1.5rem;
+            border-radius: 14px;
+            margin-top: 1.5rem;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-message h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Error Message */
+        .error-message {
+            display: none;
+            background: linear-gradient(135deg, #FED7D7 0%, #FEB2B2 100%);
+            border: 2px solid #FC8181;
+            color: #C53030;
+            padding: 1.5rem;
+            border-radius: 14px;
+            margin-top: 1.5rem;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-message h3 {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        /* Info Card */
+        .info-card {
+            background: linear-gradient(135deg, rgba(0, 168, 168, 0.08) 0%, rgba(77, 182, 172, 0.08) 100%);
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary-teal);
+        }
+
+        .info-card h4 {
+            color: var(--primary-teal-dark);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-card p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 2rem 1.5rem;
+                border-radius: 20px;
+            }
+
+            .form-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .submit-btn {
+                width: 100%;
+                padding: 1.2rem 2rem;
+                justify-content: center;
+            }
+
+            .container {
+                margin: 2rem auto;
+            }
+
+            .form-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo" onclick="goHome()">
+                <div class="logo-icon">💚</div>
+                <span class="logo-text">ReViveCare</span>
+            </div><a href = "{%url 'doc_port' %}" class="back-btn">
+                <span>←</span>
+                <span>Back to Portal</span>
+            </a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="form-card">
+            <div class="form-header">
+                <div class="form-icon">👤</div>
+                <h1>Add Patient Information</h1>
+                <p>Enter patient details to create a new recovery profile</p>
+            </div>
+
+            <div class="info-card">
+                <h4>💡 Quick Tip</h4>
+                <p>Include discharge details, medical history, recovery plan, medications, and any special instructions for comprehensive patient care.</p>
+            </div>
+
+            <form id="patientForm" onsubmit="submitForm(event)">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="name">Patient Name <span class="required">*</span></label>
+                    <div class="input-icon" data-icon="👤">
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            placeholder="Enter patient's full name"
+                            required
+                            autocomplete="name"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address <span class="required">*</span></label>
+                    <div class="input-icon" data-icon="📧">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="patient@example.com"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="info">Patient Information <span class="required">*</span></label>
+                    <textarea 
+                        id="info" 
+                        name="info" 
+                        placeholder="Enter discharge details, medical history, recovery plan, medications, and any special instructions..."
+                        required
+                        maxlength="3000"
+                        oninput="updateCharCount()"
+                    ></textarea>
+                    <div class="char-count">
+                        <span id="charCount">0</span> / 3000 characters
+                    </div>
+                </div>
+
+                <div class="submit-section">
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-text">✓ Submit Patient Info</span>
+                        <div class="spinner"></div>
+                    </button>
+                </div>
+
+                <div class="success-message" id="successMessage">
+                    <h3>✓ Success!</h3>
+                    <p>Patient information has been successfully added to the system.</p>
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    <h3>✗ Error</h3>
+                    <p id="errorText">Something went wrong. Please try again.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+        function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue; }
+
+        // Update character count
+        function updateCharCount() {
+            const textarea = document.getElementById('info');
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = textarea.value.length;
+        }
+
+        // Form submission
+        async function submitForm(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                info: document.getElementById('info').value
+            };
+
+            // Show loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            successMessage.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            try {
+                // Send POST request to doctor_info endpoint
+                const csrftoken = getCookie('csrftoken');
+
+                const response = await fetch('/doctor_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+
+                if (response.ok) {
+                    // Success
+                    successMessage.classList.add('show');
+                    document.getElementById('patientForm').reset();
+                    updateCharCount();
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        goBack();
+                    }, 2000);
+                } else {
+                    // Error from server
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to submit patient information');
+                }
+            } catch (error) {
+                // Show error message
+                errorMessage.classList.add('show');
+                document.getElementById('errorText').textContent = error.message;
+                console.error('Error submitting form:', error);
+            } finally {
+                // Remove loading state
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Navigation functions
+        function goBack() {
+            window.history.back();
+            // In production: window.location.href = '/doctor-portal';
+        }
+
+        function goHome() {
+            // window.location.href = '/';
+            alert('Returning to homepage...');
+        }
+
+        // Form validation
+        document.getElementById('patientForm').addEventListener('input', function() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const info = document.getElementById('info').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Enable submit button only if all fields are filled
+            if (name && email && info) {
+                submitBtn.style.opacity = '1';
+            } else {
+                submitBtn.style.opacity = '0.7';
+            }
+        });
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('info');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+</body>
+</html>
