@@ -38,7 +38,7 @@ langgraph-prebuilt==1.0.7
 langgraph-sdk==0.3.4
 langsmith==0.6.9
 matplotlib==3.10.8
-mediapipe==0.10.14
+mediapipe
 ml_dtypes==0.5.4
 multidict==6.7.1
 numpy==2.4.2
