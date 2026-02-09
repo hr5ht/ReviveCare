@@ -31,14 +31,13 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1',"revive-care.vercel.app","revivecare-p
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
-    'corsheaders',  # CORS support for React frontend
     'Home',
     'Doctor' , 
     'Patients'

@@ -22,3 +22,6 @@ Frontend/build/
 
 .DS_Store
 Frontend/README.md
+
+venv/
+venv/lib/python3.12/site-packages/cv2/gapi/onnx/ep/__init__.pyi
