@@ -43,7 +43,7 @@ Follow these instructions to set up the project locally on your machine.
 1.  **Clone the repository**
     ```bash
     git clone <repository-url>
-    cd Cura
+    cd ReviveCare
     ```
 
 2.  **Backend Setup**
