@@ -25,3 +25,7 @@ Frontend/README.md
 
 venv/
 venv/lib/python3.12/site-packages/cv2/gapi/onnx/ep/__init__.pyi
+.cursor/
+.agents/
+.agents/skills/neon-postgres/SKILL.md
+.agents/skills/neon-postgres/references/connection-methods.md
