@@ -261,8 +261,8 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
         server.sendmail(sender_email, doctor_email, text)
         server.quit()
         
-        print(f"✅ EMAIL ALERT SENT TO DOCTOR: {doctor_email}")
-        '''TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+        '''print(f"✅ EMAIL ALERT SENT TO DOCTOR: {doctor_email}")
+        TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
         TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
         TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")  # Your Twilio phone number
         TO_NUMBER = os.getenv("TO_NUMBER")
