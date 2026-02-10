@@ -37,6 +37,9 @@ class SLS(models.Model):
     duration_seconds = models.IntegerField(default=0, help_text="Workout duration in seconds")
     completed = models.BooleanField(default=False)
     
+    # Detail data for analysis
+    angles_data = models.JSONField(default=list, blank=True, help_text="Stored angles for each frame/rep")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -80,6 +83,9 @@ class BicepCurl(models.Model):
     duration_seconds = models.IntegerField(default=0, help_text="Workout duration in seconds")
     completed = models.BooleanField(default=False)
     
+    # Detail data for analysis
+    angles_data = models.JSONField(default=list, blank=True, help_text="Stored angles for each frame/rep")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -96,3 +102,35 @@ class BicepCurl(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Bicep Curl Workout'
         verbose_name_plural = 'Bicep Curl Workouts'
+
+class JumpingJack(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='jj_workouts')
+    date = models.DateField(default=timezone.now)
+    total_reps = models.IntegerField(default=0)
+    target_reps = models.IntegerField(default=10)
+    excellent_reps = models.IntegerField(default=0)
+    good_reps = models.IntegerField(default=0)
+    partial_reps = models.IntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    angles_data = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class ArmRaise(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='ar_workouts')
+    date = models.DateField(default=timezone.now)
+    total_reps = models.IntegerField(default=0)
+    target_reps = models.IntegerField(default=10)
+    excellent_reps = models.IntegerField(default=0)
+    good_reps = models.IntegerField(default=0)
+    partial_reps = models.IntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    angles_data = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']

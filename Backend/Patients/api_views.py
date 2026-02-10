@@ -5,7 +5,7 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from .models import Patient, SLS
+from .models import Patient, SLS, BicepCurl, JumpingJack, ArmRaise
 from django.utils import timezone
 import json
 from datetime import timedelta
@@ -279,6 +279,94 @@ def api_exercise_history(request):
             'success': True,
             'workouts': []
         })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_update_session_data(request):
+    """
+    Update real-time angles and reps for an active session.
+    Stores data in the database for later analysis.
+    """
+    patient_id = request.session.get('patient_id')
+    if not patient_id:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+        exercise_id = data.get('exercise_id') 
+        reps = data.get('reps', 0)
+        angle = data.get('angle', 0)
+        stage = data.get('stage', 'down')
+        completed = data.get('completed', False)
+        
+        today = timezone.now().date()
+        
+        if exercise_id == 'bicep-curl':
+            workout, created = BicepCurl.objects.get_or_create(
+                patient_id=patient_id,
+                date=today,
+                completed=False,
+                defaults={'target_reps': 10}
+            )
+            workout.total_reps = reps
+            
+            # Simple Quality Logic based on angle range
+            if angle < 45:
+                workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
+            elif angle < 60:
+                workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
+            
+            if not isinstance(workout.angles_data, list): workout.angles_data = []
+            workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
+            if completed: workout.completed = True
+            workout.save()
+            
+        elif exercise_id == 'shoulder-extension':
+             workout, created = SLS.objects.get_or_create(
+                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 12}
+            )
+             workout.total_reps = reps
+             if angle > 80:
+                 workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
+             elif angle > 65:
+                 workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
+             
+             if not isinstance(workout.angles_data, list): workout.angles_data = []
+             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
+             if completed: workout.completed = True
+             workout.save()
+
+        elif exercise_id == 'jumping-jacks':
+             workout, created = JumpingJack.objects.get_or_create(
+                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 20}
+            )
+             workout.total_reps = reps
+             workout.excellent_reps = reps # Generic for now
+             if not isinstance(workout.angles_data, list): workout.angles_data = []
+             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
+             if completed: workout.completed = True
+             workout.save()
+
+        elif exercise_id == 'arm-raises' or exercise_id == 'ar':
+             workout, created = ArmRaise.objects.get_or_create(
+                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 15}
+            )
+             workout.total_reps = reps
+             if angle > 85:
+                 workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
+             elif angle > 70:
+                 workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
+
+             if not isinstance(workout.angles_data, list): workout.angles_data = []
+             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
+             if completed: workout.completed = True
+             workout.save()
+
+        return JsonResponse({'success': True, 'reps': reps})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 # ============================================================================

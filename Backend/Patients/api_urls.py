@@ -17,6 +17,7 @@ urlpatterns = [
     # Exercises
     path('exercises/', api_views.api_exercise_list, name='api_exercise_list'),
     path('exercises/history/', api_views.api_exercise_history, name='api_exercise_history'),
+    path('exercises/update-session/', api_views.api_update_session_data, name='api_update_session_data'),
     
     # Doctor endpoints
     path('patients/', api_views.api_get_all_patients, name='api_get_all_patients'),

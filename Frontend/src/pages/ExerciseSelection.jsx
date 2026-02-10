@@ -12,17 +12,19 @@ const exercises = [
         color: 'emerald',
         endpoint: '/bc',
         targetReps: 12,
-        hasCamera: true // AI Tracking enabled
+        hasCamera: true,
+        videoUrl: '/static/Patients/videos/bc.mp4'
     },
     {
         id: 'shoulder-extension',
-        name: 'Shoulder Extension',
+        name: 'Lateral Raise',
         description: 'Improve shoulder mobility and strength',
         icon: Activity,
         color: 'blue',
         endpoint: '/sr',
         targetReps: 10,
-        hasCamera: true // This one has video tracking
+        hasCamera: true,
+        videoUrl: '/static/Patients/videos/sl.mp4'
     },
     {
         id: 'jumping-jacks',
@@ -31,7 +33,9 @@ const exercises = [
         icon: Zap,
         color: 'purple',
         endpoint: '/jj',
-        targetReps: 20
+        targetReps: 20,
+        hasCamera: true,
+        videoUrl: '/static/Patients/videos/jj.mp4'
     },
     {
         id: 'arm-raises',
@@ -40,7 +44,9 @@ const exercises = [
         icon: Target,
         color: 'orange',
         endpoint: '/ar',
-        targetReps: 15
+        targetReps: 15,
+        hasCamera: true,
+        videoUrl: '/static/Patients/videos/ar.mp4'
     }
 ];
 
@@ -56,7 +62,8 @@ export default function ExerciseSelection() {
             color: exercise.color,
             endpoint: exercise.endpoint,
             targetReps: exercise.targetReps,
-            hasCamera: exercise.hasCamera
+            hasCamera: exercise.hasCamera,
+            videoUrl: exercise.videoUrl
         };
 
         navigate(`/patient/exercise/${exercise.id}`, {
