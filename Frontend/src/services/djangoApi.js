@@ -1,8 +1,11 @@
 // API Service for connecting React to Django Backend
 // This file uses the new JSON API endpoints (/api/*)
 
+import { API_URL } from '../config/api';
+
 // When using Vite proxy, we don't need the full URL - proxy handles it
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// However, the user wants us to use the VITE_API_URL environment variable
+const API_BASE_URL = API_URL;
 
 // Helper to get CSRF token from cookies
 const getCSRFToken = () => {
