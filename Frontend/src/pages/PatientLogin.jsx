@@ -9,11 +9,34 @@ export default function PatientLogin() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [dbStatus, setDbStatus] = useState({ ok: true, error: null });
     const navigate = useNavigate();
     const { login } = useAuth();
 
+    // Check database health on mount
+    React.useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/health/`);
+                const data = await response.json();
+                if (!data.db_connected) {
+                    setDbStatus({ ok: false, error: data.db_error || 'Database connection failed' });
+                }
+            } catch (err) {
+                // If the whole backend is down, we handle that elsewhere or just let it fail at login
+                console.error('Health check failed:', err);
+            }
+        };
+        checkHealth();
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (dbStatus.ok === false) {
+            setError(`Cannot login: Database is disconnected. (${dbStatus.error})`);
+            return;
+        }
 
         if (!email.trim()) {
             setError('Please enter your email address');
@@ -46,7 +69,11 @@ export default function PatientLogin() {
             }
         } catch (err) {
             console.error('Login error caught:', err);
-            setError(err.message || 'Login failed. Please check your email or contact your doctor.');
+            if (err.message?.toLowerCase().includes('database') || err.message?.toLowerCase().includes('connection')) {
+                setError('Database connection error. Please verify your NeonDB configuration.');
+            } else {
+                setError(err.message || 'Login failed. Please check your email or contact your doctor.');
+            }
         } finally {
             setLoading(false);
         }
@@ -79,6 +106,20 @@ export default function PatientLogin() {
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Patient Login</h2>
                         <p className="text-gray-600">Enter your credentials to access your recovery dashboard</p>
                     </div>
+
+                    {!dbStatus.ok && (
+                        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3 shadow-sm animate-pulse">
+                            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <AlertCircle className="w-6 h-6 text-orange-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-orange-800 text-sm mb-1">Database Disconnected</h3>
+                                <p className="text-xs text-orange-700 leading-relaxed">
+                                    The backend cannot reach NeonDB. Please check your <code className="bg-orange-100 px-1 rounded text-orange-900">DATABASE_URL</code> in Railway/Env.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <FormInput

@@ -358,10 +358,21 @@ def api_add_patient(request):
 
 @require_http_methods(["GET"])
 def api_health(request):
-    """Health check endpoint - verifies backend is running"""
+    """Health check endpoint - verifies backend and database are running"""
+    db_ok = False
+    db_error = None
+    try:
+        from django.db import connection
+        connection.ensure_connection()
+        db_ok = True
+    except Exception as e:
+        db_error = str(e)
+
     return JsonResponse({
-        'success': True,
-        'status': 'ok',
-        'message': 'ReviveCare API is running',
+        'success': db_ok,
+        'status': 'ok' if db_ok else 'error',
+        'db_connected': db_ok,
+        'db_error': db_error,
+        'message': 'ReviveCare API is running' if db_ok else 'Database connection error',
         'authenticated': bool(request.session.get('patient_id'))
-    })
+    }, status=200 if db_ok else 503)
