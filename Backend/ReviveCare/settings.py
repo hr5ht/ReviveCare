@@ -58,8 +58,8 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite dev server default
     "http://127.0.0.1:5173",
-    "https://revive-care.vercel.app/",
-    "https://revive-care-*.vercel.app/",
+    "https://revive-care.vercel.app",
+    "https://revive-care-*.vercel.app",
     "http://localhost:3000",  # In case you use different port
     "http://127.0.0.1:3000",
 ]
@@ -71,8 +71,8 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://revive-care.vercel.app/",
-    "https://revive-care-*.vercel.app/",
+    "https://revive-care.vercel.app",
+    "https://revive-care-*.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
@@ -164,5 +164,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files (CSS, JS, Images, Videos)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]  # if you have a project-level static folder
+#STATICFILES_DIRS = [BASE_DIR / "static"]  # if you have a project-level static folder
 
