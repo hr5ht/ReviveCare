@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    <!-- Header -->
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-2">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="font-medium">Back to Dashboard</span>
+            </button>
+            <h1 class="text-2xl font-bold text-gray-900">Exercise Programs</h1>
+            <p class="text-gray-600">Choose an exercise to begin your workout</p>
+        </div>
+    </div>
+
+    <!-- Exercise Cards -->
+    <div class="max-w-7xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {% for ex in exercises %}
+            <div onclick="location.href='/patient/exercise/{{ ex.id }}/'"
+                class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md group cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 bg-gradient-to-br {% if ex.color == 'blue' %}from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700{% elif ex.color == 'purple' %}from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700{% elif ex.color == 'orange' %}from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700{% else %}from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700{% endif %} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+                        <i data-lucide="{{ ex.icon }}" class="w-8 h-8 text-white"></i>
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="text-xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">{{ ex.name }}</h3>
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">AI Tracking</span>
+                        </div>
+                        <p class="text-gray-600 mb-3">{{ ex.description }}</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="target" class="w-4 h-4"></i>
+                                <span>{{ ex.targetReps }} reps</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">Click to start</span>
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-gray-400 rotate-180 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md mt-8 bg-blue-50 border-blue-200">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-1">AI-Powered Exercise Tracking</h3>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        Exercises marked with "AI Tracking" use your camera to analyze your form in real-time
+                        and count your reps automatically. Make sure to grant camera permissions when prompted.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

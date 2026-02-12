@@ -18,24 +18,22 @@ This application leverages computer vision to provide real-time feedback on phys
 ## Technology Stack
 
 ### Frontend
-*   **React**: Core framework for building a dynamic user interface.
-*   **Vite**: Next-generation frontend tooling for fast build times.
-*   **Tailwind CSS**: Utility-first CSS framework for a modern, responsive design.
-*   **React Router**: For seamless navigation between application views.
+*   **Django templates** (`Backend/templates/`): Plain HTML, CSS and JavaScript served by Django. No build step.
+*   **Tailwind CSS v4** (browser build via CDN) and **Lucide** icons.
+*   **MediaPipe Pose** (CDN) for in-browser exercise tracking.
 
 ### Backend
 *   **Django**: High-level Python web framework for robust backend logic.
 *   **MediaPipe & OpenCV**: Advanced computer vision libraries used for pose detection and real-time exercise tracking.
 *   **LangChain & Sarvam AI**: Integration frameworks for the AI chat assistant capabilities.
-*   **SQLite**: Lightweight database for local development and data storage.
+*   **SQLite / PostgreSQL**: SQLite locally, NeonDB (Postgres) in production via `DATABASE_URL`.
 
 ## Getting Started
 
 Follow these instructions to set up the project locally on your machine.
 
 ### Prerequisites
-*   Node.js (v18 or higher)
-*   Python (v3.10 or higher)
+*   Python 3.11 or higher
 *   Git
 
 ### Installation
@@ -46,41 +44,26 @@ Follow these instructions to set up the project locally on your machine.
     cd ReviveCare
     ```
 
-2.  **Backend Setup**
-    Navigate to the backend directory and set up the Python environment.
-
+2.  **Setup**
     ```bash
     cd Backend
-    python -m venv venv
+    python3.11 -m venv venv
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     pip install -r requirements.txt
+    cp .env.example .env      # then fill in DATABASE_URL, GROQ_API_KEY, etc.
     ```
 
-    Run the database migrations and start the server:
+3.  **Run**
     ```bash
     python manage.py migrate
     python manage.py runserver
     ```
-    The backend will run at `http://127.0.0.1:8000`.
-
-3.  **Frontend Setup**
-    Open a new terminal, navigate to the frontend directory, and install dependencies.
-
-    ```bash
-    cd Frontend
-    npm install
-    ```
-
-    Start the development server:
-    ```bash
-    npm run dev
-    ```
-    The frontend will usually be accessible at `http://localhost:5173`.
+    Open `http://127.0.0.1:8000`. The pages and the API are both served by Django.
 
 ## Usage
 
-1.  Ensure both the Backend (Django) and Frontend (Vite) servers are running.
-2.  Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`).
+1.  Start the Django server.
+2.  Open `http://127.0.0.1:8000` in your browser.
 3.  **Doctors**: Navigate to the Doctor Dashboard to manage patients.
 4.  **Patients**: Login to access the exercise tracker. Select an exercise to start the video feed. Ensure your webcam is enabled and you are visible in the frame for the AI tracking to work correctly.
 

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReviveCare</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.18"></script>
+  <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  {% block body %}{% endblock %}
+
+  <script>
+    // JSON helper for the Django API (same origin, session cookie auth)
+    async function api(url, method = 'GET', data = null) {
+      const res = await fetch(url, {
+        method,
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: data && method !== 'GET' ? JSON.stringify(data) : null,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || json.message || `API Error: ${res.statusText}`);
+      return json;
+    }
+    const icons = () => lucide.createIcons();
+    icons();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

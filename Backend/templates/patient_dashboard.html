@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block body %}
+{% if not patient %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center">
+    <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md max-w-md">
+        <div class="text-center">
+            <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="heart" class="w-8 h-8 text-rose-600"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Unable to Load Dashboard</h2>
+            <p class="text-slate-600 mb-4">Not authenticated</p>
+            <button onclick="location.href='/patient/login/'" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                Go to Login
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    <!-- Simple Header Bar -->
+    <div class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <button onclick="location.href='/'" class="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <i data-lucide="heart" class="w-6 h-6 text-white" fill="white"></i>
+                    </div>
+                    <span class="text-xl font-bold text-slate-800">ReViveCare</span>
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-700 font-semibold">
+                        {{ initials }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-slate-900 mb-2">Welcome back, {{ patient.name|default:"Patient" }}</h1>
+            <p class="text-lg text-slate-600">Your personalized recovery support dashboard</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Content - Left Side -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Exercises Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-8">
+                        <div class="flex flex-col h-full">
+                            <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+                                <i data-lucide="dumbbell" class="w-8 h-8 text-emerald-600"></i>
+                            </div>
+                            <div class="flex-1 mb-6">
+                                <h3 class="text-2xl font-bold text-slate-900 mb-3">Exercises</h3>
+                                <p class="text-slate-600 leading-relaxed">Access your personalized exercise routines designed for your recovery journey. Follow guided videos and track your progress.</p>
+                            </div>
+                            <button onclick="location.href='/patient/exercises/'"
+                                class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 px-6 py-3 text-base w-full">
+                                Start Exercises
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chatbot Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-8">
+                        <div class="flex flex-col h-full">
+                            <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                                <i data-lucide="message-square" class="w-8 h-8 text-blue-600"></i>
+                            </div>
+                            <div class="flex-1 mb-6">
+                                <h3 class="text-2xl font-bold text-slate-900 mb-3">Chatbot</h3>
+                                <p class="text-slate-600 leading-relaxed">Get instant answers to your recovery questions. Our AI assistant is available 24/7 to provide support and guidance.</p>
+                            </div>
+                            <button onclick="location.href='/patient/chat/'"
+                                class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-6 py-3 text-base w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200">
+                                Start Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Tasks -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-slate-900">Today's Tasks</h3>
+                        <span class="text-sm text-slate-500">{{ tasks_done }} of {{ tasks|length }} completed</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        {% for t in tasks %}
+                        <div class="flex items-center gap-4 p-4 rounded-xl border transition-all {% if t.completed %}bg-emerald-50 border-emerald-200{% else %}bg-white border-slate-200 hover:border-slate-300{% endif %}">
+                            <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 {% if t.completed %}bg-emerald-500{% else %}bg-slate-200{% endif %}">
+                                {% if t.completed %}<i data-lucide="circle-check" class="w-4 h-4 text-white"></i>{% endif %}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium {% if t.completed %}text-slate-500 line-through{% else %}text-slate-900{% endif %}">{{ t.task }}</p>
+                            </div>
+                            <div class="flex items-center gap-1 text-sm text-slate-500">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                                <span>{{ t.time }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side -->
+            <div class="space-y-6">
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="location.href='/patient/exercises/'"
+                            class="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl transition-all hover:scale-105 shadow-lg flex flex-col items-center justify-center">
+                            <i data-lucide="activity" class="w-6 h-6 mb-2"></i>
+                            <div class="text-sm font-semibold">Start Exercising</div>
+                        </button>
+                        <button onclick="location.href='/patient/chat/'"
+                            class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all hover:scale-105 shadow-lg flex flex-col items-center justify-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mb-2"></i>
+                            <div class="text-sm font-semibold">Chat with AI</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recovery Summary -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6">Recovery Summary</h3>
+                    <div class="space-y-4">
+                        {% for s in recovery_stats %}
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 {{ s.cls }} rounded-lg flex items-center justify-center">
+                                    <i data-lucide="{{ s.icon }}" class="w-5 h-5"></i>
+                                </div>
+                                <span class="text-sm font-medium text-slate-700">{{ s.label }}</span>
+                            </div>
+                            <span class="text-xl font-bold text-slate-900">{{ s.value }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Upcoming Appointment -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-600">
+                    <div class="flex items-start gap-3 mb-4">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold mb-1">Next Appointment</h4>
+                            <p class="text-emerald-50 text-sm">Follow-up checkup with Dr. Anderson</p>
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-white/20">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-emerald-50">Date &amp; Time</span>
+                            <span class="font-semibold">Feb 15, 2024 at 10:00 AM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Tip -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-blue-50 border-blue-200">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-900 mb-2 text-sm">Daily Health Tip</h4>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                Remember to stay hydrated throughout the day. Aim for 8 glasses of water to support your recovery process.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -10,18 +10,12 @@ Backend/__pycache__/
 *$py.class
 *.sqlite3
 
-# Node modules
-Frontend/node_modules/
-Frontend/dist/
-Frontend/build/
-
 # System
 .DS_Store
 .vscode/
 .idea/
 
 .DS_Store
-Frontend/README.md
 
 venv/
 venv/lib/python3.12/site-packages/cv2/gapi/onnx/ep/__init__.pyi

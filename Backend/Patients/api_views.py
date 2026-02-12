@@ -1,5 +1,5 @@
 # Patients/api_views.py
-# JSON API views for React frontend integration
+# JSON API views
 # These views return JSON responses instead of HTML templates
 
 from django.http import JsonResponse

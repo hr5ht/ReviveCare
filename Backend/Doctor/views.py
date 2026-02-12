@@ -7,12 +7,7 @@ from django.views.decorators.http import require_POST
 
 # Create your views here.
 
-def doc_port(request):
-    return render(request , 'doc_port.html')
 
-@ensure_csrf_cookie
-def doc_info_page(request):
-    return render(request , 'add_info.html')
 
 @require_POST
 def doctor_info(request):

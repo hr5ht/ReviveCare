@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-slate-50">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button onclick="location.href='/patient/exercises/'" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                    <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 leading-none mb-1">{{ exercise.name }}</h1>
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span class="px-2 py-0.5 rounded bg-{{ exercise.color }}-100 text-{{ exercise.color }}-700">{{ exercise.id }}</span>
+                        <span>•</span>
+                        <span>{{ exercise.targetReps }} Reps Target</span>
+                    </div>
+                </div>
+            </div>
+            <button id="ref-btn"
+                class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 border border-slate-200 px-4 py-2 text-sm">
+                <i data-lucide="eye" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span>Show Reference</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Tracker -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl group border-4 border-white aspect-video">
+                    <video id="video" class="absolute opacity-0 pointer-events-none" playsinline muted></video>
+                    <canvas id="canvas" class="w-full h-full object-cover"></canvas>
+
+                    <!-- Start overlay -->
+                    <div id="start-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-12 text-center z-20">
+                        <div class="max-w-md animate-in fade-in zoom-in duration-500">
+                            <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-emerald-500/10">
+                                <i data-lucide="activity" class="w-12 h-12 text-emerald-400"></i>
+                            </div>
+                            <h2 class="text-3xl font-black text-white mb-4 uppercase tracking-tighter">Initialize AI Tracker</h2>
+                            <p class="text-white/70 mb-8 text-lg font-medium">Position your full body in the frame. The AI will curate your form and count reps automatically.</p>
+                            <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg">
+                                <i data-lucide="play" class="w-6 h-6 fill-current"></i> START WORKOUT
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="live" hidden>
+                        <!-- AI HUD (Top-Left) -->
+                        <div class="absolute top-6 left-6 bg-slate-900/90 backdrop-blur-xl p-5 rounded-3xl border border-white/10 z-10 w-52 shadow-2xl">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-end border-b border-white/5 pb-3">
+                                    <div>
+                                        <p class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Reps</p>
+                                        <p class="text-white text-3xl font-black leading-none"><span data-reps>0</span><span class="text-white/20 text-sm font-normal ml-1">/{{ exercise.targetReps }}</span></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Stage</p>
+                                        <p id="stage" class="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">down</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
+                                        <p class="text-[9px] font-black text-emerald-400 mb-0.5">EXC</p>
+                                        <p id="q-excellent" class="text-white text-sm font-black">0</p>
+                                    </div>
+                                    <div class="bg-yellow-500/10 p-2 rounded-xl border border-yellow-500/20">
+                                        <p class="text-[9px] font-black text-yellow-400 mb-0.5">GOOD</p>
+                                        <p id="q-good" class="text-white text-sm font-black">0</p>
+                                    </div>
+                                    <div class="bg-orange-500/10 p-2 rounded-xl border border-orange-500/20">
+                                        <p class="text-[9px] font-black text-orange-400 mb-0.5">PRT</p>
+                                        <p id="q-partial" class="text-white text-sm font-black">0</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 pt-1">
+                                    <div class="flex justify-between items-center text-[10px] font-bold text-white/50 uppercase">
+                                        <span>Symmetry</span>
+                                        <span id="diff-text" class="text-emerald-400">0° Diff</span>
+                                    </div>
+                                    <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div id="diff-bar" class="h-full transition-all duration-300 bg-emerald-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Banner -->
+                        <div class="absolute top-6 right-6 z-10 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 uppercase tracking-tighter text-[11px] font-black text-white">
+                            <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_#f43f5e]"></div>
+                            Live AI Telemetry
+                        </div>
+
+                        <!-- AI Coaching Panel -->
+                        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-30">
+                            <div id="coach" class="p-5 rounded-3xl border shadow-2xl flex items-center gap-5 transition-all duration-300 bg-slate-900/95 backdrop-blur-xl border-white/10 text-white">
+                                <div id="coach-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500/20">
+                                    <i data-lucide="zap" class="w-8 h-8 text-emerald-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">AI Coach Guidance</p>
+                                    <p id="feedback" class="text-xl font-black leading-tight tracking-tight uppercase">Position yourself in frame</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reference Video Overlay -->
+                    <div id="reference" hidden class="absolute top-6 right-6 w-64 aspect-video rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-40 bg-black animate-in slide-in-from-right duration-300 cursor-move">
+                        <div class="absolute top-0 left-0 right-0 bg-black/60 p-2 flex justify-between items-center z-10">
+                            <span class="text-[9px] font-black text-white/80 uppercase">Doctor's Demo</span>
+                            <button id="ref-close" class="text-white/60 hover:text-white">✕</button>
+                        </div>
+                        <video src="{{ exercise.videoUrl }}" autoplay loop muted class="w-full h-full object-cover"></video>
+                    </div>
+                </div>
+
+                <!-- Exercise Context -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md bg-white border-slate-200">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-50 rounded-2xl">
+                            <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-black text-slate-900 uppercase tracking-tighter mb-2">Instructions &amp; Medical Targets</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Target Angle</p>
+                                    <p class="text-sm font-bold text-slate-700">{% if exercise.id == 'bicep-curl' %}&lt; 45°{% else %}&gt; 85°{% endif %}</p>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Pace</p>
+                                    <p class="text-sm font-bold text-slate-700">Moderate (2s/rep)</p>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Focus</p>
+                                    <p class="text-sm font-bold text-slate-700">Full extension</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Controls -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md p-8 text-center bg-white border-slate-200">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Total Completion</p>
+                    <div class="relative w-32 h-32 mx-auto mb-6">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100" />
+                            <circle id="ring" cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent" class="text-emerald-500 transition-all duration-1000"
+                                stroke-dasharray="364" stroke-dashoffset="364" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <p data-reps class="text-3xl font-black text-slate-900 leading-none">0</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase">of {{ exercise.targetReps }}</p>
+                        </div>
+                    </div>
+                    <div id="achieved" hidden class="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 font-black animate-pulse">
+                        TARGET ACHIEVED!
+                    </div>
+                    <button id="reset-btn"
+                        class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 border border-slate-200 px-6 py-3 text-base w-full py-4 rounded-xl">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        RESET SESSION
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md bg-indigo-600 text-white border-none overflow-hidden relative">
+                    <div class="relative z-10">
+                        <h3 class="font-black text-lg uppercase tracking-tight mb-2">Precision AI Analysis</h3>
+                        <p class="text-white/80 text-sm leading-relaxed mb-6">Every movement is being analyzed for joint alignment and velocity. Results are synced with your recovery timeline.</p>
+                        <button class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 px-6 py-3 text-base w-full bg-white/20 hover:bg-white/30 text-white border-none py-4">
+                            <i data-lucide="info" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                            View Metric Breakdown
+                        </button>
+                    </div>
+                    <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ exercise|json_script:"exercise-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const exercise = JSON.parse(document.getElementById('exercise-data').textContent);
+    const $ = (id) => document.getElementById(id);
+    const video = $('video');
+    const canvas = $('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    let reps = 0;
+    let stage = 'down';
+    const quality = { excellent: 0, good: 0, partial: 0 };
+    let camera = null, pose = null;
+
+    // ---- UI updates ----
+    function renderReps() {
+        document.querySelectorAll('[data-reps]').forEach((el) => el.textContent = reps);
+        const pct = Math.min(100, (reps / exercise.targetReps) * 100);
+        $('ring').setAttribute('stroke-dashoffset', 364 - (364 * pct) / 100);
+        const done = reps >= exercise.targetReps;
+        $('achieved').hidden = !done;
+        $('reset-btn').hidden = done;
+    }
+    function setStage(s) {
+        stage = s;
+        const el = $('stage');
+        el.textContent = s;
+        el.classList.toggle('bg-emerald-500/20', s === 'up');
+        el.classList.toggle('text-emerald-400', s === 'up');
+        el.classList.toggle('bg-blue-500/20', s !== 'up');
+        el.classList.toggle('text-blue-400', s !== 'up');
+    }
+    function setFeedback(text) {
+        $('feedback').textContent = text;
+        const warn = text.includes("DON'T");
+        $('coach').className = `p-5 rounded-3xl border shadow-2xl flex items-center gap-5 transition-all duration-300 ${warn ? 'bg-rose-500 border-rose-400 text-white animate-bounce' : 'bg-slate-900/95 backdrop-blur-xl border-white/10 text-white'}`;
+        $('coach-icon').className = `w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${warn ? 'bg-white/20' : 'bg-emerald-500/20'}`;
+        const icon = $('coach-icon').querySelector('svg');
+        icon.classList.toggle('text-white', warn);
+        icon.classList.toggle('text-emerald-400', !warn);
+    }
+    function setDiff(diff) {
+        const bad = diff > 15;
+        $('diff-text').textContent = `${diff}° Diff`;
+        $('diff-text').className = bad ? 'text-red-400' : 'text-emerald-400';
+        $('diff-bar').className = `h-full transition-all duration-300 ${bad ? 'bg-red-400' : 'bg-emerald-400'}`;
+        $('diff-bar').style.width = `${Math.max(5, 100 - diff * 2)}%`;
+    }
+    function renderQuality() {
+        $('q-excellent').textContent = quality.excellent;
+        $('q-good').textContent = quality.good;
+        $('q-partial').textContent = quality.partial;
+    }
+
+    // ---- Pose logic ----
+    const calculateAngle = (a, b, c) => {
+        if (!a || !b || !c) return 0;
+        const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+        let angle = Math.abs((radians * 180.0) / Math.PI);
+        if (angle > 180.0) angle = 360 - angle;
+        return Math.round(angle);
+    };
+
+    const MAJOR_CONNECTIONS = [
+        [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+        [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28],
+    ];
+
+    function syncRepWithBackend(angle, q) {
+        api('/api/exercises/update-session/', 'POST', {
+            exercise_id: exercise.id,
+            reps,
+            angle,
+            stage,
+            completed: reps >= exercise.targetReps,
+            quality: q,
+        }).catch(() => { });
+    }
+
+    function countRep(angle, q, message) {
+        setStage('up');
+        reps += 1;
+        renderReps();
+        quality[q] += 1;
+        renderQuality();
+        setFeedback(message);
+        syncRepWithBackend(angle, q);
+    }
+
+    function onResults(results) {
+        if (canvas.width !== results.image.width) {
+            canvas.width = results.image.width;
+            canvas.height = results.image.height;
+        }
+        // Draw mirror image
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(-1, 1);
+        ctx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        const lm = results.poseLandmarks;
+        if (!lm) return;
+        const getX = (p) => (1 - p.x) * canvas.width;
+        const getY = (p) => p.y * canvas.height;
+
+        MAJOR_CONNECTIONS.forEach(([i, j]) => {
+            const s = lm[i], e = lm[j];
+            if (s && e && s.visibility > 0.5 && e.visibility > 0.5) {
+                ctx.beginPath();
+                ctx.moveTo(getX(s), getY(s));
+                ctx.lineTo(getX(e), getY(e));
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#3B82F6';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        });
+        [11, 12, 13, 14, 15, 16, 23, 24, 25, 26].forEach((i) => {
+            const p = lm[i];
+            if (p && p.visibility > 0.5) {
+                ctx.beginPath();
+                ctx.arc(getX(p), getY(p), 6, 0, 2 * Math.PI);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#3B82F6';
+                ctx.stroke();
+            }
+        });
+
+        const drawAngleText = (point, angle) => {
+            ctx.save();
+            ctx.fillStyle = '#FACC15';
+            ctx.font = 'bold 24px Inter';
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.fillText(`${angle}°`, getX(point) - 40, getY(point) - 10);
+            ctx.restore();
+        };
+
+        if (exercise.id === 'bicep-curl') {
+            const l = calculateAngle(lm[11], lm[13], lm[15]);
+            const r = calculateAngle(lm[12], lm[14], lm[16]);
+            drawAngleText(lm[13], l);
+            drawAngleText(lm[14], r);
+            const avg = (l + r) / 2;
+            setDiff(Math.abs(l - r));
+
+            if (avg > 160) {
+                if (stage === 'up') {
+                    setFeedback('Great! Fully extend and curl again.');
+                    syncRepWithBackend(avg, 'transition');
+                }
+                setStage('down');
+            }
+            if (avg < 45 && stage === 'down') {
+                const q = avg < 40 ? 'excellent' : (avg < 55 ? 'good' : 'partial');
+                countRep(avg, q, q === 'excellent' ? 'Perfect Form!' : 'Good, pull higher!');
+            }
+        } else if (exercise.id === 'shoulder-extension' || exercise.id === 'arm-raises') {
+            const l = calculateAngle(lm[23], lm[11], lm[13]);
+            const r = calculateAngle(lm[24], lm[12], lm[14]);
+            drawAngleText(lm[11], l);
+            drawAngleText(lm[12], r);
+            const avg = (l + r) / 2;
+            setDiff(Math.abs(l - r));
+
+            // Shrug check
+            if ((lm[11].y + lm[12].y) / 2 < (lm[0].y + 0.05)) setFeedback("DON'T SHRUG!");
+
+            if (avg < 30) setStage('down');
+            if (avg > 85 && stage === 'down') {
+                const q = avg > 90 ? 'excellent' : (avg > 75 ? 'good' : 'partial');
+                countRep(avg, q, 'Good lift! Controlled descent now.');
+            }
+        } else if (exercise.id === 'jumping-jacks') {
+            const legAvg = (calculateAngle(lm[11], lm[23], lm[25]) + calculateAngle(lm[12], lm[24], lm[26])) / 2;
+            const armAvg = (calculateAngle(lm[23], lm[11], lm[13]) + calculateAngle(lm[24], lm[12], lm[14])) / 2;
+            setDiff(Math.abs(armAvg - legAvg));
+
+            if (armAvg < 40 && legAvg < 170) setStage('down');
+            if (armAvg > 150 && legAvg > 175 && stage === 'down') {
+                countRep(180, 'excellent', 'Keep moving! Dynamic tempo!');
+            }
+        }
+    }
+
+    // ---- Controls ----
+    $('start-btn').onclick = async () => {
+        // Best-effort backend session start; tracking runs locally either way
+        const url = exercise.id === 'bicep-curl' ? '/bc/start/' : '/sr/start/';
+        api(url, 'POST', { target_reps: exercise.targetReps }).catch((e) => console.warn('Backend session start failed, continuing with local AI:', e));
+
+        $('start-overlay').hidden = true;
+        $('live').hidden = false;
+
+        pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+        pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+        pose.onResults(onResults);
+        camera = new Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 1280, height: 720 });
+        camera.start();
+    };
+
+    $('reset-btn').onclick = () => {
+        camera?.stop();
+        pose?.close();
+        video.srcObject?.getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+        reps = 0;
+        renderReps();
+        $('start-overlay').hidden = false;
+        $('live').hidden = true;
+    };
+
+    const toggleReference = (show) => {
+        $('reference').hidden = !show;
+        $('ref-btn').querySelector('span').textContent = show ? 'Close Reference' : 'Show Reference';
+    };
+    $('ref-btn').onclick = () => toggleReference($('reference').hidden);
+    $('ref-close').onclick = () => toggleReference(false);
+</script>
+{% endblock %}

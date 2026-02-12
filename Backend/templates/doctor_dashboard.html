@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-slate-900 mb-2">Welcome back, Doctor</h1>
+            <p class="text-lg text-slate-600">Manage your patients' recovery journey with ease</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            {% for s in stats %}
+            <div class="group bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 {{ s.cls }} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="{{ s.icon }}" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 mb-1">{{ s.label }}</p>
+                    <p class="text-3xl font-bold text-slate-800">{{ s.value }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Main Actions Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-5">Main Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div onclick="location.href='/doctor/add-patient/'" class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="user-plus" class="w-8 h-8 text-emerald-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors">Add Patient</h3>
+                            <p class="text-slate-600 leading-relaxed">Register a new patient to the recovery program</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer p-8">
+                    <div class="flex items-start gap-5">
+                        <div class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="clipboard-list" class="w-8 h-8 text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">View Reports</h3>
+                            <p class="text-slate-600 leading-relaxed">Access patient recovery reports and analytics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Quick Actions -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
+                    <h3 class="text-xl font-semibold text-slate-900 mb-5">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        {% for action in quick_actions %}
+                        <button class="flex items-center gap-3 p-4 rounded-xl {{ action.cls }} transition-all duration-200 text-left">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                <i data-lucide="{{ action.icon }}" class="w-5 h-5"></i>
+                            </div>
+                            <span class="font-medium text-sm">{{ action.label }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Recent Patients -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm hover:shadow-md mt-6 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100">
+                        <h3 class="text-xl font-semibold text-slate-900">Recent Patients</h3>
+                    </div>
+                    <div class="divide-y divide-slate-100">
+                        {% for p in patients %}
+                        <div class="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-700 font-semibold">
+                                        {{ p.initials }}
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-slate-900">{{ p.name }}</p>
+                                        <p class="text-sm text-slate-500">{{ p.condition }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-medium px-3 py-1.5 rounded-lg {% if p.status == 'improving' %}bg-emerald-100 text-emerald-700{% elif p.status == 'stable' %}bg-blue-100 text-blue-700{% else %}bg-rose-100 text-rose-700{% endif %}">
+                                        {{ p.status }}
+                                    </span>
+                                    <p class="text-xs text-slate-400 mt-1">{{ p.lastUpdate }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar - Today's Schedule -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
+                    <h3 class="text-lg font-semibold text-slate-900 mb-4">Today's Schedule</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-900 text-sm">Morning Rounds</p>
+                                <p class="text-xs text-slate-600">8:00 AM - 10:00 AM</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="video" class="w-5 h-5 text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-900 text-sm">Telehealth Sessions</p>
+                                <p class="text-xs text-slate-600">11:00 AM - 2:00 PM</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-xl">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-900 text-sm">Review Reports</p>
+                                <p class="text-xs text-slate-600">3:00 PM - 4:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Support -->
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                            <i data-lucide="phone" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold">Need Help?</h3>
+                    </div>
+                    <p class="text-slate-300 text-sm mb-4">
+                        Our support team is available 24/7 to assist you.
+                    </p>
+                    <button class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-emerald-600 shadow-xl shadow-emerald-900/20 hover:shadow-2xl hover:shadow-emerald-900/30 px-4 py-2 text-sm w-full">
+                        Contact Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

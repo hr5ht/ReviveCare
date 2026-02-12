@@ -16,34 +16,33 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from Home.views import * 
-from Doctor.views import *
+from django.views.generic import RedirectView
+from Home import views as pages
 from Patients.views import *
 
 
 urlpatterns = [
+    # Frontend pages (Backend/templates)
+    path('', pages.home, name='home'),
+    path('medical-dashboard/', pages.medical_dashboard, name='medical_dashboard'),
+    path('doctor/', pages.doctor_dashboard, name='doctor_dashboard'),
+    path('doctor/add-patient/', pages.add_patient, name='add_patient'),
+    path('patient/', RedirectView.as_view(url='/patient/login/')),
+    path('patient/login/', pages.patient_login, name='patient_login'),
+    path('patient/dashboard/', pages.patient_dashboard, name='patient_dashboard_page'),
+    path('patient/exercises/', pages.exercises, name='exercises'),
+    path('patient/exercise/<str:exercise_id>/', pages.exercise_workout, name='exercise_workout'),
+    path('patient/chat/', pages.chat, name='chat'),
+    path('chat/', pages.chat),
+
     # Admin
     path('admin/', admin.site.urls),
     
-    # API endpoints for React frontend (JSON responses)
+    # JSON API endpoints
     path('api/', include('Patients.api_urls')),
-    
-    # Original HTML template-based views - DISABLED
-    # path('', home, name="home"),
-    # path('doc_port/', doc_port, name="doc_port"),
-    # path('doc_info_page/', doc_info_page, name="doc_info_page"),
-    # path('doctor_info', doctor_info, name='doctor_info'),
-    # path('login/', login, name='login'),  # This now handles patient login
-    # path('patient/dashboard/', patient_dashboard, name='patient_dashboard'),
-    # path('patient/logout/', patient_logout, name='patient_logout'),
-    # path('patient/chatbot/', chatbot, name='chatbot'),
+
+    # Chatbot + workout endpoints
     path('patient/chatbot/send/', chatbot_send, name='chatbot_send'),
-    # path('exercise', exercise , name = 'exercise'),
-    # path('bc', bc , name = 'bc'),
-    # path('jj', jj , name = 'jj'),
-    # path('ar', ar , name = 'ar'),
-    # path('sr', sr, name='sr'),  # Main tracker page
-    # path('srtwo', srtwo, name='srtwo'),
     path('sr/video_feed/', video_feed, name='video_feed'),  # Video streaming
     path('sr/start/', start_workout, name='start_workout'),
     path('sr/reset/', reset_workout, name='reset_workout'),

@@ -32,10 +32,8 @@ SECRET_KEY = 'django-insecure-mley0n12f)4+9u16iu+2$t(4=l%r)j9r%o$3sk2e)4cgk3dler
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'localhost', 
+    'localhost',
     '127.0.0.1',
-    "revive-care.vercel.app",
-    "revivecare.vercel.app",
     "revivecare-production.up.railway.app"
 ]
 
@@ -43,7 +41,6 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,57 +53,29 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # Add at the top
-    'django.middleware.common.CommonMiddleware',# Must be before CommonMiddleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://revive-care.vercel.app",
-    "https://revivecare.vercel.app",
-    "https://revive-care-*.vercel.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# Railway terminates TLS at its proxy, so Django sees http; trust the https origin for CSRF.
+CSRF_TRUSTED_ORIGINS = ["https://revivecare-production.up.railway.app"]
 
-# Allow credentials (cookies, authorization headers)
-CORS_ALLOW_CREDENTIALS = True
-
-# CSRF trusted origins for React frontend
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://revive-care.vercel.app",
-    "https://revivecare.vercel.app",
-    "https://revive-care-*.vercel.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-# Session cookie settings for cross-origin requests
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
+# Pages are served by Django (same origin), so default SameSite=Lax cookies work.
+# Secure cookies only over HTTPS; set COOKIE_SECURE=False in .env for local http.
+SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = os.getenv('COOKIE_SECURE', 'True') == 'True'
 SESSION_COOKIE_HTTPONLY = True
-
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read this to send X-CSRFToken header
-
-CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'ReviveCare.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

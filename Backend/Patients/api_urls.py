@@ -1,5 +1,5 @@
 # Patients/api_urls.py
-# API URL patterns for React frontend
+# JSON API URL patterns
 
 from django.urls import path
 from . import api_views

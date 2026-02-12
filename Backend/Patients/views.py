@@ -37,12 +37,10 @@ except ImportError:
 # Configuration
 # by default, it loads from a file named ".env" in the current directory
 
-# Set the API key from the environment, if not already set
-os.environ.setdefault("GROQ_API_KEY", os.getenv("GROQ_API_KEY"))
+# GROQ_API_KEY and EMAIL_PASSWORD come from .env
 os.environ.setdefault("SMTP_SERVER", "smtp.gmail.com")
 os.environ.setdefault("SMTP_PORT", "587")
 os.environ.setdefault("EMAIL_SENDER", "actualharshit@gmail.com")
-os.environ.setdefault("EMAIL_PASSWORD", "xiad gbiy bmwu uwnm")
 os.environ.setdefault("DOCTOR_EMAIL", "harshitxgarg@gmail.com")
 SYSTEM_PROMPT = """IT IS JUST FOR EDUCATIONAL PURPOSES ONLY.You are ReViveCare, an AI-powered post-discharge recovery support chatbot.
 Your role is to support patients emotionally and informationally during recovery after surgery or injury.
@@ -101,78 +99,15 @@ PATIENT MEDICAL CONTEXT:
 # PATIENT AUTHENTICATION & DASHBOARD VIEWS
 # ============================================================================
 
-def login(request):
-    """Patient login - email only authentication"""
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
-        
-        try:
-            # Check if patient with this email exists
-            patient = Patient.objects.get(email=email)
-            
-            # Email found - log them in
-            request.session['patient_id'] = patient.id
-            request.session['patient_email'] = patient.email
-            request.session['patient_name'] = patient.name
-            
-            messages.success(request, f'Welcome back, {patient.name}!')
-            return redirect('patient_dashboard')
-                
-        except Patient.DoesNotExist:
-            # Email not found - redirect to home
-            messages.error(
-                request, 
-                'Doctor has not updated this email yet. Please come back later.'
-            )
-            return redirect('home')
-    
-    # GET request - show login form
-    return render(request, 'login_page.html')
 
 
-def patient_dashboard(request):
-    """Patient dashboard"""
-    patient_id = request.session.get('patient_id')
-    if not patient_id:
-        messages.error(request, 'Please log in to access the patient portal.')
-        return redirect('login')
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        return render(request, 'patient_dashboard.html', {'patient': patient})
-    except Patient.DoesNotExist:
-        messages.error(request, 'Session expired. Please log in again.')
-        return redirect('login')
 
 
-def patient_logout(request):
-    """Logout patient"""
-    request.session.flush()
-    messages.success(request, 'You have been logged out successfully.')
-    return redirect('home')
 
 # ============================================================================
 # CHATBOT VIEWS
 # ============================================================================
 
-def chatbot(request):
-    """Chatbot page"""
-    patient_id = request.session.get('patient_id')
-    if not patient_id:
-        messages.error(request, 'Please log in to access the chatbot.')
-        return redirect('login')
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        
-        # Initialize conversation history in session if not exists
-        if 'chat_history' not in request.session:
-            request.session['chat_history'] = []
-        
-        return render(request, 'chatbot.html', {'patient': patient})
-    except Patient.DoesNotExist:
-        messages.error(request, 'Session expired. Please log in again.')
-        return redirect('login')
 
 
 def initialize_model():
@@ -374,14 +309,8 @@ def chatbot_send(request):
 # EXERCISE VIEWS
 # ============================================================================
 
-def exercise(request):
-    return render(request , 'exercise.html')
 
-def ar(request):
-    return render(request , 'ar.html')
 
-def bc(request):
-    return render(request , 'bc.html')
 
 # Add these imports at the top of your views.py
 from django.db.models import Sum, Avg, Count, Max
@@ -391,63 +320,6 @@ from .models import Patient, SLS
 # Update the sr view (replace the existing one at line 344):
 # Replace your existing sr view (around line 344) with this:
 
-def sr(request):
-    """Side Lateral Raise exercise page with progress tracking"""
-    from django.db.models import Sum, Max
-    from datetime import timedelta
-    
-    patient_id = request.session.get('patient_id')
-    
-    context = {
-        'is_logged_in': False,
-        'patient': None,
-        'recent_workouts': [],
-        'stats': {
-            'total_sessions': 0,
-            'total_reps': 0,
-            'avg_quality': 0,
-            'best_session_reps': 0,
-        }
-    }
-    
-    if patient_id:
-        try:
-            patient = Patient.objects.get(id=patient_id)
-            context['is_logged_in'] = True
-            context['patient'] = patient
-            
-            # Check if SLS model exists
-            try:
-                from .models import SLS
-                
-                # Get recent workouts (last 7 days)
-                seven_days_ago = timezone.now().date() - timedelta(days=7)
-                recent_workouts = SLS.objects.filter(
-                    patient=patient,
-                    date__gte=seven_days_ago
-                ).order_by('-created_at')[:5]
-                
-                context['recent_workouts'] = recent_workouts
-                
-                # Calculate stats
-                all_workouts = SLS.objects.filter(patient=patient)
-                
-                if all_workouts.exists():
-                    context['stats'] = {
-                        'total_sessions': all_workouts.count(),
-                        'total_reps': all_workouts.aggregate(Sum('total_reps'))['total_reps__sum'] or 0,
-                        'avg_quality': round(sum([w.quality_score for w in all_workouts]) / all_workouts.count(), 1) if all_workouts.count() > 0 else 0,
-                        'best_session_reps': all_workouts.aggregate(Max('total_reps'))['total_reps__max'] or 0,
-                    }
-            except ImportError:
-                # SLS model doesn't exist yet - migrations not run
-                print("SLS model not found. Please run: python manage.py makemigrations && python manage.py migrate")
-                pass
-                
-        except Patient.DoesNotExist:
-            pass
-    
-    return render(request, 'sr.html', context)
 
 
 # Update the start_workout view to save to database:
@@ -572,8 +444,6 @@ def reset_workout(request):
     
     return JsonResponse({'status': 'reset'})
 
-def jj(request):
-    return render(request , 'jj.html')
 
 # ============================================================================
 # SIDE LATERAL RAISE - METRICS & CONFIGURATION
@@ -940,58 +810,6 @@ def generate_frames():
 # SIDE LATERAL RAISE - DJANGO VIEWS
 # ============================================================================
 
-def sr(request):
-    """Side Lateral Raise dashboard with workout history"""
-    patient_id = request.session.get('patient_id')
-    
-    # Check if user is logged in
-    if not patient_id:
-        messages.error(request, 'Please log in to view your workout history.')
-        return redirect('login')
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        
-        # Get all SLS workouts for this patient, ordered by date
-        sls_workouts = SLS.objects.filter(patient=patient).order_by('date')
-        
-        # Prepare workout data for the chart (last 10 sessions)
-        workout_data = []
-        for workout in sls_workouts[:10]:  # Limit to last 10 sessions for clarity
-            workout_data.append({
-                'date': workout.date.isoformat(),  # Convert to ISO format for JavaScript
-                'excellent_reps': workout.excellent_reps,
-                'good_reps': workout.good_reps,
-                'partial_reps': workout.partial_reps,
-                'total_reps': workout.total_reps,
-                'completion_percentage': workout.completion_percentage,
-                'quality_score': workout.quality_score
-            })
-        
-        # If no data exists, provide sample data
-        if not workout_data:
-            workout_data = [
-                {
-                    'date': (date.today() - timedelta(days=6)).isoformat(),
-                    'excellent_reps': 0,
-                    'good_reps': 0,
-                    'partial_reps': 0,
-                    'total_reps': 0,
-                    'completion_percentage': 0,
-                    'quality_score': 0
-                }
-            ]
-        
-        context = {
-            'patient': patient,
-            'workout_data': json.dumps(workout_data),  # Convert to JSON for JavaScript
-        }
-        
-        return render(request, 'sr.html', context)
-        
-    except Patient.DoesNotExist:
-        messages.error(request, 'Session expired. Please log in again.')
-        return redirect('login')
     
 
 def reset_workout(request):
@@ -1041,9 +859,6 @@ def save_workout(request):
 
 
 
-def srtwo(request):
-    """Side Lateral Raise tracker main view"""
-    return render(request, 'side_lateral_raise.html')
 
 def video_feed(request):
     """Video streaming route"""

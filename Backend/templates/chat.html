@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen bg-white">
+    <div class="max-w-4xl mx-auto pt-6">
+        <!-- Header with language selector -->
+        <div class="mb-6 flex items-start justify-between">
+            <div>
+                <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-2">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    <span class="font-medium">Back to Dashboard</span>
+                </button>
+                <h1 class="text-3xl font-bold text-slate-900">Medical Assistant</h1>
+                <p class="text-slate-600">Chat with your AI recovery assistant</p>
+            </div>
+
+            <div class="relative">
+                <button id="lang-btn" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                    <i data-lucide="globe" class="w-4 h-4 text-gray-600"></i>
+                    <span id="lang-label" class="text-sm font-medium"> English</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 transition-transform"></i>
+                </button>
+                <div id="lang-menu" hidden class="absolute top-full mt-1 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[160px]">
+                    <button data-lang="english" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"><span></span><span>English</span></button>
+                    <button data-lang="hindi" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"><span></span><span>हिंदी</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info banner -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3 mb-4">
+            <i data-lucide="circle-alert" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+            <p id="banner" class="text-sm text-blue-900 leading-relaxed"></p>
+        </div>
+
+        <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md overflow-hidden flex flex-col p-0 mb-8" style="height: calc(100vh - 240px)">
+            <!-- Messages area -->
+            <div id="messages" class="flex-1 overflow-y-auto p-6 bg-gray-50"></div>
+
+            <!-- Quick replies -->
+            <div class="px-6 pt-4 bg-white border-t border-gray-100">
+                <div class="mb-4">
+                    <p class="text-xs text-gray-600 mb-2 font-medium">Quick questions:</p>
+                    <div id="quick-replies" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="p-6 pt-2 bg-white">
+                <div class="flex gap-3">
+                    <input id="chat-input" type="text"
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                    <button id="send-btn" disabled
+                        class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "partials/footer.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const T = {
+        english: {
+            label: 'English',
+            welcome: "Hello! I'm your ReviveCare medical assistant. I'm here to help with your post-surgery recovery. How are you feeling today?",
+            banner: 'If symptoms appear serious, your doctor will be notified automatically',
+            placeholder: 'Type your message...',
+            error: "I'm having trouble connecting right now. Please try again or contact your doctor if this is urgent.",
+            quick: ['What foods should I eat to recover faster?', 'My appetite has decreased, is this concerning?', 'I have a fever of 101°F for the past 6 hours', "I'm coughing up blood"],
+        },
+        hindi: {
+            label: 'हिंदी',
+            welcome: 'नमस्ते! मैं आपका ReviveCare मेडिकल सहायक हूं। मैं आपके सर्जरी के बाद की रिकवरी में मदद करने के लिए यहां हूं। आप आज कैसा महसूस कर रहे हैं?',
+            banner: 'यदि लक्षण गंभीर दिखाई देते हैं, तो आपके डॉक्टर को स्वचालित रूप से सूचित किया जाएगा',
+            placeholder: 'अपना संदेश लिखें...',
+            error: 'कनेक्ट करने में समस्या हो रही है। कृपया पुनः प्रयास करें।',
+            quick: ['क्या मैं आज व्यायाम कर सकता हूं?', 'मेरी दवाइयों के बारे में बताएं', 'मुझे दर्द हो रहा है', 'घाव की देखभाल'],
+        },
+    };
+
+    const SERIOUSNESS = [
+        [0.75, 'bg-red-50 border-red-200', 'text-red-700', '⚠️ Immediate attention required. Please contact your doctor.'],
+        [0.60, 'bg-orange-50 border-orange-200', 'text-orange-700', '⚠️ Concerning symptom detected. Monitor closely and contact your doctor soon.'],
+        [0.30, 'bg-yellow-50 border-yellow-200', 'text-yellow-700', '⚠️ Mild concern. Keep track of your symptoms and follow up if necessary.'],
+        [-Infinity, 'bg-emerald-50 border-emerald-200', 'text-emerald-700', '✅ Your symptoms are within expected recovery range.'],
+    ];
+
+    const messagesEl = document.getElementById('messages');
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const menu = document.getElementById('lang-menu');
+    let language = 'english';
+    let messageCount = 0;
+    let typing = false;
+
+    const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    function addMessage(text, isAI, score) {
+        const row = document.createElement('div');
+        row.className = `flex gap-3 mb-4 ${isAI ? 'justify-start' : 'justify-end'}`;
+        const avatar = isAI
+            ? '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i data-lucide="bot" class="w-5 h-5 text-white"></i></div>'
+            : '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm order-2"><i data-lucide="user" class="w-5 h-5 text-white"></i></div>';
+        let badge = '';
+        if (isAI && typeof score === 'number') {
+            const [, bg, color, msg] = SERIOUSNESS.find(([min]) => score > min);
+            badge = `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span></div>`;
+        }
+        const body = `
+            <div class="max-w-[70%] ${isAI ? 'order-2' : 'order-1'}">
+                <div class="rounded-2xl px-4 py-3 ${isAI ? 'bg-white border border-gray-200 shadow-sm' : 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-md'}">
+                    <p class="text-sm leading-relaxed ${isAI ? 'text-gray-800' : 'text-white'}"></p>${badge}
+                </div>
+                <span class="text-xs text-gray-500 mt-1 block ${isAI ? 'text-left' : 'text-right'}">${now()}</span>
+            </div>`;
+        row.innerHTML = isAI ? avatar + body : body + avatar;
+        row.querySelector('p').textContent = text;
+        messagesEl.appendChild(row);
+        messageCount++;
+        icons();
+        if (messageCount > 1) scrollDown();
+        return row;
+    }
+
+    const scrollDown = () => messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+
+    function setTyping(on) {
+        typing = on;
+        document.getElementById('typing')?.remove();
+        if (on) {
+            messagesEl.insertAdjacentHTML('beforeend', `
+                <div id="typing" class="flex gap-3 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i data-lucide="bot" class="w-5 h-5 text-white"></i></div>
+                    <div class="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+                        <div class="flex gap-1">
+                            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                        </div>
+                    </div>
+                </div>`);
+            icons();
+            scrollDown();
+        }
+        updateSend();
+    }
+
+    const updateSend = () => { sendBtn.disabled = !input.value.trim() || typing; };
+
+    function setLanguage(lang) {
+        language = lang;
+        const t = T[lang];
+        document.getElementById('lang-label').textContent = ' ' + t.label;
+        document.getElementById('banner').textContent = t.banner;
+        input.placeholder = t.placeholder;
+        menu.querySelectorAll('[data-lang]').forEach((b) => {
+            b.classList.toggle('bg-emerald-50', b.dataset.lang === lang);
+            b.classList.toggle('text-emerald-700', b.dataset.lang === lang);
+        });
+        const quick = document.getElementById('quick-replies');
+        quick.innerHTML = '';
+        t.quick.forEach((q) => {
+            const b = document.createElement('button');
+            b.className = 'px-3 py-2 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-200 hover:scale-105 active:scale-95';
+            b.textContent = q;
+            b.onclick = () => { input.value = q; updateSend(); input.focus(); };
+            quick.appendChild(b);
+        });
+        // Swap the welcome message if the user hasn't chatted yet
+        if (messageCount <= 1) {
+            messagesEl.innerHTML = '';
+            messageCount = 0;
+            addMessage(t.welcome, true);
+        }
+    }
+
+    async function send() {
+        const text = input.value;
+        if (!text.trim() || typing) return;
+        addMessage(text, false);
+        input.value = '';
+        setTyping(true);
+        try {
+            const res = await api('/patient/chatbot/send/', 'POST', { message: text, language });
+            setTyping(false);
+            addMessage(res.success ? res.response : (res.error || T[language].error), true, res.success ? res.seriousness_score : undefined);
+        } catch (err) {
+            console.error('Chatbot error:', err);
+            setTyping(false);
+            addMessage(err.message || T[language].error, true);
+        }
+    }
+
+    const toggleMenu = (open) => {
+        menu.hidden = !open;
+        document.querySelector('#lang-btn .lucide-chevron-down').classList.toggle('rotate-180', open);
+    };
+    document.getElementById('lang-btn').onclick = () => toggleMenu(menu.hidden);
+    menu.querySelectorAll('[data-lang]').forEach((b) => b.onclick = () => { setLanguage(b.dataset.lang); toggleMenu(false); });
+    input.addEventListener('input', updateSend);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    sendBtn.onclick = send;
+
+    setLanguage('english');
+</script>
+{% endblock %}
