@@ -60,6 +60,18 @@ Follow these instructions to set up the project locally on your machine.
     ```
     Open `http://127.0.0.1:8000`. The pages and the API are both served by Django.
 
+### Deploy (Vercel)
+
+Vercel detects Django from `Backend/manage.py`, runs `collectstatic`, and serves static files from its CDN.
+
+```bash
+cd Backend
+vercel        # pick "Django" as the framework; root directory is Backend
+vercel --prod
+```
+
+Set these environment variables in the Vercel project: `DATABASE_URL` (Neon Postgres), `SECRET_KEY`, `GROQ_API_KEY`, `EMAIL_PASSWORD`, and optionally the `TWILIO_*` values. Leave `DEBUG` and `COOKIE_SECURE` unset in production.
+
 ## Usage
 
 1.  Start the Django server.

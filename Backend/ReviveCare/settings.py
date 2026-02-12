@@ -26,15 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-mley0n12f)4+9u16iu+2$t(4=l%r)j9r%o$3sk2e)4cgk3dler'
+SECRET_KEY = os.getenv('SECRET_KEY') or 'django-insecure-mley0n12f)4+9u16iu+2$t(4=l%r)j9r%o$3sk2e)4cgk3dler'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    "revivecare-production.up.railway.app"
+    '.vercel.app',
 ]
 
 
@@ -62,8 +62,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Railway terminates TLS at its proxy, so Django sees http; trust the https origin for CSRF.
-CSRF_TRUSTED_ORIGINS = ["https://revivecare-production.up.railway.app"]
+# Vercel terminates TLS at its proxy; trust its forwarded scheme so CSRF origin checks see https.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Pages are served by Django (same origin), so default SameSite=Lax cookies work.
 # Secure cookies only over HTTPS; set COOKIE_SECURE=False in .env for local http.
@@ -135,7 +135,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -144,5 +143,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files (CSS, JS, Images, Videos)
 STATIC_URL = '/static/'
-#STATICFILES_DIRS = [BASE_DIR / "static"]  # if you have a project-level static folder
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Vercel runs collectstatic and serves this from its CDN
 

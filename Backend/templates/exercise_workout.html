@@ -382,11 +382,7 @@
     }
 
     // ---- Controls ----
-    $('start-btn').onclick = async () => {
-        // Best-effort backend session start; tracking runs locally either way
-        const url = exercise.id === 'bicep-curl' ? '/bc/start/' : '/sr/start/';
-        api(url, 'POST', { target_reps: exercise.targetReps }).catch((e) => console.warn('Backend session start failed, continuing with local AI:', e));
-
+    $('start-btn').onclick = () => {
         $('start-overlay').hidden = true;
         $('live').hidden = false;
 

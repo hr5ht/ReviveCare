@@ -41,18 +41,7 @@ urlpatterns = [
     # JSON API endpoints
     path('api/', include('Patients.api_urls')),
 
-    # Chatbot + workout endpoints
+    # Chatbot endpoint
     path('patient/chatbot/send/', chatbot_send, name='chatbot_send'),
-    path('sr/video_feed/', video_feed, name='video_feed'),  # Video streaming
-    path('sr/start/', start_workout, name='start_workout'),
-    path('sr/reset/', reset_workout, name='reset_workout'),
-    path('sr/status/', get_workout_status, name='get_workout_status'),
-    path('sr/save/', save_workout, name='save_workout'),
-    
-    # Bicep Curl Endpoints
-    path('bc/start/', start_bicep_workout, name='start_bicep_workout'),
-    path('bc/reset/', reset_bicep_workout, name='reset_bicep_workout'),
-    path('bc/status/', get_bicep_status, name='get_bicep_status'),
-    path('bc/video_feed/', bicep_feed_view, name='bicep_feed_view'),
 ]
 

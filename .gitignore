@@ -23,3 +23,8 @@ venv/lib/python3.12/site-packages/cv2/gapi/onnx/ep/__init__.pyi
 .agents/
 .agents/skills/neon-postgres/SKILL.md
 .agents/skills/neon-postgres/references/connection-methods.md
+
+# Vercel
+.vercel/
+.env.local
+Backend/staticfiles/
