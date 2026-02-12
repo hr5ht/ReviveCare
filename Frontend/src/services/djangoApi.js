@@ -190,6 +190,10 @@ export const exerciseAPI = {
     getBicepVideoFeedUrl: () => {
         return `${API_BASE_URL}/bc/video_feed/`;
     },
+
+    updateSessionData: async (data) => {
+        return apiCall('/api/exercises/update-session/', 'POST', data);
+    },
 };
 
 // ==================== Health Check API ====================
