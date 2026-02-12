@@ -31,7 +31,13 @@ SECRET_KEY = 'django-insecure-mley0n12f)4+9u16iu+2$t(4=l%r)j9r%o$3sk2e)4cgk3dler
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1',"revive-care.vercel.app","revivecare-production.up.railway.app"]
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1',
+    "revive-care.vercel.app",
+    "revivecare.vercel.app",
+    "revivecare-production.up.railway.app"
+]
 
 
 # Application definition
@@ -60,13 +66,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CORS Configuration for React Frontend
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite dev server default
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://revive-care.vercel.app",
+    "https://revivecare.vercel.app",
     "https://revive-care-*.vercel.app",
-    "http://localhost:3000",  # In case you use different port
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
@@ -78,23 +84,22 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://revive-care.vercel.app",
+    "https://revivecare.vercel.app",
     "https://revive-care-*.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
 # Session cookie settings for cross-origin requests
-SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read this
-CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_ALLOW_ALL = True
 
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read this to send X-CSRFToken header
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'ReviveCare.urls'
 
