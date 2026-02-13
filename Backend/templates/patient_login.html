@@ -110,7 +110,8 @@
     form.addEventListener('input', () => showError(''));
 
     // Check database health on load
-    api('/api/health/').then((data) => {
+    // Read the body even on 503: that's how the health check reports a DB outage
+    fetch('/api/health/').then((res) => res.json()).then((data) => {
         if (!data.db_connected) {
             dbError = data.db_error || 'Database connection failed';
             document.getElementById('db-warning').hidden = false;
