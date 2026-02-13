@@ -110,7 +110,7 @@ def initialize_model():
     if not LANGCHAIN_AVAILABLE:
         return None
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         temperature=0.3,
         max_tokens=1024,
         timeout=30,
