@@ -223,9 +223,6 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
 @require_http_methods(["POST"])
 def chatbot_send(request):
     """Handle chatbot message sending"""
-    print(f"DEBUG: Session ID: {request.session.session_key}")
-    print(f"DEBUG: User in session: {request.session.get('patient_id')}")
-    
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return JsonResponse({'success': False, 'error': 'Not authenticated'})
