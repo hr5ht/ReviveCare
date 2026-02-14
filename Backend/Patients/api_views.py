@@ -37,12 +37,10 @@ def api_patient_login(request):
     Returns JSON with success status and patient data
     """
     try:
-        print(f"DEBUG: Login request body: {request.body.decode('utf-8')}")
         data = json.loads(request.body) if request.body else {}
         email = data.get('email', '').strip().lower()
         password = data.get('password', '').strip()
-        print(f"DEBUG: Parsed data - Email: {email}, Password provided: {bool(password)}")
-        
+
         if not email or not password:
             return JsonResponse({
                 'success': False,
