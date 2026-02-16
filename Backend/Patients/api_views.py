@@ -2,6 +2,7 @@
 # JSON API views
 # These views return JSON responses instead of HTML templates
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -50,8 +51,7 @@ def api_patient_login(request):
         try:
             patient = Patient.objects.get(email=email)
             
-            # Simple password check (Note: use hashing in production!)
-            if patient.password != password:
+            if not check_password(password, patient.password):
                 return JsonResponse({
                     'success': False,
                     'error': 'Invalid email or password'
@@ -418,7 +418,8 @@ def api_add_patient(request):
         patient = Patient.objects.create(
             name=name,
             email=email,
-            info=info
+            info=info,
+            password=make_password(Patient._meta.get_field('password').default),
         )
         
         return JsonResponse({
