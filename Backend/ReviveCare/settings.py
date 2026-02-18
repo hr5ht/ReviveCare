@@ -148,6 +148,10 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files (CSS, JS, Images, Videos)
+# Doctor accounts are Django users
+LOGIN_URL = 'doctor_login'
+LOGIN_REDIRECT_URL = 'doctor_dashboard'
+
 # Email (Gmail SMTP by default). Without a password, emails print to the console instead.
 EMAIL_HOST = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('SMTP_PORT', '587'))
