@@ -132,8 +132,8 @@
         btnLabel.textContent = 'Logging in...';
         document.getElementById('login-btn').disabled = true;
         try {
-            await api('/api/patient/login/', 'POST', { email, password });
-            location.href = '/patient/dashboard/';
+            const res = await api('/api/patient/login/', 'POST', { email, password });
+            location.href = res.must_change_password ? '/patient/change-password/' : '/patient/dashboard/';
         } catch (err) {
             const m = err.message?.toLowerCase() || '';
             showError(m.includes('database') || m.includes('connection')

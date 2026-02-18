@@ -72,7 +72,8 @@ def api_patient_login(request):
                     'id': patient.id,
                     'name': patient.name,
                     'email': patient.email,
-                }
+                },
+                'must_change_password': patient.must_change_password,
             })
             
         except Patient.DoesNotExist:

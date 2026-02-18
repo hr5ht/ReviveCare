@@ -1,5 +1,17 @@
+from functools import wraps
+
 from django.shortcuts import render, redirect
 from Patients.models import Patient
+
+
+def patient_page(view):
+    """Send patients still on a temporary password to the change-password page first."""
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if Patient.objects.filter(id=request.session.get('patient_id'), must_change_password=True).exists():
+            return redirect('change_password')
+        return view(request, *args, **kwargs)
+    return wrapper
 
 
 def _initials(name):
@@ -104,6 +116,7 @@ def patient_login(request):
     return render(request, 'patient_login.html')
 
 
+@patient_page
 def patient_dashboard(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
     if not patient:
@@ -138,10 +151,12 @@ def change_password(request):
     ]})
 
 
+@patient_page
 def exercises(request):
     return render(request, 'exercises.html', {'exercises': EXERCISES})
 
 
+@patient_page
 def exercise_workout(request, exercise_id):
     exercise = next((e for e in EXERCISES if e['id'] == exercise_id), None)
     if not exercise:
@@ -149,5 +164,6 @@ def exercise_workout(request, exercise_id):
     return render(request, 'exercise_workout.html', {'exercise': exercise})
 
 
+@patient_page
 def chat(request):
     return render(request, 'chat.html')
