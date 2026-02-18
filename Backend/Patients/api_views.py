@@ -423,6 +423,7 @@ def api_add_patient(request):
             email=email,
             info=info,
             password=make_password(temp_password),
+            must_change_password=True,
         )
         
         return JsonResponse({
