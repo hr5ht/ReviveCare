@@ -5,6 +5,7 @@
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +14,9 @@ from .models import Patient, SLS, BicepCurl, JumpingJack, ArmRaise
 from django.utils import timezone
 import json
 from datetime import timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def json_response_decorator(view_func):
@@ -419,6 +423,26 @@ def api_get_all_patients(request):
     })
 
 
+def send_welcome_email(request, patient, temp_password):
+    """Email a new patient their login details. Returns True if it was sent."""
+    login_url = request.build_absolute_uri('/patient/login/')
+    body = (
+        f"Hi {patient.name},\n\n"
+        "Your doctor has added you to ReViveCare, your post-discharge recovery companion.\n\n"
+        f"Log in at: {login_url}\n"
+        f"Email: {patient.email}\n"
+        f"Temporary password: {temp_password}\n\n"
+        "You'll be asked to choose your own password the first time you log in.\n\n"
+        "— The ReViveCare team"
+    )
+    try:
+        send_mail('Your ReViveCare login details', body, None, [patient.email])
+        return True
+    except Exception:
+        logger.exception('Welcome email to patient %s failed', patient.id)
+        return False
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_add_patient(request):
@@ -463,6 +487,7 @@ def api_add_patient(request):
             },
             # Shown once to the doctor so it can be shared with the patient
             'temporary_password': temp_password,
+            'email_sent': send_welcome_email(request, patient, temp_password),
         })
         
     except json.JSONDecodeError:

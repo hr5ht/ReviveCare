@@ -148,6 +148,17 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files (CSS, JS, Images, Videos)
+# Email (Gmail SMTP by default). Without a password, emails print to the console instead.
+EMAIL_HOST = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('SMTP_PORT', '587'))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_SENDER', 'actualharshit@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'ReViveCare <{EMAIL_HOST_USER}>'
+EMAIL_TIMEOUT = 10
+if not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Vercel runs collectstatic and serves this from its CDN
 

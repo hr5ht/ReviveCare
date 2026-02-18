@@ -64,7 +64,7 @@
 
                     <div id="temp-password" hidden class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                         <p class="text-sm font-semibold text-emerald-800 mb-1">Share this temporary password with the patient</p>
-                        <p class="text-sm text-emerald-700 mb-2">It won't be shown again.</p>
+                        <p id="temp-password-note" class="text-sm text-emerald-700 mb-2">It won't be shown again.</p>
                         <code class="block text-lg font-mono font-bold tracking-wider text-emerald-900 bg-white border border-emerald-200 rounded-lg px-3 py-2 select-all"></code>
                     </div>
 
@@ -144,6 +144,9 @@
         try {
             const res = await api('/api/patients/add/', 'POST', { name: v.patientName, email: v.email, info: v.patientInfo });
             tempPassword.querySelector('code').textContent = res.temporary_password;
+            document.getElementById('temp-password-note').textContent = res.email_sent
+                ? `We also emailed it to ${v.email}. It won't be shown again.`
+                : "We couldn't email it, so please share it with the patient yourself. It won't be shown again.";
             tempPassword.hidden = false;
             setButton('Patient Added Successfully!', 'circle-check', false);
             setTimeout(() => { form.reset(); setButton('Add Patient', 'user-plus', false); }, 3000);
