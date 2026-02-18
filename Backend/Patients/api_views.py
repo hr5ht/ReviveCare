@@ -4,6 +4,7 @@
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.http import JsonResponse
+from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import Patient, SLS, BicepCurl, JumpingJack, ArmRaise
@@ -415,11 +416,13 @@ def api_add_patient(request):
                 'error': 'Patient with this email already exists'
             }, status=400)
         
+        # No look-alike characters (0/O, 1/l/I) so it's easy to read out to a patient
+        temp_password = get_random_string(10, 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
         patient = Patient.objects.create(
             name=name,
             email=email,
             info=info,
-            password=make_password(Patient._meta.get_field('password').default),
+            password=make_password(temp_password),
         )
         
         return JsonResponse({
@@ -429,7 +432,9 @@ def api_add_patient(request):
                 'id': patient.id,
                 'name': patient.name,
                 'email': patient.email,
-            }
+            },
+            # Shown once to the doctor so it can be shared with the patient
+            'temporary_password': temp_password,
         })
         
     except json.JSONDecodeError:

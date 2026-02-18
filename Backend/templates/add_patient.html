@@ -62,6 +62,12 @@
                         Add Patient
                     </button>
 
+                    <div id="temp-password" hidden class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <p class="text-sm font-semibold text-emerald-800 mb-1">Share this temporary password with the patient</p>
+                        <p class="text-sm text-emerald-700 mb-2">It won't be shown again.</p>
+                        <code class="block text-lg font-mono font-bold tracking-wider text-emerald-900 bg-white border border-emerald-200 rounded-lg px-3 py-2 select-all"></code>
+                    </div>
+
                     <div id="submit-error" hidden class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2">
                         <i data-lucide="circle-alert" class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"></i>
                         <p class="text-sm text-rose-700"></p>
@@ -100,6 +106,7 @@
     const form = document.getElementById('patient-form');
     const btn = document.getElementById('submit-btn');
     const submitError = document.getElementById('submit-error');
+    const tempPassword = document.getElementById('temp-password');
     const OK = ['border-slate-200', 'focus:border-emerald-400', 'focus:ring-emerald-500/20'];
     const BAD = ['border-rose-300', 'focus:border-rose-500', 'focus:ring-rose-500/20'];
 
@@ -130,11 +137,14 @@
         if (!v.patientInfo.trim()) errs.patientInfo = 'Patient information is required';
         ['patientName', 'email', 'patientInfo'].forEach((n) => setError(n, errs[n]));
         submitError.hidden = true;
+        tempPassword.hidden = true;
         if (Object.keys(errs).length) return;
 
         setButton('Saving...', 'user-plus', true);
         try {
-            await api('/api/patients/add/', 'POST', { name: v.patientName, email: v.email, info: v.patientInfo });
+            const res = await api('/api/patients/add/', 'POST', { name: v.patientName, email: v.email, info: v.patientInfo });
+            tempPassword.querySelector('code').textContent = res.temporary_password;
+            tempPassword.hidden = false;
             setButton('Patient Added Successfully!', 'circle-check', false);
             setTimeout(() => { form.reset(); setButton('Add Patient', 'user-plus', false); }, 3000);
         } catch (err) {
