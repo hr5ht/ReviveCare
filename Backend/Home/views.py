@@ -127,6 +127,17 @@ def patient_dashboard(request):
     })
 
 
+def change_password(request):
+    patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
+    if not patient:
+        return redirect('patient_login')
+    return render(request, 'change_password.html', {'patient': patient, 'fields': [
+        ('current', 'Current Password', 'Enter your current password'),
+        ('new_password', 'New Password', 'At least 8 characters'),
+        ('confirm', 'Confirm New Password', 'Re-enter the new password'),
+    ]})
+
+
 def exercises(request):
     return render(request, 'exercises.html', {'exercises': EXERCISES})
 

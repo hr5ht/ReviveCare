@@ -30,6 +30,7 @@ urlpatterns = [
     path('patient/', RedirectView.as_view(url='/patient/login/')),
     path('patient/login/', pages.patient_login, name='patient_login'),
     path('patient/dashboard/', pages.patient_dashboard, name='patient_dashboard_page'),
+    path('patient/change-password/', pages.change_password, name='change_password'),
     path('patient/exercises/', pages.exercises, name='exercises'),
     path('patient/exercise/<str:exercise_id>/', pages.exercise_workout, name='exercise_workout'),
     path('patient/chat/', pages.chat, name='chat'),

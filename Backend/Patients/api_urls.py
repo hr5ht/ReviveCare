@@ -11,6 +11,7 @@ urlpatterns = [
     # Patient authentication
     path('patient/login/', api_views.api_patient_login, name='api_patient_login'),
     path('patient/logout/', api_views.api_patient_logout, name='api_patient_logout'),
+    path('patient/change-password/', api_views.api_patient_change_password, name='api_patient_change_password'),
     path('patient/dashboard/', api_views.api_patient_dashboard, name='api_patient_dashboard'),
     path('patient/profile/', api_views.api_patient_profile, name='api_patient_profile'),
     

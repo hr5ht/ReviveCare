@@ -3,6 +3,8 @@
 # These views return JSON responses instead of HTML templates
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
@@ -151,6 +153,30 @@ def api_patient_logout(request):
         'success': True,
         'message': 'Logged out successfully'
     })
+
+
+@require_http_methods(["POST"])
+def api_patient_change_password(request):
+    """Change the logged-in patient's password (needs the current one)"""
+    patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
+    if not patient:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+
+    data = json.loads(request.body or '{}')
+    current, new = data.get('current_password', ''), data.get('new_password', '')
+    if not check_password(current, patient.password):
+        return JsonResponse({'success': False, 'error': 'Current password is incorrect'}, status=400)
+    if new == current:
+        return JsonResponse({'success': False, 'error': 'New password must be different from the current one'}, status=400)
+    try:
+        validate_password(new)
+    except ValidationError as e:
+        return JsonResponse({'success': False, 'error': ' '.join(e.messages)}, status=400)
+
+    patient.password = make_password(new)
+    patient.must_change_password = False
+    patient.save(update_fields=['password', 'must_change_password'])
+    return JsonResponse({'success': True, 'message': 'Password updated'})
 
 
 @require_http_methods(["GET"])
