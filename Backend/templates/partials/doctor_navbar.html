@@ -23,6 +23,13 @@
                         <p class="text-emerald-100 text-xs">Cardiologist</p>
                     </div>
                 </div>
+
+                <form method="post" action="/doctor/logout/">
+                    {% csrf_token %}
+                    <button type="submit" title="Log out" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <i data-lucide="log-out" class="w-5 h-5 text-white"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
