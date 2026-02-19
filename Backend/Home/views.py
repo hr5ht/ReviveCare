@@ -1,5 +1,6 @@
 from functools import wraps
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from Patients.models import Patient
 
@@ -50,6 +51,7 @@ def home(request):
     })
 
 
+@login_required
 def medical_dashboard(request):
     appointments = [
         {'patient': 'Sarah Mitchell', 'time': '09:00 AM', 'type': 'Consultation', 'status': 'confirmed'},
@@ -82,6 +84,7 @@ def medical_dashboard(request):
     })
 
 
+@login_required
 def doctor_dashboard(request):
     patients = [
         {'name': 'Sarah Mitchell', 'condition': 'Post-Surgery Recovery', 'status': 'improving', 'lastUpdate': '2 hours ago'},
@@ -108,6 +111,7 @@ def doctor_dashboard(request):
     })
 
 
+@login_required
 def add_patient(request):
     return render(request, 'add_patient.html')
 
