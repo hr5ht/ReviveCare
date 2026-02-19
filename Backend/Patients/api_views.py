@@ -64,6 +64,10 @@ def _record_login_failure(request):
     cache.incr(key)
 
 
+ACCOUNT_LOCK_AFTER = 5  # consecutive wrong passwords
+ACCOUNT_LOCK_MINUTES = 15
+
+
 @require_http_methods(["POST"])
 def api_patient_login(request):
     """
@@ -90,14 +94,29 @@ def api_patient_login(request):
         
         try:
             patient = Patient.objects.get(email=email)
-            
+
+            if patient.locked_until and patient.locked_until > timezone.now():
+                return JsonResponse({
+                    'success': False,
+                    'error': f'This account is locked after too many wrong passwords. Try again in {ACCOUNT_LOCK_MINUTES} minutes or ask your doctor.'
+                }, status=423)
+
             if not check_password(password, patient.password):
                 _record_login_failure(request)
+                patient.failed_login_count += 1
+                if patient.failed_login_count >= ACCOUNT_LOCK_AFTER:
+                    patient.failed_login_count = 0
+                    patient.locked_until = timezone.now() + timedelta(minutes=ACCOUNT_LOCK_MINUTES)
+                patient.save(update_fields=['failed_login_count', 'locked_until'])
                 return JsonResponse({
                     'success': False,
                     'error': 'Invalid email or password'
                 }, status=401)
             
+            if patient.failed_login_count or patient.locked_until:
+                patient.failed_login_count, patient.locked_until = 0, None
+                patient.save(update_fields=['failed_login_count', 'locked_until'])
+
             # Create session
             request.session['patient_id'] = patient.id
             request.session['patient_email'] = patient.email

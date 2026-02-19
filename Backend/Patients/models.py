@@ -7,6 +7,8 @@ class Patient(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128, default='1234321')  # Added password field
     must_change_password = models.BooleanField(default=False)  # set while the password is a temporary one
+    failed_login_count = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
     info = models.TextField(max_length=3000)
     created_at = models.DateTimeField(default=timezone.now)  # Changed from auto_now_add
     updated_at = models.DateTimeField(auto_now=True)
