@@ -5,6 +5,7 @@
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
@@ -46,6 +47,23 @@ def json_response_decorator(view_func):
 # PATIENT API ENDPOINTS
 # ============================================================================
 
+LOGIN_FAILURE_LIMIT = 10
+LOGIN_FAILURE_WINDOW = 15 * 60  # seconds
+
+
+def _login_failures_key(request):
+    # Vercel sets X-Real-IP to the client address; REMOTE_ADDR covers local runs
+    ip = request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR', '')
+    return f'patient-login-failures:{ip}'
+
+
+def _record_login_failure(request):
+    # ponytail: per-instance memory cache, so the limit is per server instance; use a shared cache if that matters
+    key = _login_failures_key(request)
+    cache.add(key, 0, LOGIN_FAILURE_WINDOW)
+    cache.incr(key)
+
+
 @require_http_methods(["POST"])
 def api_patient_login(request):
     """
@@ -53,6 +71,12 @@ def api_patient_login(request):
     Accepts email and creates session
     Returns JSON with success status and patient data
     """
+    if cache.get(_login_failures_key(request), 0) >= LOGIN_FAILURE_LIMIT:
+        return JsonResponse({
+            'success': False,
+            'error': 'Too many failed login attempts. Please try again in 15 minutes.'
+        }, status=429)
+
     try:
         data = json.loads(request.body) if request.body else {}
         email = data.get('email', '').strip().lower()
@@ -68,6 +92,7 @@ def api_patient_login(request):
             patient = Patient.objects.get(email=email)
             
             if not check_password(password, patient.password):
+                _record_login_failure(request)
                 return JsonResponse({
                     'success': False,
                     'error': 'Invalid email or password'
@@ -90,6 +115,7 @@ def api_patient_login(request):
             })
             
         except Patient.DoesNotExist:
+            _record_login_failure(request)
             return JsonResponse({
                 'success': False,
                 'error': 'Doctor has not updated this email yet. Please come back later.'
