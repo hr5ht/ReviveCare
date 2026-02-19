@@ -3,7 +3,6 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from twilio.rest import Client
 from django.utils import timezone
 import json
@@ -219,7 +218,6 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
             'error': str(e)
         }
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def chatbot_send(request):
     """Handle chatbot message sending"""

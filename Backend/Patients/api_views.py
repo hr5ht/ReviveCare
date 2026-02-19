@@ -8,7 +8,6 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import Patient, SLS, BicepCurl, JumpingJack, ArmRaise
 from django.utils import timezone
@@ -47,7 +46,6 @@ def json_response_decorator(view_func):
 # PATIENT API ENDPOINTS
 # ============================================================================
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def api_patient_login(request):
     """
@@ -322,7 +320,6 @@ def api_exercise_history(request):
         })
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def api_update_session_data(request):
     """
@@ -455,7 +452,6 @@ def send_welcome_email(request, patient, temp_password):
         return False
 
 
-@csrf_exempt
 @require_http_methods(["POST"])
 @doctor_required
 def api_add_patient(request):
