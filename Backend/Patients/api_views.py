@@ -15,8 +15,19 @@ from django.utils import timezone
 import json
 from datetime import timedelta
 import logging
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+
+def doctor_required(view):
+    """JSON 401 unless a doctor (Django user) is logged in."""
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Doctor login required'}, status=401)
+        return view(request, *args, **kwargs)
+    return wrapper
 
 
 def json_response_decorator(view_func):
@@ -404,6 +415,7 @@ def api_update_session_data(request):
 # ============================================================================
 
 @require_http_methods(["GET"])
+@doctor_required
 def api_get_all_patients(request):
     """Get all patients (for doctor dashboard)"""
     patients = Patient.objects.all()
@@ -445,6 +457,7 @@ def send_welcome_email(request, patient, temp_password):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@doctor_required
 def api_add_patient(request):
     """Add new patient (for doctor)"""
     try:
