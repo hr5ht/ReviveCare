@@ -75,6 +75,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Secure cookies only over HTTPS; set COOKIE_SECURE=False in .env for local http.
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = os.getenv('COOKIE_SECURE', 'True') == 'True'
 SESSION_COOKIE_HTTPONLY = True
+# Log patients out after 2 hours without activity (each request extends it)
+SESSION_COOKIE_AGE = 2 * 60 * 60
+SESSION_SAVE_EVERY_REQUEST = True
 
 ROOT_URLCONF = 'ReviveCare.urls'
 
