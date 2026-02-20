@@ -1,6 +1,7 @@
 # patient/views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from twilio.rest import Client
@@ -218,12 +219,22 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
             'error': str(e)
         }
 
+CHAT_RATE_LIMIT = 20  # messages per patient
+CHAT_RATE_WINDOW = 10 * 60  # seconds
+
+
 @require_http_methods(["POST"])
 def chatbot_send(request):
     """Handle chatbot message sending"""
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return JsonResponse({'success': False, 'error': 'Not authenticated'})
+
+    # ponytail: per-instance memory cache; move to a shared cache if the limit must hold across instances
+    rate_key = f'chatbot-messages:{patient_id}'
+    cache.add(rate_key, 0, CHAT_RATE_WINDOW)
+    if cache.incr(rate_key) > CHAT_RATE_LIMIT:
+        return JsonResponse({'success': False, 'error': 'You are sending messages too quickly. Please wait a few minutes.'}, status=429)
     
     try:
         # Get patient
