@@ -282,7 +282,22 @@
         syncRepWithBackend(angle, q);
     }
 
+    // Show the raw camera feed until MediaPipe starts returning results (the model download can take a while)
+    let gotResults = false;
+    function drawPreview() {
+        if (gotResults || !camera) return;
+        if (video.readyState >= 2) {
+            if (canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+        requestAnimationFrame(drawPreview);
+    }
+
     function onResults(results) {
+        gotResults = true;
         if (canvas.width !== results.image.width) {
             canvas.width = results.image.width;
             canvas.height = results.image.height;
@@ -390,7 +405,9 @@
         pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         pose.onResults(onResults);
         camera = new Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 1280, height: 720 });
+        gotResults = false;
         camera.start();
+        requestAnimationFrame(drawPreview);
     };
 
     $('reset-btn').onclick = () => {
