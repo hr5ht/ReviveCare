@@ -327,7 +327,7 @@ def api_exercise_history(request):
         patient = Patient.objects.get(id=patient_id)
         
         # Get recent workouts
-        seven_days_ago = timezone.now().date() - timedelta(days=7)
+        seven_days_ago = timezone.localdate() - timedelta(days=7)
         recent_workouts = SLS.objects.filter(
             patient=patient,
             date__gte=seven_days_ago
@@ -383,7 +383,7 @@ def api_update_session_data(request):
         stage = data.get('stage', 'down')
         completed = data.get('completed', False)
         
-        today = timezone.now().date()
+        today = timezone.localdate()
         
         if exercise_id == 'bicep-curl':
             workout, created = BicepCurl.objects.get_or_create(
