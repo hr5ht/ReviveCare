@@ -53,6 +53,13 @@
                     </div>
 
                     <div id="live" hidden>
+                        <!-- Shown until MediaPipe returns its first results -->
+                        <div id="model-loading" class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                            <div class="flex items-center gap-3 bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 text-white shadow-2xl">
+                                <div class="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                                <span class="text-sm font-bold tracking-wide">Loading AI model…</span>
+                            </div>
+                        </div>
                         <!-- AI HUD (Top-Left) -->
                         <div class="absolute top-6 left-6 bg-slate-900/90 backdrop-blur-xl p-5 rounded-3xl border border-white/10 z-10 w-52 shadow-2xl">
                             <div class="space-y-4">
@@ -297,6 +304,7 @@
     }
 
     function onResults(results) {
+        if (!gotResults) $('model-loading').hidden = true;
         gotResults = true;
         if (canvas.width !== results.image.width) {
             canvas.width = results.image.width;
@@ -406,6 +414,7 @@
         pose.onResults(onResults);
         camera = new Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 1280, height: 720 });
         gotResults = false;
+        $('model-loading').hidden = false;
         camera.start();
         requestAnimationFrame(drawPreview);
     };
