@@ -471,6 +471,9 @@
         video.srcObject?.getTracks().forEach((t) => t.stop());
         video.srcObject = null;
     }
+    // Release the camera when the patient leaves the page (also covers back/forward cache)
+    window.addEventListener('pagehide', stopTracking);
+
     $('camera-retry').onclick = () => {
         $('camera-error').hidden = true;
         $('start-overlay').hidden = false;
