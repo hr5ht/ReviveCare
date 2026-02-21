@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 {% endblock %}
 
@@ -48,6 +47,20 @@
                             <p class="text-white/70 mb-8 text-lg font-medium">Position your full body in the frame. The AI will curate your form and count reps automatically.</p>
                             <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg">
                                 <i data-lucide="play" class="w-6 h-6 fill-current"></i> START WORKOUT
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Camera / model startup errors -->
+                    <div id="camera-error" hidden class="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-12 text-center z-30">
+                        <div class="max-w-md">
+                            <div class="w-20 h-20 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-rose-500/10">
+                                <i data-lucide="camera-off" class="w-10 h-10 text-rose-400"></i>
+                            </div>
+                            <h2 id="camera-error-title" class="text-2xl font-black text-white mb-3 uppercase tracking-tighter"></h2>
+                            <p id="camera-error-text" class="text-white/70 mb-8 font-medium"></p>
+                            <button id="camera-retry" class="w-full bg-white/10 hover:bg-white/20 text-white font-black py-4 rounded-2xl border border-white/20 transition-all flex items-center justify-center gap-3">
+                                <i data-lucide="rotate-ccw" class="w-5 h-5"></i> TRY AGAIN
                             </button>
                         </div>
                     </div>
@@ -212,7 +225,7 @@
     let reps = 0;
     let stage = 'down';
     const quality = { excellent: 0, good: 0, partial: 0 };
-    let camera = null, pose = null;
+    let running = false, pose = null;
 
     // ---- UI updates ----
     function renderReps() {
@@ -292,7 +305,7 @@
     // Show the raw camera feed until MediaPipe starts returning results (the model download can take a while)
     let gotResults = false;
     function drawPreview() {
-        if (gotResults || !camera) return;
+        if (gotResults || !running) return;
         if (video.readyState >= 2) {
             if (canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
             ctx.save();
@@ -405,25 +418,66 @@
     }
 
     // ---- Controls ----
-    $('start-btn').onclick = () => {
+    // Browser camera + a frame loop into MediaPipe (camera_utils froze the page when camera access was refused)
+    $('start-btn').onclick = async () => {
         $('start-overlay').hidden = true;
         $('live').hidden = false;
-
+        $('model-loading').hidden = false;
+        gotResults = false;
+        try {
+            video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+            await video.play();
+        } catch (err) {
+            return showCameraError(err);
+        }
         pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
         pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         pose.onResults(onResults);
-        camera = new Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 1280, height: 720 });
-        gotResults = false;
-        $('model-loading').hidden = false;
-        camera.start();
+        running = true;
         requestAnimationFrame(drawPreview);
+        requestAnimationFrame(sendFrames);
+    };
+
+    async function sendFrames() {
+        if (!running) return;
+        try {
+            await pose.send({ image: video });
+        } catch {
+            return showCameraError({ name: 'ModelError' });
+        }
+        requestAnimationFrame(sendFrames);
+    }
+
+    const CAMERA_ERRORS = {
+        NotAllowedError: ['Camera blocked', 'Allow camera access for this site in your browser settings, then try again.'],
+        SecurityError: ['Camera blocked', 'Allow camera access for this site in your browser settings, then try again.'],
+        NotFoundError: ['No camera found', 'Connect a camera (or use a device that has one) and try again.'],
+        OverconstrainedError: ['No camera found', 'Connect a camera (or use a device that has one) and try again.'],
+        NotReadableError: ['Camera is busy', 'Another app or tab is using your camera. Close it and try again.'],
+        ModelError: ["Couldn't load the AI model", 'Check your internet connection and try again.'],
+    };
+    function showCameraError(err) {
+        const [title, text] = CAMERA_ERRORS[err?.name] || ["Couldn't start the camera", 'Something went wrong starting the camera. Please try again.'];
+        stopTracking();
+        $('camera-error-title').textContent = title;
+        $('camera-error-text').textContent = text;
+        $('camera-error').hidden = false;
+        $('live').hidden = true;
+    }
+    function stopTracking() {
+        running = false;
+        pose?.close();
+        pose = null;
+        video.srcObject?.getTracks().forEach((t) => t.stop());
+        video.srcObject = null;
+    }
+    $('camera-retry').onclick = () => {
+        $('camera-error').hidden = true;
+        $('start-overlay').hidden = false;
     };
 
     $('reset-btn').onclick = () => {
-        camera?.stop();
-        pose?.close();
-        video.srcObject?.getTracks().forEach((t) => t.stop());
-        video.srcObject = null;
+        stopTracking();
         reps = 0;
         renderReps();
         $('start-overlay').hidden = false;
