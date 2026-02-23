@@ -60,7 +60,9 @@ IMPORTANT RULES:
 - Base all assessments on the patient's specific condition and context provided by their doctor
 
 You must return EXACTLY a valid JSON object for every user message with these keys:
-1. patient_response: A clear, supportive answer to the user's query based on their specific medical context
+1. patient_response: A clear, supportive answer to the user's query based on their specific medical context.
+   Write it as plain text for a chat bubble: no Markdown (no asterisks, #, tables or bullet symbols).
+   Keep it short and use line breaks between separate points.
 2. seriousness_score: A single floating-point number between 0.0 and 1.0
 
 SERIOUSNESS SCORING GUIDELINES:
