@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 from twilio.rest import Client
 from django.utils import timezone
 import json
+import logging
 import os
 import re
 import smtplib
@@ -16,6 +17,8 @@ from datetime import datetime, date, timedelta
 from .models import Patient, SLS
 import os
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from a .env file
 load_dotenv()  
@@ -221,6 +224,8 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
             'error': str(e)
         }
 
+MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
+                     "If this is urgent, contact your doctor or hospital directly.")
 CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
@@ -273,7 +278,11 @@ def chatbot_send(request):
             messages.append(HumanMessage(content=user_message))
             
             # Get AI response
-            response = llm.invoke(messages)
+            try:
+                response = llm.invoke(messages)
+            except Exception:
+                logger.exception('Chatbot model call failed')
+                return JsonResponse({'success': False, 'error': MODEL_UNAVAILABLE}, status=503)
             patient_response, seriousness_score = parse_response(response)
             
         else:
@@ -304,6 +313,6 @@ def chatbot_send(request):
         
     except Patient.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Patient not found'})
-    except Exception as e:
-        print(f"Error in chatbot_send: {e}")
-        return JsonResponse({'success': False, 'error': 'Server error'})
+    except Exception:
+        logger.exception('chatbot_send failed')
+        return JsonResponse({'success': False, 'error': MODEL_UNAVAILABLE}, status=500)
