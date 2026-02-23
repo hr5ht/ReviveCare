@@ -483,6 +483,11 @@
         stopTracking();
         reps = 0;
         renderReps();
+        Object.keys(quality).forEach((k) => quality[k] = 0);
+        renderQuality();
+        setStage('down');
+        setDiff(0);
+        setFeedback('Position yourself in frame');
         $('start-overlay').hidden = false;
         $('live').hidden = true;
     };
