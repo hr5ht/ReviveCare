@@ -382,6 +382,7 @@ def api_update_session_data(request):
         angle = data.get('angle', 0)
         stage = data.get('stage', 'down')
         completed = data.get('completed', False)
+        target_reps = data.get('target_reps')  # the workout page's target wins over the per-model default
         
         today = timezone.localdate()
         
@@ -393,6 +394,7 @@ def api_update_session_data(request):
                 defaults={'target_reps': 10}
             )
             workout.total_reps = reps
+            if target_reps: workout.target_reps = int(target_reps)
             
             # Simple Quality Logic based on angle range
             if angle < 45:
@@ -410,6 +412,7 @@ def api_update_session_data(request):
                 patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 12}
             )
              workout.total_reps = reps
+             if target_reps: workout.target_reps = int(target_reps)
              if angle > 80:
                  workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
              elif angle > 65:
@@ -425,6 +428,7 @@ def api_update_session_data(request):
                 patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 20}
             )
              workout.total_reps = reps
+             if target_reps: workout.target_reps = int(target_reps)
              workout.excellent_reps = reps # Generic for now
              if not isinstance(workout.angles_data, list): workout.angles_data = []
              workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
@@ -436,6 +440,7 @@ def api_update_session_data(request):
                 patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 15}
             )
              workout.total_reps = reps
+             if target_reps: workout.target_reps = int(target_reps)
              if angle > 85:
                  workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
              elif angle > 70:

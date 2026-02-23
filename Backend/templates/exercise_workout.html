@@ -284,6 +284,7 @@
     function syncRepWithBackend(angle, q) {
         api('/api/exercises/update-session/', 'POST', {
             exercise_id: exercise.id,
+            target_reps: exercise.targetReps,
             reps,
             angle,
             stage,
