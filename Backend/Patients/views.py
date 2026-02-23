@@ -112,7 +112,7 @@ def initialize_model():
     if not LANGCHAIN_AVAILABLE:
         return None
     return ChatGroq(
-        model="openai/gpt-oss-120b",
+        model=os.getenv('GROQ_MODEL', 'openai/gpt-oss-120b'),  # override when Groq retires a model
         temperature=0.3,
         max_tokens=1024,
         timeout=30,
