@@ -52,39 +52,6 @@ def home(request):
 
 
 @login_required
-def medical_dashboard(request):
-    appointments = [
-        {'patient': 'Sarah Mitchell', 'time': '09:00 AM', 'type': 'Consultation', 'status': 'confirmed'},
-        {'patient': 'James Wilson', 'time': '10:30 AM', 'type': 'Follow-up', 'status': 'confirmed'},
-        {'patient': 'Emily Davis', 'time': '11:15 AM', 'type': 'Check-up', 'status': 'pending'},
-        {'patient': 'Michael Chen', 'time': '02:00 PM', 'type': 'Consultation', 'status': 'confirmed'},
-        {'patient': 'Lisa Anderson', 'time': '03:30 PM', 'type': 'Lab Review', 'status': 'pending'},
-    ]
-    for a in appointments:
-        a['initials'] = _initials(a['patient'])
-    return render(request, 'medical_dashboard.html', {
-        'stats': [
-            {'icon': 'users', 'label': 'Total Patients', 'value': '1,429', 'change': '+12%', 'trend': 'up', 'cls': 'bg-emerald-50 text-emerald-600'},
-            {'icon': 'calendar', 'label': 'Appointments Today', 'value': '24', 'change': '3 pending', 'trend': 'neutral', 'cls': 'bg-blue-50 text-blue-600'},
-            {'icon': 'activity', 'label': 'Active Cases', 'value': '89', 'change': '-5% from last week', 'trend': 'neutral', 'cls': 'bg-purple-50 text-purple-600'},
-            {'icon': 'heart', 'label': 'Critical Alerts', 'value': '3', 'change': 'Require attention', 'trend': 'alert', 'cls': 'bg-rose-50 text-rose-600'},
-        ],
-        'appointments': appointments,
-        'activity': [
-            {'action': 'Lab results uploaded', 'patient': 'John Thompson', 'time': '15 min ago', 'icon': 'file-text'},
-            {'action': 'New prescription added', 'patient': 'Maria Garcia', 'time': '32 min ago', 'icon': 'pill'},
-            {'action': 'Appointment rescheduled', 'patient': 'Robert Lee', 'time': '1 hour ago', 'icon': 'calendar'},
-            {'action': 'Vital signs updated', 'patient': 'Anna Smith', 'time': '2 hours ago', 'icon': 'activity'},
-        ],
-        'alerts': [
-            {'message': 'Patient Sarah Mitchell - Blood pressure spike detected', 'severity': 'high', 'time': '5 min ago'},
-            {'message': 'Lab results require immediate review - John Thompson', 'severity': 'medium', 'time': '23 min ago'},
-            {'message': 'Medication refill needed - Emily Davis', 'severity': 'low', 'time': '1 hour ago'},
-        ],
-    })
-
-
-@login_required
 def doctor_dashboard(request):
     patients = [
         {'name': 'Sarah Mitchell', 'condition': 'Post-Surgery Recovery', 'status': 'improving', 'lastUpdate': '2 hours ago'},

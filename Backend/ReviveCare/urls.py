@@ -25,7 +25,6 @@ from Patients.views import *
 urlpatterns = [
     # Frontend pages (Backend/templates)
     path('', pages.home, name='home'),
-    path('medical-dashboard/', pages.medical_dashboard, name='medical_dashboard'),
     path('doctor/', pages.doctor_dashboard, name='doctor_dashboard'),
     path('doctor/login/', auth_views.LoginView.as_view(template_name='doctor_login.html', redirect_authenticated_user=True), name='doctor_login'),
     path('doctor/logout/', auth_views.LogoutView.as_view(next_page='doctor_login'), name='doctor_logout'),
