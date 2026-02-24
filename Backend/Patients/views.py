@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.core.cache import cache
+from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from twilio.rest import Client
@@ -10,9 +11,6 @@ import json
 import logging
 import os
 import re
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime, date, timedelta
 from .models import Patient, SLS
 import os
@@ -150,24 +148,11 @@ def parse_response(raw_response):
 
 
 def send_email_alert(patient, user_query, patient_response, seriousness_score):
-    """Send email alert to doctor when seriousness score is high"""
-    try:
-        smtp_server = os.environ.get("SMTP_SERVER")
-        smtp_port = int(os.environ.get("SMTP_PORT"))
-        sender_email = os.environ.get("EMAIL_SENDER")
-        sender_password = os.environ.get("EMAIL_PASSWORD")
-        doctor_email = os.environ.get("DOCTOR_EMAIL")
-        
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = doctor_email
-        msg['Subject'] = f"🚨 URGENT - Patient Alert: {patient.name} (Score: {seriousness_score:.2f})"
-        
-        email_body = f"""
-URGENT PATIENT ALERT - ReViveCare System
+    """Email the doctor when a chat message scores as serious. Returns True if it was sent."""
+    body = f"""URGENT PATIENT ALERT - ReViveCare
 ============================================
 
-Alert Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Alert Time: {timezone.localtime():%Y-%m-%d %H:%M} IST
 Patient Name: {patient.name}
 Patient Email: {patient.email}
 Seriousness Score: {seriousness_score:.2f}
@@ -186,43 +171,14 @@ Please contact the patient immediately to assess their condition and provide app
 
 This is an automated alert from the ReViveCare post-discharge monitoring system.
 """
-        
-        msg.attach(MIMEText(email_body, 'plain'))
-        
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        text = msg.as_string()
-        server.sendmail(sender_email, doctor_email, text)
-        server.quit()
-        
-        '''print(f"✅ EMAIL ALERT SENT TO DOCTOR: {doctor_email}")
-        TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-        TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-        TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")  # Your Twilio phone number
-        TO_NUMBER = os.getenv("TO_NUMBER")
-            
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-            
-        call = client.calls.create(
-            to=TO_NUMBER,
-            from_=TWILIO_PHONE_NUMBER,
-            twiml=f"<Response><Say voice='alice'>This is an emergency please call {patient.name}</Say></Response>"
-        )
-            
-        context = {
-            'call_sid': call.sid,
-            'status': 'Call initiated successfully',
-            'phone_number': TO_NUMBER,
-            'message': f"IVR call is being made to say  'This is an emergency please call {patient.name}'"
-        }'''
-        
-    except Exception as e:
-        print(f"⚠️ EMAIL SEND FAILED: {str(e)}")
-        context = {
-            'status': 'Error making call',
-            'error': str(e)
-        }
+    try:
+        send_mail(f"URGENT - Patient Alert: {patient.name} (Score: {seriousness_score:.2f})",
+                  body, None, [os.getenv('DOCTOR_EMAIL', 'harshitxgarg@gmail.com')])
+        return True
+    except Exception:
+        logger.exception('Doctor alert email for patient %s failed', patient.id)
+        return False
+
 
 MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
                      "If this is urgent, contact your doctor or hospital directly.")

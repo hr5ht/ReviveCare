@@ -160,7 +160,7 @@ EMAIL_HOST = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('SMTP_PORT', '587'))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_SENDER', 'actualharshit@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '').replace(' ', '')  # Gmail shows app passwords with spaces
 DEFAULT_FROM_EMAIL = f'ReViveCare <{EMAIL_HOST_USER}>'
 EMAIL_TIMEOUT = 10
 if not EMAIL_HOST_PASSWORD:
