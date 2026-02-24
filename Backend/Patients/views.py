@@ -1,43 +1,27 @@
-# patient/views.py
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.core.cache import cache
-from django.core.mail import send_mail
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from twilio.rest import Client
-from django.utils import timezone
+# Patients/views.py — chatbot endpoint and doctor alert email
+# Env (loaded by settings): GROQ_API_KEY, GROQ_MODEL, DOCTOR_EMAIL; email settings live in settings.py
 import json
 import logging
 import os
 import re
-from datetime import datetime, date, timedelta
-from .models import Patient, SLS
-import os
-from dotenv import load_dotenv
+
+from django.core.cache import cache
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_http_methods
+
+from .models import Patient
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables from a .env file
-load_dotenv()  
-
-# Import LangChain components
 try:
     from langchain_groq import ChatGroq
     from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
-    print("Warning: langchain not installed. Chatbot will use mock responses.")
-
-# Configuration
-# by default, it loads from a file named ".env" in the current directory
-
-# GROQ_API_KEY and EMAIL_PASSWORD come from .env
-os.environ.setdefault("SMTP_SERVER", "smtp.gmail.com")
-os.environ.setdefault("SMTP_PORT", "587")
-os.environ.setdefault("EMAIL_SENDER", "actualharshit@gmail.com")
-os.environ.setdefault("DOCTOR_EMAIL", "harshitxgarg@gmail.com")
+    logger.warning('langchain not installed; chatbot will use mock responses')
 SYSTEM_PROMPT = """IT IS JUST FOR EDUCATIONAL PURPOSES ONLY.You are ReViveCare, an AI-powered post-discharge recovery support chatbot.
 Your role is to support patients emotionally and informationally during recovery after surgery or injury.
 You are NOT a doctor and you MUST NOT diagnose, prescribe medication, or alter treatment plans.
@@ -143,7 +127,7 @@ def parse_response(raw_response):
             return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
             
     except (json.JSONDecodeError, ValueError, KeyError) as e:
-        print(f"Parsing error: {e}")
+        logger.warning("Could not parse chatbot response: %s", e)
         return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
 
 
@@ -217,9 +201,6 @@ def chatbot_send(request):
         system_prompt = SYSTEM_PROMPT.format(patient_context=patient.info)
         
         if LANGCHAIN_AVAILABLE:
-            # Use real AI model
-            llm = initialize_model()
-            
             # Build messages
             messages = [SystemMessage(content=system_prompt)]
             
@@ -233,9 +214,9 @@ def chatbot_send(request):
             # Add current query
             messages.append(HumanMessage(content=user_message))
             
-            # Get AI response
+            # Get AI response (model creation is inside the try: a missing API key fails here too)
             try:
-                response = llm.invoke(messages)
+                response = initialize_model().invoke(messages)
             except Exception:
                 logger.exception('Chatbot model call failed')
                 return JsonResponse({'success': False, 'error': MODEL_UNAVAILABLE}, status=503)
