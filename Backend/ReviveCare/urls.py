@@ -36,7 +36,6 @@ urlpatterns = [
     path('patient/exercises/', pages.exercises, name='exercises'),
     path('patient/exercise/<str:exercise_id>/', pages.exercise_workout, name='exercise_workout'),
     path('patient/chat/', pages.chat, name='chat'),
-    path('chat/', pages.chat),
 
     # Admin
     path('admin/', admin.site.urls),
