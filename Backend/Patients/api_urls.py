@@ -12,12 +12,8 @@ urlpatterns = [
     path('patient/login/', api_views.api_patient_login, name='api_patient_login'),
     path('patient/logout/', api_views.api_patient_logout, name='api_patient_logout'),
     path('patient/change-password/', api_views.api_patient_change_password, name='api_patient_change_password'),
-    path('patient/dashboard/', api_views.api_patient_dashboard, name='api_patient_dashboard'),
-    path('patient/profile/', api_views.api_patient_profile, name='api_patient_profile'),
     
     # Exercises
-    path('exercises/', api_views.api_exercise_list, name='api_exercise_list'),
-    path('exercises/history/', api_views.api_exercise_history, name='api_exercise_history'),
     path('exercises/update-session/', api_views.api_update_session_data, name='api_update_session_data'),
     
     # Doctor endpoints

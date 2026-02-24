@@ -30,19 +30,6 @@ def doctor_required(view):
     return wrapper
 
 
-def json_response_decorator(view_func):
-    """Decorator to ensure JSON response with proper headers"""
-    def wrapper(request, *args, **kwargs):
-        try:
-            return view_func(request, *args, **kwargs)
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    return wrapper
-
-
 # ============================================================================
 # PATIENT API ENDPOINTS
 # ============================================================================
@@ -147,63 +134,6 @@ def api_patient_login(request):
         }, status=400)
 
 
-@require_http_methods(["GET"])
-def api_patient_dashboard(request):
-    """
-    Get patient dashboard data
-    Returns patient profile and stats as JSON
-    """
-    patient_id = request.session.get('patient_id')
-    
-    if not patient_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authenticated'
-        }, status=401)
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        
-        # Get exercise stats
-        stats = {
-            'total_sessions': 0,
-            'total_reps': 0,
-            'avg_quality': 0,
-            'best_session_reps': 0,
-        }
-        
-        try:
-            from django.db.models import Sum, Max
-            all_workouts = SLS.objects.filter(patient=patient)
-            
-            if all_workouts.exists():
-                stats = {
-                    'total_sessions': all_workouts.count(),
-                    'total_reps': all_workouts.aggregate(Sum('total_reps'))['total_reps__sum'] or 0,
-                    'avg_quality': round(sum([w.quality_score for w in all_workouts]) / all_workouts.count(), 1) if all_workouts.count() > 0 else 0,
-                    'best_session_reps': all_workouts.aggregate(Max('total_reps'))['total_reps__max'] or 0,
-                }
-        except Exception as e:
-            print(f"Error getting stats: {e}")
-        
-        return JsonResponse({
-            'success': True,
-            'patient': {
-                'id': patient.id,
-                'name': patient.name,
-                'email': patient.email,
-                'info': patient.info if hasattr(patient, 'info') else '',
-            },
-            'stats': stats
-        })
-        
-    except Patient.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Patient not found'
-        }, status=404)
-
-
 @require_http_methods(["POST"])
 def api_patient_logout(request):
     """Logout patient and clear session"""
@@ -238,131 +168,9 @@ def api_patient_change_password(request):
     return JsonResponse({'success': True, 'message': 'Password updated'})
 
 
-@require_http_methods(["GET"])
-def api_patient_profile(request):
-    """Get current patient profile"""
-    patient_id = request.session.get('patient_id')
-    
-    if not patient_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authenticated'
-        }, status=401)
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        return JsonResponse({
-            'success': True,
-            'patient': {
-                'id': patient.id,
-                'name': patient.name,
-                'email': patient.email,
-                'info': patient.info if hasattr(patient, 'info') else '',
-            }
-        })
-    except Patient.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Patient not found'
-        }, status=404)
-
-
 # ============================================================================
 # EXERCISE API ENDPOINTS
 # ============================================================================
-
-@require_http_methods(["GET"])
-def api_exercise_list(request):
-    """Get list of available exercises"""
-    exercises = [
-        {
-            'id': 'sr',
-            'name': 'Side Lateral Raise',
-            'description': 'Shoulder strengthening exercise',
-            'target_muscles': ['Shoulders', 'Deltoids'],
-            'difficulty': 'Beginner',
-            'video_url': '/sr/video_feed/',
-        },
-        {
-            'id': 'ar',
-            'name': 'Arm Raise',
-            'description': 'Arm strengthening exercise',
-            'target_muscles': ['Arms', 'Shoulders'],
-            'difficulty': 'Beginner',
-        },
-        {
-            'id': 'bc',
-            'name': 'Bicep Curl',
-            'description': 'Bicep strengthening exercise',
-            'target_muscles': ['Biceps', 'Arms'],
-            'difficulty': 'Beginner',
-        },
-        {
-            'id': 'jj',
-            'name': 'Jumping Jacks',
-            'description': 'Full body cardio exercise',
-            'target_muscles': ['Full Body'],
-            'difficulty': 'Beginner',
-        },
-    ]
-    
-    return JsonResponse({
-        'success': True,
-        'exercises': exercises
-    })
-
-
-@require_http_methods(["GET"])
-def api_exercise_history(request):
-    """Get exercise history for logged-in patient"""
-    patient_id = request.session.get('patient_id')
-    
-    if not patient_id:
-        return JsonResponse({
-            'success': False,
-            'error': 'Not authenticated'
-        }, status=401)
-    
-    try:
-        patient = Patient.objects.get(id=patient_id)
-        
-        # Get recent workouts
-        seven_days_ago = timezone.localdate() - timedelta(days=7)
-        recent_workouts = SLS.objects.filter(
-            patient=patient,
-            date__gte=seven_days_ago
-        ).order_by('-created_at')[:10]
-        
-        workouts = []
-        for workout in recent_workouts:
-            workouts.append({
-                'id': workout.id,
-                'date': workout.date.isoformat(),
-                'total_reps': workout.total_reps,
-                'target_reps': workout.target_reps,
-                'excellent_reps': workout.excellent_reps,
-                'good_reps': workout.good_reps,
-                'partial_reps': workout.partial_reps,
-                'completed': workout.completed,
-                'duration_seconds': workout.duration_seconds,
-                'quality_score': workout.quality_score,
-            })
-        
-        return JsonResponse({
-            'success': True,
-            'workouts': workouts
-        })
-        
-    except Patient.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Patient not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': True,
-            'workouts': []
-        })
 
 
 @require_http_methods(["POST"])
