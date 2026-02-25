@@ -151,6 +151,15 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Static files (CSS, JS, Images, Videos)
+# Logs go to stdout (Vercel captures them). LOG_LEVEL=DEBUG for more detail.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'simple': {'format': '{levelname} {name}: {message}', 'style': '{'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'simple'}},
+    'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
+}
+
 # Doctor accounts are Django users
 LOGIN_URL = 'doctor_login'
 LOGIN_REDIRECT_URL = 'doctor_dashboard'
