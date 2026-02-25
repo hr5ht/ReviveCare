@@ -137,3 +137,39 @@ class ArmRaise(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class Workout(models.Model):
+    """One exercise session for one patient per day (replaces the per-exercise models)."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='workouts')
+    exercise = models.CharField(max_length=40, db_index=True)  # exercise slug, e.g. 'bicep-curl'
+    date = models.DateField(default=timezone.localdate)
+
+    total_reps = models.IntegerField(default=0)
+    target_reps = models.IntegerField(default=10)
+    excellent_reps = models.IntegerField(default=0)
+    good_reps = models.IntegerField(default=0)
+    partial_reps = models.IntegerField(default=0)
+
+    duration_seconds = models.IntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    angles_data = models.JSONField(default=list, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['patient', 'date'])]
+
+    def __str__(self):
+        return f"{self.patient.name} - {self.exercise} - {self.date}"
+
+    @property
+    def completion_percentage(self):
+        return int(self.total_reps / self.target_reps * 100) if self.target_reps else 0
+
+    @property
+    def quality_score(self):
+        if not self.total_reps:
+            return 0
+        return round((self.excellent_reps * 100 + self.good_reps * 70 + self.partial_reps * 40) / self.total_reps, 1)
