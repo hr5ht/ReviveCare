@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
-from .models import Patient, SLS, BicepCurl, JumpingJack, ArmRaise
+from .models import Patient, Workout
 from django.utils import timezone
 import json
 from datetime import timedelta
@@ -173,94 +173,42 @@ def api_patient_change_password(request):
 # ============================================================================
 
 
+QUALITY_FIELDS = {'excellent': 'excellent_reps', 'good': 'good_reps', 'partial': 'partial_reps'}
+
+
 @require_http_methods(["POST"])
 def api_update_session_data(request):
-    """
-    Update real-time angles and reps for an active session.
-    Stores data in the database for later analysis.
-    """
+    """Save live workout progress: one Workout row per patient, exercise and day."""
     patient_id = request.session.get('patient_id')
     if not patient_id:
         return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
-    
+
     try:
         data = json.loads(request.body)
-        exercise_id = data.get('exercise_id') 
-        reps = data.get('reps', 0)
-        angle = data.get('angle', 0)
-        stage = data.get('stage', 'down')
-        completed = data.get('completed', False)
-        target_reps = data.get('target_reps')  # the workout page's target wins over the per-model default
-        
-        today = timezone.localdate()
-        
-        if exercise_id == 'bicep-curl':
-            workout, created = BicepCurl.objects.get_or_create(
-                patient_id=patient_id,
-                date=today,
-                completed=False,
-                defaults={'target_reps': 10}
-            )
-            workout.total_reps = reps
-            if target_reps: workout.target_reps = int(target_reps)
-            
-            # Simple Quality Logic based on angle range
-            if angle < 45:
-                workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
-            elif angle < 60:
-                workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
-            
-            if not isinstance(workout.angles_data, list): workout.angles_data = []
-            workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
-            if completed: workout.completed = True
-            workout.save()
-            
-        elif exercise_id == 'shoulder-extension':
-             workout, created = SLS.objects.get_or_create(
-                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 12}
-            )
-             workout.total_reps = reps
-             if target_reps: workout.target_reps = int(target_reps)
-             if angle > 80:
-                 workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
-             elif angle > 65:
-                 workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
-             
-             if not isinstance(workout.angles_data, list): workout.angles_data = []
-             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
-             if completed: workout.completed = True
-             workout.save()
+        exercise = data.get('exercise_id')
+        if not exercise:
+            return JsonResponse({'success': False, 'error': 'exercise_id is required'}, status=400)
+        reps = int(data.get('reps', 0))
+        target_reps = data.get('target_reps')
 
-        elif exercise_id == 'jumping-jacks':
-             workout, created = JumpingJack.objects.get_or_create(
-                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 20}
-            )
-             workout.total_reps = reps
-             if target_reps: workout.target_reps = int(target_reps)
-             workout.excellent_reps = reps # Generic for now
-             if not isinstance(workout.angles_data, list): workout.angles_data = []
-             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
-             if completed: workout.completed = True
-             workout.save()
-
-        elif exercise_id == 'arm-raises' or exercise_id == 'ar':
-             workout, created = ArmRaise.objects.get_or_create(
-                patient_id=patient_id, date=today, completed=False, defaults={'target_reps': 15}
-            )
-             workout.total_reps = reps
-             if target_reps: workout.target_reps = int(target_reps)
-             if angle > 85:
-                 workout.excellent_reps = max(workout.excellent_reps, reps - (workout.good_reps + workout.partial_reps))
-             elif angle > 70:
-                 workout.good_reps = max(workout.good_reps, reps - (workout.excellent_reps + workout.partial_reps))
-
-             if not isinstance(workout.angles_data, list): workout.angles_data = []
-             workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': angle, 'stage': stage, 'rep': reps})
-             if completed: workout.completed = True
-             workout.save()
-
+        workout, _ = Workout.objects.get_or_create(
+            patient_id=patient_id, exercise=exercise, date=timezone.localdate(), completed=False,
+            defaults={'target_reps': int(target_reps or 10)},
+        )
+        if target_reps:
+            workout.target_reps = int(target_reps)
+        # Count a rep's quality once: only when the page reports a rep we haven't graded yet
+        field = QUALITY_FIELDS.get(data.get('quality'))
+        if field and reps > workout.excellent_reps + workout.good_reps + workout.partial_reps:
+            setattr(workout, field, getattr(workout, field) + 1)
+        workout.total_reps = reps
+        workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': data.get('angle', 0),
+                                    'stage': data.get('stage', 'down'), 'rep': reps})
+        if data.get('completed'):
+            workout.completed = True
+        workout.save()
         return JsonResponse({'success': True, 'reps': reps})
-        
+
     except Exception:
         logger.exception('Saving workout session failed for patient %s', patient_id)
         return JsonResponse({'success': False, 'error': 'Could not save your workout progress'}, status=500)
