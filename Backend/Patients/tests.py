@@ -166,3 +166,67 @@ class WorkoutSessionTests(TestCase):
 
     def test_exercise_required(self):
         self.assertEqual(post_json(self.client, self.url, {'reps': 1}).status_code, 400)
+
+
+class ChatbotParsingTests(TestCase):
+    def parse(self, text):
+        from types import SimpleNamespace
+        from .views import parse_response
+        return parse_response(SimpleNamespace(content=text))
+
+    def test_plain_json(self):
+        self.assertEqual(self.parse('{"patient_response": "Rest well.", "seriousness_score": 0.2}'), ('Rest well.', 0.2))
+
+    def test_json_wrapped_in_text_or_code_fence(self):
+        text = 'Sure!\n```json\n{"patient_response": "Call your doctor.", "seriousness_score": 0.8}\n```'
+        self.assertEqual(self.parse(text), ('Call your doctor.', 0.8))
+
+    def test_score_clamped_to_0_1(self):
+        self.assertEqual(self.parse('{"patient_response": "x", "seriousness_score": 7}')[1], 1.0)
+        self.assertEqual(self.parse('{"patient_response": "x", "seriousness_score": -2}')[1], 0.0)
+
+    def test_unparseable_replies_fall_back_safely(self):
+        for text in ['no json here', '{not valid json}', '{"patient_response": "x", "seriousness_score": "high"}']:
+            reply, score = self.parse(text)
+            self.assertIn('trouble processing', reply)
+            self.assertEqual(score, 0.0)
+
+
+class ChatbotEndpointTests(TestCase):
+    url = '/patient/chatbot/send/'
+
+    def setUp(self):
+        cache.clear()
+        Patient.objects.create(name='C', email='c@example.com', info='Knee', password=make_password('Right-pass-1'))
+        post_json(self.client, '/api/patient/login/', {'email': 'c@example.com', 'password': 'Right-pass-1'})
+
+    def send_with_reply(self, content):
+        from types import SimpleNamespace
+        from unittest import mock
+        model = mock.Mock(invoke=mock.Mock(return_value=SimpleNamespace(content=content)))
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
+                mock.patch('Patients.views.initialize_model', return_value=model):
+            return post_json(self.client, self.url, {'message': 'I have a fever', 'language': 'english'})
+
+    def test_reply_and_history(self):
+        r = self.send_with_reply('{"patient_response": "Drink water.", "seriousness_score": 0.3}').json()
+        self.assertEqual((r['response'], r['seriousness_score']), ('Drink water.', 0.3))
+        self.assertEqual(len(self.client.session['chat_history']), 2)
+
+    def test_serious_reply_emails_the_doctor(self):
+        from django.core import mail
+        self.send_with_reply('{"patient_response": "Go to hospital.", "seriousness_score": 0.9}')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('I have a fever', mail.outbox[0].body)
+
+    def test_model_failure_returns_friendly_503(self):
+        from unittest import mock
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
+                mock.patch('Patients.views.initialize_model', side_effect=RuntimeError('no key')):
+            r = post_json(self.client, self.url, {'message': 'hi'})
+        self.assertEqual(r.status_code, 503)
+        self.assertIn('contact your doctor', r.json()['error'])
+
+    def test_requires_login(self):
+        self.client.logout()
+        self.assertFalse(post_json(self.client, self.url, {'message': 'hi'}).json()['success'])
