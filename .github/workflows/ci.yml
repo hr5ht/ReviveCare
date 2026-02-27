@@ -25,3 +25,9 @@ jobs:
         run: python manage.py makemigrations --check --dry-run --settings=ReviveCare.test_settings
       - name: Tests
         run: python manage.py test --settings=ReviveCare.test_settings
+      - name: Compiled Tailwind CSS is up to date
+        run: |
+          curl -sSL -o /tmp/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64
+          chmod +x /tmp/tailwindcss
+          /tmp/tailwindcss -i static/css/input.css -o static/css/app.css --minify
+          git diff --exit-code static/css/app.css

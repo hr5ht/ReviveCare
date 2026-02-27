@@ -176,5 +176,6 @@ if not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']  # project-wide assets (compiled Tailwind CSS)
 STATIC_ROOT = BASE_DIR / 'staticfiles'  # Vercel runs collectstatic and serves this from its CDN
 

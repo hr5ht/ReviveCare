@@ -1,0 +1,6 @@
+/* Tailwind source. Rebuild app.css from Backend/ after changing templates or class names in views:
+   npx @tailwindcss/cli@4.1.18 -i static/css/input.css -o static/css/app.css --minify */
+@import "tailwindcss" source("../..");
+
+/* Classes built at runtime that the scanner can't see, e.g. bg-{{ exercise.color }}-100 */
+@source inline("{bg,text}-{emerald,blue,purple,orange}-{100,700}");
