@@ -123,3 +123,46 @@ class AddPatientTests(TestCase):
         self.assertFalse(r['email_sent'])
         self.assertTrue(Patient.objects.filter(email='ravi@example.com').exists())
 
+
+class WorkoutSessionTests(TestCase):
+    url = '/api/exercises/update-session/'
+
+    def setUp(self):
+        self.patient = Patient.objects.create(name='S', email='s@example.com', info='x',
+                                              password=make_password('Right-pass-1'))
+        post_json(self.client, '/api/patient/login/', {'email': 's@example.com', 'password': 'Right-pass-1'})
+
+    def save(self, **data):
+        return post_json(self.client, self.url, {'exercise_id': 'bicep-curl', 'target_reps': 12, **data})
+
+    def test_requires_patient_login(self):
+        self.client.logout()
+        self.assertEqual(self.save(reps=1).status_code, 401)
+
+    def test_one_row_per_exercise_per_day(self):
+        from .models import Workout
+        self.save(reps=1, quality='excellent')
+        self.save(reps=2, quality='good')
+        post_json(self.client, self.url, {'exercise_id': 'jumping-jacks', 'reps': 5})
+        self.assertEqual(Workout.objects.count(), 2)
+        w = Workout.objects.get(exercise='bicep-curl')
+        self.assertEqual((w.total_reps, w.target_reps, len(w.angles_data)), (2, 12, 2))
+
+    def test_quality_counted_once_per_rep(self):
+        from .models import Workout
+        self.save(reps=1, quality='excellent')
+        self.save(reps=1, quality='transition')
+        self.save(reps=2, quality='good')
+        self.save(reps=2, quality='good')
+        w = Workout.objects.get()
+        self.assertEqual((w.excellent_reps, w.good_reps, w.partial_reps), (1, 1, 0))
+
+    def test_completed_session_starts_a_new_row(self):
+        from .models import Workout
+        self.save(reps=12, quality='excellent', completed=True)
+        self.save(reps=1, quality='good')
+        self.assertEqual(Workout.objects.filter(completed=True).count(), 1)
+        self.assertEqual(Workout.objects.filter(completed=False).count(), 1)
+
+    def test_exercise_required(self):
+        self.assertEqual(post_json(self.client, self.url, {'reps': 1}).status_code, 400)
