@@ -65,3 +65,61 @@ class PatientLoginTests(TestCase):
         self.login('Right-pass-1')
         self.patient.refresh_from_db()
         self.assertEqual(self.patient.failed_login_count, 0)
+
+
+class AddPatientTests(TestCase):
+    url = '/api/patients/add/'
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        User.objects.create_user('doc', password='Doc-pass-123')
+        self.client.login(username='doc', password='Doc-pass-123')
+
+    def add(self, **data):
+        return post_json(self.client, self.url, {'name': 'Ravi Kumar', 'email': 'ravi@example.com', 'info': 'Hip', **data})
+
+    def test_requires_doctor_login(self):
+        self.client.logout()
+        self.assertEqual(self.add().status_code, 401)
+        self.assertFalse(Patient.objects.exists())
+
+    def test_creates_patient_with_hashed_temporary_password(self):
+        r = self.add().json()
+        patient = Patient.objects.get(email='ravi@example.com')
+        self.assertTrue(patient.must_change_password)
+        self.assertNotEqual(patient.password, r['temporary_password'])
+        self.assertTrue(patient.check_password(r['temporary_password']) if hasattr(patient, 'check_password')
+                        else __import__('django.contrib.auth.hashers', fromlist=['x']).check_password(r['temporary_password'], patient.password))
+
+    def test_temporary_passwords_are_unique_and_readable(self):
+        a = self.add().json()['temporary_password']
+        b = self.add(email='other@example.com').json()['temporary_password']
+        self.assertNotEqual(a, b)
+        self.assertEqual(len(a), 10)
+        self.assertFalse(set(a) & set('0O1lI'))
+
+    def test_email_lowercased_and_duplicates_rejected(self):
+        self.add(email='Ravi@Example.com')
+        r = self.add()
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Patient.objects.count(), 1)
+
+    def test_name_and_email_required(self):
+        self.assertEqual(self.add(name='').status_code, 400)
+        self.assertEqual(self.add(email='').status_code, 400)
+
+    def test_sends_welcome_email(self):
+        from django.core import mail
+        r = self.add().json()
+        self.assertTrue(r['email_sent'])
+        self.assertEqual(mail.outbox[0].to, ['ravi@example.com'])
+        self.assertIn(r['temporary_password'], mail.outbox[0].body)
+
+    def test_email_failure_still_creates_patient(self):
+        with self.settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST='127.0.0.1',
+                           EMAIL_PORT=1, EMAIL_TIMEOUT=1):
+            r = self.add().json()
+        self.assertTrue(r['success'])
+        self.assertFalse(r['email_sent'])
+        self.assertTrue(Patient.objects.filter(email='ravi@example.com').exists())
+
