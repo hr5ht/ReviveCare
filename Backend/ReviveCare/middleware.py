@@ -1,8 +1,8 @@
 PERMISSIONS_POLICY = 'camera=(self), microphone=(self), geolocation=(), payment=(), usb=()'
 
-# Only this site and the two CDNs the pages load from (Tailwind/MediaPipe on jsDelivr, lucide on unpkg).
+# Only this site and jsDelivr (MediaPipe Pose); CSS and icons are served locally.
 # 'unsafe-inline' stays until inline scripts/onclick handlers move to static files; 'wasm-unsafe-eval' is for MediaPipe.
-CDNS = 'https://cdn.jsdelivr.net https://unpkg.com'
+CDNS = 'https://cdn.jsdelivr.net'
 CONTENT_SECURITY_POLICY = '; '.join([
     "default-src 'self'",
     f"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' {CDNS}",
