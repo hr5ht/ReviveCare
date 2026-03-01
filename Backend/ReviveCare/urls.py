@@ -30,6 +30,7 @@ urlpatterns = [
     path('doctor/login/', auth_views.LoginView.as_view(template_name='doctor_login.html', redirect_authenticated_user=True), name='doctor_login'),
     path('doctor/logout/', auth_views.LogoutView.as_view(next_page='doctor_login'), name='doctor_logout'),
     path('doctor/add-patient/', doctor.add_patient, name='add_patient'),
+    path('doctor/profile/', doctor.doctor_profile, name='doctor_profile'),
     path('patient/', RedirectView.as_view(url='/patient/login/')),
     path('patient/login/', pages.patient_login, name='patient_login'),
     path('patient/dashboard/', pages.patient_dashboard, name='patient_dashboard_page'),

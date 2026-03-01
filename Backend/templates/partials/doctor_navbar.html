@@ -16,13 +16,13 @@
                     <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-current"></span>
                 </button>
 
-                <div class="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
+                <a href="/doctor/profile/" title="Profile settings" class="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 transition-colors">
                     <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 font-semibold">{{ doctor_initials }}</div>
                     <div class="text-left">
                         <p class="text-white font-semibold text-sm">{{ doctor_name }}</p>
                         <p class="text-emerald-100 text-xs">{{ doctor_specialty }}</p>
                     </div>
-                </div>
+                </a>
 
                 <form method="post" action="/doctor/logout/">
                     {% csrf_token %}

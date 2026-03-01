@@ -1,7 +1,11 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import redirect, render
 
 from Home.views import _initials
+
+from .forms import DoctorProfileForm
+from .models import DoctorProfile
 
 
 @login_required
@@ -34,3 +38,22 @@ def doctor_dashboard(request):
 @login_required
 def add_patient(request):
     return render(request, 'add_patient.html')
+
+
+@login_required
+def doctor_profile(request):
+    user, profile = request.user, DoctorProfile.for_user(request.user)
+    if request.method == 'POST':
+        form = DoctorProfileForm(request.POST)
+        if form.is_valid():
+            d = form.cleaned_data
+            user.first_name, user.last_name, user.email = d['first_name'], d['last_name'], d['email']
+            user.save(update_fields=['first_name', 'last_name', 'email'])
+            profile.specialty, profile.phone = d['specialty'], d['phone']
+            profile.save()
+            messages.success(request, 'Profile saved.')
+            return redirect('doctor_profile')
+    else:
+        form = DoctorProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email,
+                                          'specialty': profile.specialty, 'phone': profile.phone})
+    return render(request, 'doctor_profile.html', {'form': form})
