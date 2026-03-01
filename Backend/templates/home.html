@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}ReviveCare · Post-Discharge Recovery{% endblock %}
+{% block head %}
+{% load static %}
+<meta name="description" content="ReViveCare connects patients with their care team after hospital discharge: AI-guided rehab exercises, a recovery chat assistant and progress tracking for doctors.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ReViveCare">
+<meta property="og:title" content="ReViveCare · Post-Discharge Recovery">
+<meta property="og:description" content="AI-guided rehab exercises, a recovery chat assistant and progress tracking for doctors.">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'og-image.png' %}">
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
 {% block body %}
 <div class="min-h-screen bg-white">
     <!-- Hero Section with Gradient Background -->
