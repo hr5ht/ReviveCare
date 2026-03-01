@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Page not found · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center px-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 w-full max-w-md text-center">
+        <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <i data-lucide="map-pin-off" class="w-8 h-8 text-white"></i>
+        </div>
+        <p class="text-sm font-semibold text-emerald-600 mb-2">404</p>
+        <h1 class="text-2xl font-bold text-slate-900 mb-3">We couldn't find that page</h1>
+        <p class="text-slate-600 mb-8">The link may be old or mistyped. Let's get you back on track.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onclick="location.href='/'" class="inline-flex items-center justify-center gap-2 font-semibold rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                <i data-lucide="house" class="w-5 h-5"></i> Home
+            </button>
+            <button onclick="location.href='/patient/login/'" class="inline-flex items-center justify-center gap-2 font-semibold rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 px-6 py-3 transition-all">
+                <i data-lucide="log-in" class="w-5 h-5"></i> Patient Login
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

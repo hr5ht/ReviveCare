@@ -1,0 +1,21 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Something went wrong · ReviveCare</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <!-- Kept free of template logic and scripts: it renders when something else has already failed -->
+  <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 flex items-center justify-center px-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 w-full max-w-md text-center">
+      <p class="text-sm font-semibold text-rose-600 mb-2">500</p>
+      <h1 class="text-2xl font-bold text-slate-900 mb-3">Something went wrong on our side</h1>
+      <p class="text-slate-600 mb-8">Please try again in a moment. If you need urgent help, contact your doctor or hospital directly.</p>
+      <a href="/" class="inline-flex items-center justify-center font-semibold rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 px-6 py-3">Back to Home</a>
+    </div>
+  </div>
+</body>
+</html>
