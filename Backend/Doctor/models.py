@@ -1,3 +1,16 @@
+from django.conf import settings
 from django.db import models
 
-# Create your models here.
+
+class DoctorProfile(models.Model):
+    """Extra details for a doctor account (doctors log in as Django users)."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='doctor_profile')
+    specialty = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+
+    def __str__(self):
+        return f"Dr. {self.user.get_full_name() or self.user.username}"
+
+    @classmethod
+    def for_user(cls, user):
+        return cls.objects.get_or_create(user=user)[0]
