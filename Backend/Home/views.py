@@ -1,7 +1,15 @@
+import logging
 from functools import wraps
 
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core import signing
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from Patients.models import Patient
+
+logger = logging.getLogger(__name__)
 
 
 def patient_page(view):
@@ -105,3 +113,58 @@ def exercise_workout(request, exercise_id):
 @patient_page
 def chat(request):
     return render(request, 'chat.html')
+
+
+RESET_SALT = 'patient-password-reset'
+RESET_MAX_AGE = 24 * 60 * 60  # seconds
+
+
+def _reset_token(patient):
+    # Includes a slice of the current password hash, so the link stops working once the password changes
+    return signing.dumps({'id': patient.id, 'h': patient.password[-16:]}, salt=RESET_SALT)
+
+
+def _patient_from_token(token):
+    try:
+        data = signing.loads(token, salt=RESET_SALT, max_age=RESET_MAX_AGE)
+    except signing.BadSignature:
+        return None
+    patient = Patient.objects.filter(id=data.get('id')).first()
+    return patient if patient and patient.password[-16:] == data.get('h') else None
+
+
+def patient_forgot_password(request):
+    sent = False
+    if request.method == 'POST':
+        patient = Patient.objects.filter(email=request.POST.get('email', '').strip().lower(), is_active=True).first()
+        if patient:
+            link = request.build_absolute_uri(f'/patient/reset-password/{_reset_token(patient)}/')
+            try:
+                send_mail('Reset your ReViveCare password',
+                          f"Hi {patient.name},\n\nChoose a new ReViveCare password here (the link expires in 24 hours):\n\n"
+                          f"{link}\n\nIf you didn't ask for this, you can ignore this email.\n\n— The ReViveCare team",
+                          None, [patient.email])
+            except Exception:
+                logger.exception('Patient reset email failed for %s', patient.id)
+        sent = True  # same response either way, so the page doesn't reveal which emails exist
+    return render(request, 'patient_forgot_password.html', {'sent': sent})
+
+
+def patient_reset_password(request, token):
+    patient = _patient_from_token(token)
+    error = None
+    if patient and request.method == 'POST':
+        new, confirm = request.POST.get('new_password', ''), request.POST.get('confirm', '')
+        try:
+            if new != confirm:
+                raise ValidationError("The passwords don't match.")
+            validate_password(new)
+        except ValidationError as e:
+            error = ' '.join(e.messages)
+        else:
+            patient.password = make_password(new)
+            patient.must_change_password = False
+            patient.failed_login_count, patient.locked_until = 0, None
+            patient.save(update_fields=['password', 'must_change_password', 'failed_login_count', 'locked_until'])
+            return render(request, 'patient_reset_password.html', {'done': True})
+    return render(request, 'patient_reset_password.html', {'valid': bool(patient), 'error': error})
