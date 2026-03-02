@@ -291,6 +291,7 @@ def api_add_patient(request):
             info=info,
             password=make_password(temp_password),
             must_change_password=True,
+            doctor=request.user,
         )
         
         return JsonResponse({

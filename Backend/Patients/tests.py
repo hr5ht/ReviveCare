@@ -230,3 +230,21 @@ class ChatbotEndpointTests(TestCase):
     def test_requires_login(self):
         self.client.logout()
         self.assertFalse(post_json(self.client, self.url, {'message': 'hi'}).json()['success'])
+
+
+class PatientDoctorLinkTests(TestCase):
+    def test_new_patient_belongs_to_the_doctor_who_added_them(self):
+        from django.contrib.auth.models import User
+        doc = User.objects.create_user('doc', password='Doc-pass-123')
+        self.client.login(username='doc', password='Doc-pass-123')
+        post_json(self.client, '/api/patients/add/', {'name': 'Ravi', 'email': 'ravi@example.com', 'info': 'x'})
+        self.assertEqual(Patient.objects.get().doctor, doc)
+        self.assertEqual(list(doc.patients.all()), [Patient.objects.get()])
+
+    def test_deleting_doctor_keeps_patient(self):
+        from django.contrib.auth.models import User
+        doc = User.objects.create_user('doc')
+        p = Patient.objects.create(name='A', email='a@example.com', info='x', password='x', doctor=doc)
+        doc.delete()
+        p.refresh_from_db()
+        self.assertIsNone(p.doctor)

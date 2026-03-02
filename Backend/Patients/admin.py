@@ -5,8 +5,8 @@ from .models import Patient, Workout
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'is_active', 'must_change_password', 'locked_until', 'created_at')
-    list_filter = ('is_active', 'must_change_password')
+    list_display = ('name', 'email', 'doctor', 'is_active', 'must_change_password', 'locked_until', 'created_at')
+    list_filter = ('is_active', 'must_change_password', 'doctor')
     search_fields = ('name', 'email')
     readonly_fields = ('password', 'failed_login_count', 'locked_until', 'created_at', 'updated_at')
 
