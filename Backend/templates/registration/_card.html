@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <button onclick="location.href='/'" class="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <i data-lucide="heart" class="w-6 h-6 text-white"></i>
+                </div>
+                <div class="text-left">
+                    <h1 class="text-xl font-bold text-gray-900">ReviveCare</h1>
+                    <p class="text-xs text-gray-600">{% block portal %}Doctor Portal{% endblock %}</p>
+                </div>
+            </button>
+        </div>
+    </div>
+    <div class="flex items-center justify-center px-6 py-12">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i data-lucide="{% block icon %}key-round{% endblock %}" class="w-8 h-8 text-white"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">{% block heading %}{% endblock %}</h2>
+                <p class="text-gray-600">{% block subtitle %}{% endblock %}</p>
+            </div>
+            {% block card %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<div class="mb-5">
+    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">{{ field.label }}</label>
+    <div class="relative">
+        <div class="absolute left-3 top-1/2 -translate-y-1/2"><i data-lucide="{{ icon|default:'lock' }}" class="w-5 h-5 text-slate-400"></i></div>
+        <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" type="{{ field.field.widget.input_type }}" autocomplete="{{ field.field.widget.attrs.autocomplete|default:'off' }}" required
+            class="w-full pl-11 pr-4 py-3 bg-white border {% if field.errors %}border-rose-300{% else %}border-slate-200{% endif %} focus:border-emerald-400 focus:ring-emerald-500/20 rounded-xl text-slate-800 focus:outline-none focus:ring-4 transition-all" />
+    </div>
+    {% for error in field.errors %}<p class="mt-1.5 text-sm text-rose-600">{{ error }}</p>{% endfor %}
+</div>
