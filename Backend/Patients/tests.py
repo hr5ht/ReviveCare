@@ -248,3 +248,23 @@ class PatientDoctorLinkTests(TestCase):
         doc.delete()
         p.refresh_from_db()
         self.assertIsNone(p.doctor)
+
+
+class DoctorScopeTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.a = User.objects.create_user('a', password='Doc-pass-123')
+        self.b = User.objects.create_user('b', password='Doc-pass-123')
+        Patient.objects.create(name='Mine', email='mine@example.com', info='x', password='x', doctor=self.a)
+        Patient.objects.create(name='Theirs', email='theirs@example.com', info='x', password='x', doctor=self.b)
+
+    def test_doctor_lists_only_own_patients(self):
+        self.client.login(username='a', password='Doc-pass-123')
+        names = [p['name'] for p in self.client.get('/api/patients/').json()['patients']]
+        self.assertEqual(names, ['Mine'])
+
+    def test_superuser_sees_everyone(self):
+        from django.contrib.auth.models import User
+        User.objects.create_superuser('admin', 'a@example.com', 'Admin-pass-123')
+        self.client.login(username='admin', password='Admin-pass-123')
+        self.assertEqual(len(self.client.get('/api/patients/').json()['patients']), 2)

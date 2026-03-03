@@ -19,6 +19,11 @@ class Patient(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def for_doctor(cls, user):
+        """Patients a doctor may see: their own (superusers see everyone)."""
+        return cls.objects.all() if user.is_superuser else cls.objects.filter(doctor=user)
     
     class Meta:
         ordering = ['-updated_at']

@@ -221,8 +221,8 @@ def api_update_session_data(request):
 @require_http_methods(["GET"])
 @doctor_required
 def api_get_all_patients(request):
-    """Get all patients (for doctor dashboard)"""
-    patients = Patient.objects.all()
+    """The logged-in doctor's patients"""
+    patients = Patient.for_doctor(request.user)
     
     patient_list = []
     for patient in patients:
