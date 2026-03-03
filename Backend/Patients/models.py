@@ -13,6 +13,11 @@ class Patient(models.Model):
     failed_login_count = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
     info = models.TextField(max_length=3000)
+    condition = models.CharField(max_length=150, blank=True)  # e.g. "Total knee replacement"
+    surgery_date = models.DateField(null=True, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    emergency_contact_name = models.CharField(max_length=100, blank=True)
+    emergency_contact_phone = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(default=timezone.now)  # Changed from auto_now_add
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
