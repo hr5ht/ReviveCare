@@ -1,0 +1,22 @@
+<!-- Patient header (needs `initials`) -->
+<div class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+            <button onclick="location.href='/'" class="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                    <i data-lucide="heart" class="w-6 h-6 text-white" fill="white"></i>
+                </div>
+                <span class="text-xl font-bold text-slate-800">ReViveCare</span>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <button onclick="location.href='/patient/change-password/'" title="Change password" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                    <i data-lucide="key-round" class="w-5 h-5"></i>
+                </button>
+                <a href="/patient/profile/" title="My profile" class="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-emerald-100 hover:to-emerald-200 rounded-xl flex items-center justify-center text-slate-700 font-semibold transition-colors">
+                    {{ initials }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

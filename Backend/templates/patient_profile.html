@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}My Profile · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/patient_header.html" %}
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to Dashboard</span>
+        </button>
+
+        <div class="flex items-center gap-5 mb-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg">{{ initials }}</div>
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">{{ patient.name }}</h1>
+                <p class="text-slate-600">{{ patient.email }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-emerald-600"></i> Recovery</h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Condition</dt><dd class="font-medium text-slate-900 text-right">{{ patient.condition|default:"—" }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Surgery / discharge date</dt><dd class="font-medium text-slate-900">{{ patient.surgery_date|date:"d M Y"|default:"—" }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Your doctor</dt><dd class="font-medium text-slate-900">{% if patient.doctor %}Dr. {{ patient.doctor.get_full_name|default:patient.doctor.username }}{% else %}—{% endif %}</dd></div>
+                </dl>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><i data-lucide="phone" class="w-5 h-5 text-emerald-600"></i> Contact</h2>
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Phone</dt><dd class="font-medium text-slate-900">{{ patient.phone|default:"—" }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Emergency contact</dt><dd class="font-medium text-slate-900 text-right">{{ patient.emergency_contact_name|default:"—" }}</dd></div>
+                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Emergency phone</dt><dd class="font-medium text-slate-900">{{ patient.emergency_contact_phone|default:"—" }}</dd></div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+            <p class="text-sm text-slate-700">Medical details are managed by your doctor. Ask them if something here looks wrong.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

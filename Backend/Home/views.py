@@ -86,6 +86,18 @@ def patient_dashboard(request):
     })
 
 
+def _logged_in_patient(request):
+    return Patient.objects.filter(id=request.session.get('patient_id')).first()
+
+
+@patient_page
+def patient_profile(request):
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name)})
+
+
 def change_password(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
     if not patient:
