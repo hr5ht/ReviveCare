@@ -71,3 +71,32 @@ class Workout(models.Model):
         if not self.total_reps:
             return 0
         return round((self.excellent_reps * 100 + self.good_reps * 70 + self.partial_reps * 40) / self.total_reps, 1)
+
+
+class Exercise(models.Model):
+    """A rehab exercise the browser tracker knows how to count."""
+    RULES = [
+        ('curl', 'Elbow curl (angle closes below the "up" threshold)'),
+        ('raise', 'Arm raise (shoulder angle opens above the "up" threshold)'),
+        ('jack', 'Jumping jack (arms and legs open together)'),
+    ]
+    COLORS = [(c, c.title()) for c in ('emerald', 'blue', 'purple', 'orange')]
+
+    slug = models.SlugField(unique=True)  # also the workout URL: /patient/exercise/<slug>/
+    name = models.CharField(max_length=80)
+    description = models.CharField(max_length=200)
+    icon = models.CharField(max_length=40, default='activity', help_text='lucide icon name')
+    color = models.CharField(max_length=20, choices=COLORS, default='emerald')
+    target_reps = models.PositiveSmallIntegerField(default=10)
+    video_url = models.CharField(max_length=200, blank=True, help_text='Reference video, e.g. /static/Patients/videos/bc.mp4')
+    rule = models.CharField(max_length=10, choices=RULES)
+    up_angle = models.PositiveSmallIntegerField(help_text='Angle (degrees) that counts as the top of a rep')
+    down_angle = models.PositiveSmallIntegerField(help_text='Angle (degrees) that resets for the next rep')
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
