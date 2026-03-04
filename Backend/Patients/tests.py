@@ -268,3 +268,24 @@ class DoctorScopeTests(TestCase):
         User.objects.create_superuser('admin', 'a@example.com', 'Admin-pass-123')
         self.client.login(username='admin', password='Admin-pass-123')
         self.assertEqual(len(self.client.get('/api/patients/').json()['patients']), 2)
+
+
+class AddPatientRecoveryDetailsTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        User.objects.create_user('doc', password='Doc-pass-123')
+        self.client.login(username='doc', password='Doc-pass-123')
+
+    def add(self, **extra):
+        return post_json(self.client, '/api/patients/add/', {'name': 'Ravi', 'email': 'ravi@example.com', 'info': 'x', **extra})
+
+    def test_saves_recovery_details(self):
+        self.add(condition='Hip replacement', surgery_date='2026-01-15', phone='+91 98765 43210',
+                 emergency_contact_name='Anil', emergency_contact_phone='+91 91234 56789')
+        p = Patient.objects.get()
+        self.assertEqual((p.condition, str(p.surgery_date), p.emergency_contact_name), ('Hip replacement', '2026-01-15', 'Anil'))
+
+    def test_rejects_bad_or_future_surgery_date(self):
+        self.assertEqual(self.add(surgery_date='not-a-date').status_code, 400)
+        self.assertEqual(self.add(surgery_date='2999-01-01').status_code, 400)
+        self.assertFalse(Patient.objects.exists())

@@ -13,7 +13,7 @@ from django.views.decorators.http import require_http_methods
 from .models import Patient, Workout
 from django.utils import timezone
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 import logging
 from functools import wraps
 
@@ -269,6 +269,14 @@ def api_add_patient(request):
         name = data.get('name', '').strip()
         email = data.get('email', '').strip().lower()
         info = data.get('info', '').strip()
+        extra = {f: str(data.get(f) or '').strip() for f in
+                 ('condition', 'phone', 'emergency_contact_name', 'emergency_contact_phone')}
+        try:
+            surgery_date = date.fromisoformat(data['surgery_date']) if data.get('surgery_date') else None
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Surgery date must be a valid date'}, status=400)
+        if surgery_date and surgery_date > timezone.localdate():
+            return JsonResponse({'success': False, 'error': 'Surgery date cannot be in the future'}, status=400)
         
         if not name or not email:
             return JsonResponse({
@@ -292,6 +300,8 @@ def api_add_patient(request):
             password=make_password(temp_password),
             must_change_password=True,
             doctor=request.user,
+            surgery_date=surgery_date,
+            **extra,
         )
         
         return JsonResponse({
