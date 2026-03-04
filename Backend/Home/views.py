@@ -1,6 +1,7 @@
 import logging
 from functools import wraps
 
+from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core import signing
@@ -8,6 +9,8 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from Patients.models import Patient
+
+from .forms import PatientContactForm
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +98,18 @@ def patient_profile(request):
     patient = _logged_in_patient(request)
     if not patient:
         return redirect('patient_login')
-    return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name)})
+    fields = ['phone', 'emergency_contact_name', 'emergency_contact_phone']
+    if request.method == 'POST':
+        form = PatientContactForm(request.POST)
+        if form.is_valid():
+            for f in fields:
+                setattr(patient, f, form.cleaned_data[f])
+            patient.save(update_fields=fields)
+            messages.success(request, 'Contact details saved.')
+            return redirect('patient_profile')
+    else:
+        form = PatientContactForm(initial={f: getattr(patient, f) for f in fields})
+    return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form})
 
 
 def change_password(request):

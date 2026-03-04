@@ -28,14 +28,24 @@
                 </dl>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <form method="post" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                {% csrf_token %}
                 <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><i data-lucide="phone" class="w-5 h-5 text-emerald-600"></i> Contact</h2>
-                <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Phone</dt><dd class="font-medium text-slate-900">{{ patient.phone|default:"—" }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Emergency contact</dt><dd class="font-medium text-slate-900 text-right">{{ patient.emergency_contact_name|default:"—" }}</dd></div>
-                    <div class="flex justify-between gap-4"><dt class="text-slate-500">Emergency phone</dt><dd class="font-medium text-slate-900">{{ patient.emergency_contact_phone|default:"—" }}</dd></div>
-                </dl>
-            </div>
+                {% for message in messages %}
+                <p class="mb-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2"><i data-lucide="circle-check" class="w-4 h-4"></i> {{ message }}</p>
+                {% endfor %}
+                {% for field in form %}
+                <div class="mb-4">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1.5">{{ field.label }}</label>
+                    <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" type="{% if 'phone' in field.name %}tel{% else %}text{% endif %}" value="{{ field.value|default:'' }}"
+                        class="w-full px-4 py-2.5 bg-white border {% if field.errors %}border-rose-300{% else %}border-slate-200{% endif %} focus:border-emerald-400 focus:ring-emerald-500/20 rounded-xl text-slate-800 focus:outline-none focus:ring-4 transition-all" />
+                    {% for error in field.errors %}<p class="mt-1 text-sm text-rose-600">{{ error }}</p>{% endfor %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                    <i data-lucide="save" class="w-5 h-5"></i> Save Contact Details
+                </button>
+            </form>
         </div>
 
         <div class="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-start gap-3">
