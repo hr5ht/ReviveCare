@@ -8,6 +8,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
+from django.utils import timezone
 from Patients.models import Patient
 
 from .forms import PatientContactForm
@@ -65,6 +66,13 @@ def patient_login(request):
     return render(request, 'patient_login.html')
 
 
+def days_in_recovery(patient):
+    """Days since surgery/discharge, or a dash when the doctor hasn't set the date."""
+    if not patient.surgery_date:
+        return '—'
+    return str(max(0, (timezone.localdate() - patient.surgery_date).days))
+
+
 @patient_page
 def patient_dashboard(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
@@ -82,7 +90,7 @@ def patient_dashboard(request):
         ],
         'tasks_done': 2,
         'recovery_stats': [
-            {'label': 'Days in Recovery', 'value': '12', 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
+            {'label': 'Days in Recovery', 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
             {'label': 'Progress Score', 'value': '87%', 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
             {'label': 'Goals Achieved', 'value': '8/10', 'icon': 'target', 'cls': 'bg-purple-100 text-purple-600'},
         ],
