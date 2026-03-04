@@ -28,6 +28,10 @@
       if (!res.ok) throw new Error(json.error || json.message || `API Error: ${res.statusText}`);
       return json;
     }
+    async function patientLogout() {
+      await api('/api/patient/logout/', 'POST').catch(() => {});
+      location.href = '/patient/login/';
+    }
     const icons = () => lucide.createIcons();
     icons();
   </script>
