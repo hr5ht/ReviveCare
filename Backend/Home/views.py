@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from Patients.models import Patient
+from Patients.models import Exercise, Patient
 
 from .forms import PatientContactForm
 
@@ -28,19 +28,6 @@ def patient_page(view):
 
 def _initials(name):
     return ''.join(n[0] for n in name.split())
-
-
-# Shared by the exercise list and workout pages
-EXERCISES = [
-    {'id': 'bicep-curl', 'name': 'Bicep Curl', 'description': 'Strengthen your biceps with controlled arm movements',
-     'icon': 'dumbbell', 'color': 'emerald', 'targetReps': 12, 'videoUrl': '/static/Patients/videos/bc.mp4'},
-    {'id': 'shoulder-extension', 'name': 'Lateral Raise', 'description': 'Improve shoulder mobility and strength',
-     'icon': 'activity', 'color': 'blue', 'targetReps': 10, 'videoUrl': '/static/Patients/videos/sl.mp4'},
-    {'id': 'jumping-jacks', 'name': 'Jumping Jacks', 'description': 'Full-body cardio warmup exercise',
-     'icon': 'zap', 'color': 'purple', 'targetReps': 20, 'videoUrl': '/static/Patients/videos/jj.mp4'},
-    {'id': 'arm-raises', 'name': 'Arm Raises', 'description': 'Build shoulder endurance and stability',
-     'icon': 'target', 'color': 'orange', 'targetReps': 15, 'videoUrl': '/static/Patients/videos/ar.mp4'},
-]
 
 
 def home(request):
@@ -133,15 +120,15 @@ def change_password(request):
 
 @patient_page
 def exercises(request):
-    return render(request, 'exercises.html', {'exercises': EXERCISES})
+    return render(request, 'exercises.html', {'exercises': [e.to_dict() for e in Exercise.objects.filter(is_active=True)]})
 
 
 @patient_page
 def exercise_workout(request, exercise_id):
-    exercise = next((e for e in EXERCISES if e['id'] == exercise_id), None)
+    exercise = Exercise.objects.filter(slug=exercise_id, is_active=True).first()
     if not exercise:
         return redirect('exercises')
-    return render(request, 'exercise_workout.html', {'exercise': exercise})
+    return render(request, 'exercise_workout.html', {'exercise': exercise.to_dict()})
 
 
 @patient_page
