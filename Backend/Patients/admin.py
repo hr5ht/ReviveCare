@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
-from .models import Patient, Workout
+from .models import Exercise, Patient, Workout
 
 
 @admin.register(Patient)
@@ -17,3 +18,23 @@ class WorkoutAdmin(admin.ModelAdmin):
     list_filter = ('exercise', 'completed', 'date')
     search_fields = ('patient__name', 'patient__email')
     exclude = ('angles_data',)
+
+
+@admin.register(Exercise)
+class ExerciseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'rule', 'target_reps', 'up_angle', 'down_angle', 'order', 'is_active')
+    list_editable = ('target_reps', 'order', 'is_active')
+    list_filter = ('rule', 'is_active')
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ('video_preview',)
+    fieldsets = [
+        (None, {'fields': ('name', 'slug', 'description', 'icon', 'color', 'order', 'is_active')}),
+        ('Tracking', {'fields': ('rule', 'up_angle', 'down_angle', 'target_reps')}),
+        ('Reference video', {'fields': ('video_url', 'video_preview')}),
+    ]
+
+    @admin.display(description='Preview')
+    def video_preview(self, obj):
+        if not obj.video_url:
+            return '—'
+        return format_html('<video src="{}" controls muted style="max-width:360px;border-radius:8px"></video>', obj.video_url)
