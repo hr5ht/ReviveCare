@@ -156,7 +156,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Target Angle</p>
-                                    <p class="text-sm font-bold text-slate-700">{% if exercise.id == 'bicep-curl' %}&lt; 45°{% else %}&gt; 85°{% endif %}</p>
+                                    <p class="text-sm font-bold text-slate-700">{% if exercise.rule == 'curl' %}&lt; {{ exercise.upAngle }}°{% else %}&gt; {{ exercise.upAngle }}°{% endif %}</p>
                                 </div>
                                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Pace</p>
@@ -372,7 +372,8 @@
             ctx.restore();
         };
 
-        if (exercise.id === 'bicep-curl') {
+        const { rule, upAngle: UP, downAngle: DOWN } = exercise;  // thresholds come from the Exercise record
+        if (rule === 'curl') {
             const l = calculateAngle(lm[11], lm[13], lm[15]);
             const r = calculateAngle(lm[12], lm[14], lm[16]);
             drawAngleText(lm[13], l);
@@ -380,18 +381,18 @@
             const avg = (l + r) / 2;
             setDiff(Math.abs(l - r));
 
-            if (avg > 160) {
+            if (avg > DOWN) {
                 if (stage === 'up') {
                     setFeedback('Great! Fully extend and curl again.');
                     syncRepWithBackend(avg, 'transition');
                 }
                 setStage('down');
             }
-            if (avg < 45 && stage === 'down') {
-                const q = avg < 40 ? 'excellent' : (avg < 55 ? 'good' : 'partial');
+            if (avg < UP && stage === 'down') {
+                const q = avg < UP - 5 ? 'excellent' : (avg < UP + 10 ? 'good' : 'partial');
                 countRep(avg, q, q === 'excellent' ? 'Perfect Form!' : 'Good, pull higher!');
             }
-        } else if (exercise.id === 'shoulder-extension' || exercise.id === 'arm-raises') {
+        } else if (rule === 'raise') {
             const l = calculateAngle(lm[23], lm[11], lm[13]);
             const r = calculateAngle(lm[24], lm[12], lm[14]);
             drawAngleText(lm[11], l);
@@ -402,18 +403,18 @@
             // Shrug check
             if ((lm[11].y + lm[12].y) / 2 < (lm[0].y + 0.05)) setFeedback("DON'T SHRUG!");
 
-            if (avg < 30) setStage('down');
-            if (avg > 85 && stage === 'down') {
-                const q = avg > 90 ? 'excellent' : (avg > 75 ? 'good' : 'partial');
+            if (avg < DOWN) setStage('down');
+            if (avg > UP && stage === 'down') {
+                const q = avg > UP + 5 ? 'excellent' : (avg > UP - 10 ? 'good' : 'partial');
                 countRep(avg, q, 'Good lift! Controlled descent now.');
             }
-        } else if (exercise.id === 'jumping-jacks') {
+        } else if (rule === 'jack') {
             const legAvg = (calculateAngle(lm[11], lm[23], lm[25]) + calculateAngle(lm[12], lm[24], lm[26])) / 2;
             const armAvg = (calculateAngle(lm[23], lm[11], lm[13]) + calculateAngle(lm[24], lm[12], lm[14])) / 2;
             setDiff(Math.abs(armAvg - legAvg));
 
-            if (armAvg < 40 && legAvg < 170) setStage('down');
-            if (armAvg > 150 && legAvg > 175 && stage === 'down') {
+            if (armAvg < DOWN && legAvg < 170) setStage('down');
+            if (armAvg > UP && legAvg > 175 && stage === 'down') {
                 countRep(180, 'excellent', 'Keep moving! Dynamic tempo!');
             }
         }

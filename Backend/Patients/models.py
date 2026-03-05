@@ -104,4 +104,5 @@ class Exercise(models.Model):
     def to_dict(self):
         """Shape the exercise templates and the tracker JS expect."""
         return {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
-                'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url}
+                'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url,
+                'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle}
