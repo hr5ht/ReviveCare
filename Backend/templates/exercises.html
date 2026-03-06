@@ -18,7 +18,7 @@
     <div class="max-w-7xl mx-auto px-6 py-12">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {% for ex in exercises %}
-            <div onclick="location.href='/patient/exercise/{{ ex.id }}/'"
+            <div onclick="location.href='/patient/exercises/{{ ex.id }}/'"
                 class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md group cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="flex items-start gap-4">
                     <div class="w-16 h-16 bg-gradient-to-br {% if ex.color == 'blue' %}from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700{% elif ex.color == 'purple' %}from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700{% elif ex.color == 'orange' %}from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700{% else %}from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700{% endif %} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform">
@@ -43,7 +43,7 @@
 
                 <div class="mt-4 pt-4 border-t border-gray-200">
                     <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-500">Click to start</span>
+                        <span class="text-gray-500">View instructions</span>
                         <i data-lucide="arrow-left" class="w-4 h-4 text-gray-400 rotate-180 group-hover:translate-x-1 transition-transform"></i>
                     </div>
                 </div>

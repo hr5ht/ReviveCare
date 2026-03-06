@@ -124,6 +124,14 @@ def exercises(request):
 
 
 @patient_page
+def exercise_detail(request, slug):
+    exercise = Exercise.objects.filter(slug=slug, is_active=True).first()
+    if not exercise:
+        return redirect('exercises')
+    return render(request, 'exercise_detail.html', {'exercise': exercise.to_dict()})
+
+
+@patient_page
 def exercise_workout(request, exercise_id):
     exercise = Exercise.objects.filter(slug=exercise_id, is_active=True).first()
     if not exercise:

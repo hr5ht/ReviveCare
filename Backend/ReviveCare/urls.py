@@ -45,6 +45,7 @@ urlpatterns = [
     path('patient/forgot-password/', pages.patient_forgot_password, name='patient_forgot_password'),
     path('patient/reset-password/<str:token>/', pages.patient_reset_password, name='patient_reset_password'),
     path('patient/exercises/', pages.exercises, name='exercises'),
+    path('patient/exercises/<slug:slug>/', pages.exercise_detail, name='exercise_detail'),
     path('patient/exercise/<str:exercise_id>/', pages.exercise_workout, name='exercise_workout'),
     path('patient/chat/', pages.chat, name='chat'),
 

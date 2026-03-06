@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ exercise.name }} · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div class="max-w-5xl mx-auto px-6 py-4">
+            <button onclick="location.href='/patient/exercises/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="font-medium">All Exercises</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-6 py-10">
+        <div class="flex items-start gap-5 mb-8">
+            <div class="w-16 h-16 bg-gradient-to-br {% if exercise.color == 'blue' %}from-blue-500 to-blue-600{% elif exercise.color == 'purple' %}from-purple-500 to-purple-600{% elif exercise.color == 'orange' %}from-orange-500 to-orange-600{% else %}from-emerald-500 to-emerald-600{% endif %} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <i data-lucide="{{ exercise.icon }}" class="w-8 h-8 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 mb-1">{{ exercise.name }}</h1>
+                <p class="text-slate-600 mb-3">{{ exercise.description }}</p>
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold {% if exercise.difficulty == 'advanced' %}bg-rose-100 text-rose-700{% elif exercise.difficulty == 'intermediate' %}bg-amber-100 text-amber-700{% else %}bg-sky-100 text-sky-700{% endif %}">{{ exercise.difficultyLabel }}</span>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">AI Tracking</span>
+                    <span class="flex items-center gap-1 text-slate-500"><i data-lucide="target" class="w-4 h-4"></i> {{ exercise.targetReps }} reps</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">How to do it</h2>
+                {% if exercise.steps %}
+                <ol class="space-y-3">
+                    {% for step in exercise.steps %}
+                    <li class="flex items-start gap-3 text-slate-700">
+                        <span class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold flex items-center justify-center flex-shrink-0">{{ forloop.counter }}</span>
+                        <span class="pt-0.5">{{ step }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <p class="text-slate-500">Your doctor hasn't added instructions for this exercise yet.</p>
+                {% endif %}
+                <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                    <i data-lucide="triangle-alert" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                    <p class="text-sm text-slate-700">Stop if you feel sharp pain, dizziness or shortness of breath, and contact your doctor.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">Watch the demo</h2>
+                {% if exercise.videoUrl %}
+                <video src="{{ exercise.videoUrl }}" controls muted loop playsinline class="w-full rounded-xl bg-black aspect-video object-cover"></video>
+                {% else %}
+                <div class="w-full aspect-video rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">No demo video yet</div>
+                {% endif %}
+                <button onclick="location.href='/patient/exercise/{{ exercise.id }}/'" class="mt-6 inline-flex items-center justify-center gap-3 font-semibold rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-8 py-4 text-lg transition-all">
+                    <i data-lucide="play" class="w-5 h-5 fill-current"></i> Start Workout
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
