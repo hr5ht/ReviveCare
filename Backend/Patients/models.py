@@ -85,6 +85,7 @@ class Exercise(models.Model):
     slug = models.SlugField(unique=True)  # also the workout URL: /patient/exercise/<slug>/
     name = models.CharField(max_length=80)
     description = models.CharField(max_length=200)
+    instructions = models.TextField(blank=True, help_text='One step per line')
     icon = models.CharField(max_length=40, default='activity', help_text='lucide icon name')
     color = models.CharField(max_length=20, choices=COLORS, default='emerald')
     target_reps = models.PositiveSmallIntegerField(default=10)
@@ -101,8 +102,12 @@ class Exercise(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def steps(self):
+        return [line.strip() for line in self.instructions.splitlines() if line.strip()]
+
     def to_dict(self):
         """Shape the exercise templates and the tracker JS expect."""
         return {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
                 'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url,
-                'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle}
+                'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps}

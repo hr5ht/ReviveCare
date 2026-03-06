@@ -153,6 +153,16 @@
                         </div>
                         <div>
                             <h3 class="font-black text-slate-900 uppercase tracking-tighter mb-2">Instructions &amp; Medical Targets</h3>
+                            {% if exercise.steps %}
+                            <ol class="mb-4 space-y-2">
+                                {% for step in exercise.steps %}
+                                <li class="flex items-start gap-3 text-sm text-slate-700">
+                                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center flex-shrink-0">{{ forloop.counter }}</span>
+                                    <span class="pt-0.5">{{ step }}</span>
+                                </li>
+                                {% endfor %}
+                            </ol>
+                            {% endif %}
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Target Angle</p>
