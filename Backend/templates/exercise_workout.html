@@ -385,7 +385,7 @@
         if (res.rep) countRep(res.rep.angle, res.rep.quality, res.feedback);
         else {
             if (res.feedback) setFeedback(res.feedback);
-            if (res.stage !== stage) setStage(res.stage);
+            if (res.stage && res.stage !== stage) setStage(res.stage);
         }
     }
 

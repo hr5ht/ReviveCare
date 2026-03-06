@@ -43,8 +43,9 @@
                 const arms = mean(angle(lm[23], lm[11], lm[13]), angle(lm[24], lm[12], lm[14]));
                 return { value: arms, left: arms, right: legs, labels: [] };
             },
-            isUp: (m, ex) => m.left > ex.upAngle && m.right > 175,
-            isDown: (m, ex) => m.left < ex.downAngle && m.right < 170,
+            // Top of a jack: arms up AND legs spread (hip angle closes); rest: arms down AND legs together
+            isUp: (m, ex) => m.left > ex.upAngle && m.right < 155,
+            isDown: (m, ex) => m.left < ex.downAngle && m.right > 165,
             grade: () => 'excellent',
             upMessage: () => 'Keep moving! Dynamic tempo!',
         },
@@ -54,10 +55,11 @@
     function createRepCounter(exercise) {
         const rule = RULES[exercise.rule];
         if (!rule) throw new Error('Unknown exercise rule: ' + exercise.rule);
-        let stage = 'down';
+        // null until the rest position is seen, so starting mid-movement (e.g. arms already up) doesn't count a rep
+        let stage = null;
         return {
             get stage() { return stage; },
-            reset() { stage = 'down'; },
+            reset() { stage = null; },
             update(lm) {
                 const m = rule.measure(lm);
                 const out = { measure: m, diff: Math.abs(m.left - m.right), rep: null, transition: false,

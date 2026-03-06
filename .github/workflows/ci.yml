@@ -25,6 +25,8 @@ jobs:
         run: python manage.py makemigrations --check --dry-run --settings=ReviveCare.test_settings
       - name: Tests
         run: python manage.py test --settings=ReviveCare.test_settings
+      - name: Rep counting tests (recorded pose landmarks)
+        run: node --test static/js/reps.test.js
       - name: Compiled Tailwind CSS is up to date
         run: |
           curl -sSL -o /tmp/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64
