@@ -36,6 +36,7 @@
                                 <i data-lucide="target" class="w-4 h-4"></i>
                                 <span>{{ ex.targetReps }} reps</span>
                             </div>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold {% if ex.difficulty == 'advanced' %}bg-rose-100 text-rose-700{% elif ex.difficulty == 'intermediate' %}bg-amber-100 text-amber-700{% else %}bg-sky-100 text-sky-700{% endif %}">{{ ex.difficultyLabel }}</span>
                         </div>
                     </div>
                 </div>

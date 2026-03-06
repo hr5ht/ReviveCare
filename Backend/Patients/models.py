@@ -81,6 +81,7 @@ class Exercise(models.Model):
         ('jack', 'Jumping jack (arms and legs open together)'),
     ]
     COLORS = [(c, c.title()) for c in ('emerald', 'blue', 'purple', 'orange')]
+    DIFFICULTIES = [('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')]
 
     slug = models.SlugField(unique=True)  # also the workout URL: /patient/exercise/<slug>/
     name = models.CharField(max_length=80)
@@ -89,6 +90,7 @@ class Exercise(models.Model):
     icon = models.CharField(max_length=40, default='activity', help_text='lucide icon name')
     color = models.CharField(max_length=20, choices=COLORS, default='emerald')
     target_reps = models.PositiveSmallIntegerField(default=10)
+    difficulty = models.CharField(max_length=12, choices=DIFFICULTIES, default='beginner')
     video_url = models.CharField(max_length=200, blank=True, help_text='Reference video, e.g. /static/Patients/videos/bc.mp4')
     rule = models.CharField(max_length=10, choices=RULES)
     up_angle = models.PositiveSmallIntegerField(help_text='Angle (degrees) that counts as the top of a rep')
@@ -110,4 +112,5 @@ class Exercise(models.Model):
         """Shape the exercise templates and the tracker JS expect."""
         return {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
                 'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url,
-                'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps}
+                'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps,
+                'difficulty': self.difficulty, 'difficultyLabel': self.get_difficulty_display()}

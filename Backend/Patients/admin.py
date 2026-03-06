@@ -22,14 +22,14 @@ class WorkoutAdmin(admin.ModelAdmin):
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'rule', 'target_reps', 'up_angle', 'down_angle', 'order', 'is_active')
+    list_display = ('name', 'slug', 'rule', 'difficulty', 'target_reps', 'up_angle', 'down_angle', 'order', 'is_active')
     list_editable = ('target_reps', 'order', 'is_active')
-    list_filter = ('rule', 'is_active')
+    list_filter = ('rule', 'difficulty', 'is_active')
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ('video_preview',)
     fieldsets = [
         (None, {'fields': ('name', 'slug', 'description', 'instructions', 'icon', 'color', 'order', 'is_active')}),
-        ('Tracking', {'fields': ('rule', 'up_angle', 'down_angle', 'target_reps')}),
+        ('Tracking', {'fields': ('rule', 'up_angle', 'down_angle', 'target_reps', 'difficulty')}),
         ('Reference video', {'fields': ('video_url', 'video_preview')}),
     ]
 
