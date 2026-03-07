@@ -1,14 +1,14 @@
 // Run: node --test static/js/   (from Backend/). Fixtures are MediaPipe Pose landmarks recorded from the demo videos.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { angle, createRepCounter } = require('./reps.js');
+const { angle, elevation, createRepCounter } = require('./reps.js');
 
 // Same thresholds as the seeded Exercise rows (Patients migrations 0019 + 0022)
 const EXERCISES = {
     'bicep-curl': { rule: 'curl', upAngle: 60, downAngle: 160 },
     'lateral-raise': { rule: 'raise', upAngle: 85, downAngle: 30 },
     'jumping-jacks': { rule: 'jack', upAngle: 110, downAngle: 50 },
-    'arm-raises': { rule: 'raise', upAngle: 85, downAngle: 30 },
+    'arm-raises': { rule: 'front', upAngle: 85, downAngle: 30 },
 };
 
 function run(exercise, fixture) {
@@ -70,4 +70,24 @@ test('holding the top position counts once', () => {
     const frames = [170, 40, 40, 40, 170, 40, 170].map((d) => counter.update(arm(d)));
     assert.equal(frames.filter((f) => f.rep).length, 2);
     assert.equal(frames.filter((f) => f.graded).length, 2);
+});
+
+test('front raise elevation corrects for the arm pointing at the camera', () => {
+    const shoulder = { x: 0.5, y: 0.3 };
+    assert.equal(elevation(shoulder, { x: 0.5, y: 0.6 }, 0.3), 0);     // hanging straight down
+    assert.equal(elevation(shoulder, { x: 0.5, y: 0.3 }, 0.3), 90);    // at shoulder height, even though it looks short in 2D
+    assert.equal(elevation(shoulder, { x: 0.5, y: 0.0 }, 0.3), 180);   // straight overhead
+});
+
+test('front raise counts a rep once the arm comes back down', () => {
+    const counter = createRepCounter(EXERCISES['arm-raises']);
+    const pose = (wristY) => {
+        const lm = []; lm[11] = lm[12] = { x: 0.5, y: 0.3 };
+        lm[15] = lm[16] = { x: 0.5, y: wristY };
+        return lm;
+    };
+    // rest (arm 0.3 long) -> shoulder height (looks short: pointing at camera) -> rest
+    const frames = [0.6, 0.45, 0.3, 0.29, 0.45, 0.6].map((y) => counter.update(pose(y)));
+    assert.equal(frames.filter((f) => f.rep).length, 1);
+    assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent']);
 });

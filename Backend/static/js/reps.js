@@ -10,6 +10,13 @@
         return Math.round(deg);
     }
     const mean = (a, b) => (a + b) / 2;
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    // How far an arm has risen from hanging straight down (0) to shoulder height (90) or overhead (180).
+    // `len` is the longest shoulder-wrist distance seen, i.e. the arm at rest, which corrects for the arm
+    // pointing toward the camera (it looks shorter in 2D) during a forward raise.
+    function elevation(shoulder, wrist, len) {
+        return Math.round((Math.acos(Math.max(-1, Math.min(1, (wrist.y - shoulder.y) / len))) * 180) / Math.PI);
+    }
 
     // MediaPipe Pose indexes: 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrists, 23/24 hips, 25/26 knees, 27/28 ankles.
     // measure(lm) -> { value, left, right, labels: [[landmarkIndex, degrees]] }; thresholds come from the Exercise record.
@@ -40,6 +47,20 @@
             // Shoulders creeping up toward the ears
             check: (lm) => (mean(lm[11].y, lm[12].y) < lm[0].y + 0.05 ? "DON'T SHRUG!" : null),
         },
+        front: {
+            measure(lm, ctx) {
+                ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));
+                ctx.rightLen = Math.max(ctx.rightLen || 0, dist(lm[12], lm[16]));
+                const left = elevation(lm[11], lm[15], ctx.leftLen), right = elevation(lm[12], lm[16], ctx.rightLen);
+                return { value: mean(left, right), left, right, labels: [[11, left], [12, right]] };
+            },
+            isUp: (m, ex) => m.value > ex.upAngle,
+            isDown: (m, ex) => m.value < ex.downAngle,
+            better: (a, b) => (b.value > a.value ? b : a),
+            grade: (m, ex) => (m.value > ex.upAngle + 5 ? 'excellent' : m.value > ex.upAngle - 10 ? 'good' : 'partial'),
+            repMessage: 'Nice raise! Lower with control.',
+            gradeMessages: { excellent: 'Great height!', good: 'Good, lift a little higher.', partial: 'Raise to shoulder height.' },
+        },
         jack: {
             measure(lm) {
                 const legs = mean(angle(lm[11], lm[23], lm[25]), angle(lm[12], lm[24], lm[26]));
@@ -64,12 +85,12 @@
         const rule = RULES[exercise.rule];
         if (!rule) throw new Error('Unknown exercise rule: ' + exercise.rule);
         // null until the rest position is seen, so starting mid-movement (e.g. arms already up) doesn't count a rep
-        let stage = null, peak = null;
+        let stage = null, peak = null, ctx = {};  // ctx: per-session memory for rules (e.g. resting arm length)
         return {
             get stage() { return stage; },
-            reset() { stage = null; peak = null; },
+            reset() { stage = null; peak = null; ctx = {}; },
             update(lm) {
-                const m = rule.measure(lm);
+                const m = rule.measure(lm, ctx);
                 const out = { measure: m, diff: Math.abs(m.left - m.right), rep: null, graded: null,
                               feedback: rule.check ? rule.check(lm) : null };
                 if (stage === 'up') peak = rule.better(peak, m);
@@ -93,7 +114,7 @@
         };
     }
 
-    const api = { angle, RULES, createRepCounter };
+    const api = { angle, elevation, RULES, createRepCounter };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.RepCounter = api;
 })(this);

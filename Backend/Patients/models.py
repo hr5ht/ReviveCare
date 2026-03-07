@@ -78,6 +78,7 @@ class Exercise(models.Model):
     RULES = [
         ('curl', 'Elbow curl (angle closes below the "up" threshold)'),
         ('raise', 'Arm raise (shoulder angle opens above the "up" threshold)'),
+        ('front', 'Front arm raise (wrists rise toward shoulder height)'),
         ('jack', 'Jumping jack (arms and legs open together)'),
     ]
     COLORS = [(c, c.title()) for c in ('emerald', 'blue', 'purple', 'orange')]
