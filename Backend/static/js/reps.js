@@ -55,6 +55,22 @@
             // Shoulders creeping up toward the ears
             check: (lm) => (mean(lm[11].y, lm[12].y) < lm[0].y + 0.05 ? "DON'T SHRUG!" : null),
         },
+        squat: {
+            measure(lm) {
+                const left = angle(lm[23], lm[25], lm[27]), right = angle(lm[24], lm[26], lm[28]);
+                return { value: mean(left, right), left, right, labels: [[25, left], [26, right]] };
+            },
+            // Knees bend (angle closes) on both legs; standing tall resets
+            isUp: (m, ex) => Math.max(m.left, m.right) < ex.upAngle,
+            isDown: (m, ex) => Math.min(m.left, m.right) > ex.downAngle,
+            better: (a, b) => (Math.max(b.left, b.right) < Math.max(a.left, a.right) ? b : a),
+            grade: (m, ex) => {
+                const depth = Math.max(m.left, m.right);
+                return depth < ex.upAngle - 10 ? 'excellent' : depth < ex.upAngle + 5 ? 'good' : 'partial';
+            },
+            repMessage: 'Good depth! Push up through your heels.',
+            gradeMessages: { excellent: 'Deep and controlled!', good: 'Good, sit a little lower next time.', partial: 'Try to bend your knees more.' },
+        },
         front: {
             measure(lm, ctx) {
                 ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));

@@ -9,6 +9,7 @@ const EXERCISES = {
     'lateral-raise': { rule: 'raise', upAngle: 85, downAngle: 30 },
     'jumping-jacks': { rule: 'jack', upAngle: 110, downAngle: 50 },
     'arm-raises': { rule: 'front', upAngle: 85, downAngle: 30 },
+    squat: { rule: 'squat', upAngle: 100, downAngle: 160 },
 };
 
 function run(exercise, fixture) {
@@ -106,4 +107,20 @@ test('bicep curls need both arms', () => {
     assert.equal(oneArm[1].feedback, 'Curl both arms together');
     const both = [[30, 35], [170, 165]].map(([l, r]) => counter.update(pose(l, r)));
     assert.equal(both.filter((f) => f.rep).length, 1);
+});
+
+// Legs seen from the front: hip above knee, shin rotated to make the knee angle
+function legs(kneeDeg) {
+    const lm = [];
+    const leg = (hip, knee) => { const bend = (180 - kneeDeg) * Math.PI / 180; return [hip, knee, { x: knee.x + 0.2 * Math.sin(bend), y: knee.y + 0.2 * Math.cos(bend) }]; };
+    [lm[23], lm[25], lm[27]] = leg({ x: 0.45, y: 0.5 }, { x: 0.45, y: 0.7 });
+    [lm[24], lm[26], lm[28]] = leg({ x: 0.55, y: 0.5 }, { x: 0.55, y: 0.7 });
+    return lm;
+}
+
+test('squats count when both knees bend past the target and grade on depth', () => {
+    const counter = createRepCounter(EXERCISES.squat);
+    const frames = [175, 120, 95, 80, 170, 175, 98, 170].map((d) => counter.update(legs(d)));
+    assert.equal(frames.filter((f) => f.rep).length, 2);
+    assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
 });
