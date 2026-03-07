@@ -137,3 +137,11 @@ test('seated knee extension counts each leg straightening from a bend', () => {
     assert.equal(frames.filter((f) => f.rep).length, 2);
     assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
 });
+
+test('shoulder flexion uses the front-raise rule with an overhead target', () => {
+    const counter = createRepCounter(EXERCISES['shoulder-flexion']);
+    const pose = (wristY) => { const lm = []; lm[11] = lm[12] = { x: 0.5, y: 0.3 }; lm[15] = lm[16] = { x: 0.5, y: wristY }; return lm; };
+    // rest -> shoulder height only (not overhead: no rep) -> rest -> overhead -> rest
+    const frames = [0.6, 0.3, 0.6, 0.0, 0.6].map((y) => counter.update(pose(y)));
+    assert.equal(frames.filter((f) => f.rep).length, 1);
+});
