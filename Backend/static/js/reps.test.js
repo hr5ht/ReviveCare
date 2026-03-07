@@ -10,6 +10,8 @@ const EXERCISES = {
     'jumping-jacks': { rule: 'jack', upAngle: 110, downAngle: 50 },
     'arm-raises': { rule: 'front', upAngle: 85, downAngle: 30 },
     squat: { rule: 'squat', upAngle: 100, downAngle: 160 },
+    'knee-extension': { rule: 'knee_ext', upAngle: 160, downAngle: 110 },
+    'shoulder-flexion': { rule: 'front', upAngle: 150, downAngle: 30 },
 };
 
 function run(exercise, fixture) {
@@ -121,6 +123,17 @@ function legs(kneeDeg) {
 test('squats count when both knees bend past the target and grade on depth', () => {
     const counter = createRepCounter(EXERCISES.squat);
     const frames = [175, 120, 95, 80, 170, 175, 98, 170].map((d) => counter.update(legs(d)));
+    assert.equal(frames.filter((f) => f.rep).length, 2);
+    assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
+});
+
+test('seated knee extension counts each leg straightening from a bend', () => {
+    const counter = createRepCounter(EXERCISES['knee-extension']);
+    const pose = (leftDeg, rightDeg) => {
+        const l = legs(leftDeg), r = legs(rightDeg);
+        return Object.assign([], l, { 24: r[24], 26: r[26], 28: r[28] });
+    };
+    const frames = [[90, 90], [175, 90], [95, 95], [92, 165], [90, 90]].map(([a, b]) => counter.update(pose(a, b)));
     assert.equal(frames.filter((f) => f.rep).length, 2);
     assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
 });

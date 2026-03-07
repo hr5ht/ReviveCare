@@ -71,6 +71,19 @@
             repMessage: 'Good depth! Push up through your heels.',
             gradeMessages: { excellent: 'Deep and controlled!', good: 'Good, sit a little lower next time.', partial: 'Try to bend your knees more.' },
         },
+        knee_ext: {
+            measure(lm) {
+                const left = angle(lm[23], lm[25], lm[27]), right = angle(lm[24], lm[26], lm[28]);
+                return { value: Math.max(left, right), left, right, labels: [[25, left], [26, right]] };
+            },
+            // Seated: one leg straightens at a time, so the straighter knee counts; both bent again resets
+            isUp: (m, ex) => Math.max(m.left, m.right) > ex.upAngle,
+            isDown: (m, ex) => Math.max(m.left, m.right) < ex.downAngle,
+            better: (a, b) => (b.value > a.value ? b : a),
+            grade: (m, ex) => (m.value > ex.upAngle + 10 ? 'excellent' : m.value > ex.upAngle ? 'good' : 'partial'),
+            repMessage: 'Straight leg! Hold, then lower slowly.',
+            gradeMessages: { excellent: 'Full extension!', good: 'Good, straighten a little more.', partial: 'Try to fully straighten your knee.' },
+        },
         front: {
             measure(lm, ctx) {
                 ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));
