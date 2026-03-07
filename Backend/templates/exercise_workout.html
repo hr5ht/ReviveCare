@@ -300,10 +300,14 @@
         }).catch(() => { });
     }
 
-    function countRep(angle, q, message) {
+    // Count as soon as the threshold is crossed; grade (and save) once the patient is back at rest
+    function countRep(message) {
         setStage('up');
         reps += 1;
         renderReps();
+        setFeedback(message);
+    }
+    function gradeRep(angle, q, message) {
         quality[q] += 1;
         renderQuality();
         setFeedback(message);
@@ -381,10 +385,10 @@
         const res = counter.update(lm);
         res.measure.labels.forEach(([i, deg]) => drawAngleText(lm[i], deg));
         setDiff(res.diff);
-        if (res.transition) syncRepWithBackend(res.measure.value, 'transition');
-        if (res.rep) countRep(res.rep.angle, res.rep.quality, res.feedback);
+        if (res.graded) gradeRep(res.graded.angle, res.graded.quality, res.feedback);
+        if (res.rep) countRep(res.feedback);
         else {
-            if (res.feedback) setFeedback(res.feedback);
+            if (res.feedback && !res.graded) setFeedback(res.feedback);
             if (res.stage && res.stage !== stage) setStage(res.stage);
         }
     }

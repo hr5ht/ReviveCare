@@ -21,9 +21,10 @@
             },
             isUp: (m, ex) => m.value < ex.upAngle,
             isDown: (m, ex) => m.value > ex.downAngle,
+            better: (a, b) => (b.value < a.value ? b : a),  // deeper curl = smaller elbow angle
             grade: (m, ex) => (m.value < ex.upAngle - 5 ? 'excellent' : m.value < ex.upAngle + 10 ? 'good' : 'partial'),
-            upMessage: (q) => (q === 'excellent' ? 'Perfect Form!' : 'Good, pull higher!'),
-            downMessage: 'Great! Fully extend and curl again.',
+            repMessage: 'Nice curl! Now lower all the way.',
+            gradeMessages: { excellent: 'Perfect Form!', good: 'Good, pull a little higher next time.', partial: 'Try a fuller curl.' },
         },
         raise: {
             measure(lm) {
@@ -32,8 +33,10 @@
             },
             isUp: (m, ex) => m.value > ex.upAngle,
             isDown: (m, ex) => m.value < ex.downAngle,
+            better: (a, b) => (b.value > a.value ? b : a),
             grade: (m, ex) => (m.value > ex.upAngle + 5 ? 'excellent' : m.value > ex.upAngle - 10 ? 'good' : 'partial'),
-            upMessage: () => 'Good lift! Controlled descent now.',
+            repMessage: 'Good lift! Controlled descent now.',
+            gradeMessages: { excellent: 'Great height!', good: 'Good, lift a little higher.', partial: 'Raise to shoulder height.' },
             // Shoulders creeping up toward the ears
             check: (lm) => (mean(lm[11].y, lm[12].y) < lm[0].y + 0.05 ? "DON'T SHRUG!" : null),
         },
@@ -46,36 +49,43 @@
             // Top of a jack: arms up AND legs spread (hip angle closes); rest: arms down AND legs together
             isUp: (m, ex) => m.left > ex.upAngle && m.right < 155,
             isDown: (m, ex) => m.left < ex.downAngle && m.right > 165,
-            grade: () => 'excellent',
-            upMessage: () => 'Keep moving! Dynamic tempo!',
+            // Best jack = highest arms; graded on arm height and how wide the legs opened
+            better: (a, b) => (b.left > a.left ? { ...b, right: Math.min(a.right, b.right) } : { ...a, right: Math.min(a.right, b.right) }),
+            grade: (m, ex) => (m.left > ex.upAngle + 12 && m.right < 145 ? 'excellent' : m.left > ex.upAngle + 5 ? 'good' : 'partial'),
+            repMessage: 'Keep moving! Dynamic tempo!',
+            gradeMessages: { excellent: 'Full jack, great!', good: 'Good, reach higher overhead.', partial: 'Arms higher and feet wider.' },
         },
     };
 
-    // exercise: { rule, upAngle, downAngle }. Returns a counter whose update() reports what happened this frame.
+    // exercise: { rule, upAngle, downAngle }. update(landmarks) reports what happened this frame:
+    //   rep    - the threshold was crossed: count it now so feedback is instant
+    //   graded - the patient is back at rest: the rep's quality, judged at its best (peak) position
     function createRepCounter(exercise) {
         const rule = RULES[exercise.rule];
         if (!rule) throw new Error('Unknown exercise rule: ' + exercise.rule);
         // null until the rest position is seen, so starting mid-movement (e.g. arms already up) doesn't count a rep
-        let stage = null;
+        let stage = null, peak = null;
         return {
             get stage() { return stage; },
-            reset() { stage = null; },
+            reset() { stage = null; peak = null; },
             update(lm) {
                 const m = rule.measure(lm);
-                const out = { measure: m, diff: Math.abs(m.left - m.right), rep: null, transition: false,
+                const out = { measure: m, diff: Math.abs(m.left - m.right), rep: null, graded: null,
                               feedback: rule.check ? rule.check(lm) : null };
+                if (stage === 'up') peak = rule.better(peak, m);
                 if (rule.isDown(m, exercise)) {
                     if (stage === 'up') {
-                        out.transition = true;
-                        out.feedback = out.feedback || rule.downMessage || null;
+                        const quality = rule.grade(peak, exercise);
+                        out.graded = { quality, angle: peak.value };
+                        out.feedback = out.feedback || rule.gradeMessages[quality];
                     }
                     stage = 'down';
                 }
                 if (rule.isUp(m, exercise) && stage === 'down') {
                     stage = 'up';
-                    const quality = rule.grade(m, exercise);
-                    out.rep = { quality, angle: m.value };
-                    out.feedback = rule.upMessage(quality);
+                    peak = m;
+                    out.rep = { angle: m.value };
+                    out.feedback = out.feedback || rule.repMessage;
                 }
                 out.stage = stage;
                 return out;

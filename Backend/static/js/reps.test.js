@@ -20,7 +20,7 @@ function run(exercise, fixture) {
         const lm = [];
         for (const [i, [x, y, visibility]] of Object.entries(frame)) lm[+i] = { x, y, visibility };
         const res = counter.update(lm);
-        if (res.rep) reps.push(res.rep.quality);
+        if (res.graded) reps.push(res.graded.quality);
     }
     return reps;
 }
@@ -31,8 +31,8 @@ test('angle() measures the angle at the middle point', () => {
     assert.equal(angle(undefined, { x: 0, y: 0 }, { x: 1, y: 0 }), 0);
 });
 
-test('demo bicep curl video counts one full curl', () => {
-    assert.equal(run(EXERCISES['bicep-curl'], 'bc').length, 1);
+test('demo bicep curl video counts one full curl, graded at its deepest point', () => {
+    assert.deepEqual(run(EXERCISES['bicep-curl'], 'bc'), ['excellent']);
 });
 
 test('the old 45 degree curl threshold missed the demo curl', () => {
@@ -45,6 +45,12 @@ test('demo lateral raise video counts two raises', () => {
 
 test('demo jumping jack video counts the four jacks that start from rest', () => {
     assert.equal(run(EXERCISES['jumping-jacks'], 'jj').length, 4);
+});
+
+test('jumping jacks are graded on arm height and leg spread at the top', () => {
+    // Demo jacks peak with arms at 125, 121, 120 and 125 degrees (excellent needs > upAngle + 12)
+    assert.deepEqual(run(EXERCISES['jumping-jacks'], 'jj'), ['excellent', 'good', 'good', 'excellent']);
+    assert.ok(run({ ...EXERCISES['jumping-jacks'], upAngle: 100 }, 'jj').every((q) => q === 'excellent'));
 });
 
 test('starting with arms already up does not count a rep', () => {
@@ -61,6 +67,7 @@ test('holding the top position counts once', () => {
         lm[11] = lm[12] = s; lm[13] = lm[14] = e; lm[15] = lm[16] = w;
         return lm;
     };
-    const reps = [170, 40, 40, 40, 170, 40].map((d) => counter.update(arm(d)).rep).filter(Boolean);
-    assert.equal(reps.length, 2);
+    const frames = [170, 40, 40, 40, 170, 40, 170].map((d) => counter.update(arm(d)));
+    assert.equal(frames.filter((f) => f.rep).length, 2);
+    assert.equal(frames.filter((f) => f.graded).length, 2);
 });
