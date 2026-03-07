@@ -26,10 +26,18 @@
                 const left = angle(lm[11], lm[13], lm[15]), right = angle(lm[12], lm[14], lm[16]);
                 return { value: mean(left, right), left, right, labels: [[13, left], [14, right]] };
             },
-            isUp: (m, ex) => m.value < ex.upAngle,
-            isDown: (m, ex) => m.value > ex.downAngle,
-            better: (a, b) => (b.value < a.value ? b : a),  // deeper curl = smaller elbow angle
-            grade: (m, ex) => (m.value < ex.upAngle - 5 ? 'excellent' : m.value < ex.upAngle + 10 ? 'good' : 'partial'),
+            // Both arms must pass each threshold, so curling one arm and half-curling the other doesn't count
+            isUp: (m, ex) => Math.max(m.left, m.right) < ex.upAngle,
+            isDown: (m, ex) => Math.min(m.left, m.right) > ex.downAngle,
+            better: (a, b) => (Math.max(b.left, b.right) < Math.max(a.left, a.right) ? b : a),  // judged by the weaker arm
+            grade: (m, ex) => {
+                const weaker = Math.max(m.left, m.right);
+                return weaker < ex.upAngle - 5 ? 'excellent' : weaker < ex.upAngle + 10 ? 'good' : 'partial';
+            },
+            check(lm) {
+                const left = angle(lm[11], lm[13], lm[15]), right = angle(lm[12], lm[14], lm[16]);
+                return Math.abs(left - right) > 40 && Math.min(left, right) < 90 ? 'Curl both arms together' : null;
+            },
             repMessage: 'Nice curl! Now lower all the way.',
             gradeMessages: { excellent: 'Perfect Form!', good: 'Good, pull a little higher next time.', partial: 'Try a fuller curl.' },
         },

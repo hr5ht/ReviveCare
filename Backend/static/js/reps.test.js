@@ -3,9 +3,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { angle, elevation, createRepCounter } = require('./reps.js');
 
-// Same thresholds as the seeded Exercise rows (Patients migrations 0019 + 0022)
+// Same thresholds as the seeded Exercise rows (Patients migrations 0019, 0022, 0024)
 const EXERCISES = {
-    'bicep-curl': { rule: 'curl', upAngle: 60, downAngle: 160 },
+    'bicep-curl': { rule: 'curl', upAngle: 60, downAngle: 150 },
     'lateral-raise': { rule: 'raise', upAngle: 85, downAngle: 30 },
     'jumping-jacks': { rule: 'jack', upAngle: 110, downAngle: 50 },
     'arm-raises': { rule: 'front', upAngle: 85, downAngle: 30 },
@@ -90,4 +90,20 @@ test('front raise counts a rep once the arm comes back down', () => {
     const frames = [0.6, 0.45, 0.3, 0.29, 0.45, 0.6].map((y) => counter.update(pose(y)));
     assert.equal(frames.filter((f) => f.rep).length, 1);
     assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent']);
+});
+
+test('bicep curls need both arms', () => {
+    const counter = createRepCounter(EXERCISES['bicep-curl']);
+    const pose = (leftDeg, rightDeg) => {
+        const lm = [];
+        const arm = (s, e, deg) => { const bend = (180 - deg) * Math.PI / 180; return [s, e, { x: e.x + 0.2 * Math.sin(bend), y: e.y + 0.2 * Math.cos(bend) }]; };
+        [lm[11], lm[13], lm[15]] = arm({ x: 0.4, y: 0.3 }, { x: 0.4, y: 0.5 }, leftDeg);
+        [lm[12], lm[14], lm[16]] = arm({ x: 0.6, y: 0.3 }, { x: 0.6, y: 0.5 }, rightDeg);
+        return lm;
+    };
+    const oneArm = [[170, 170], [30, 120], [170, 170]].map(([l, r]) => counter.update(pose(l, r)));
+    assert.equal(oneArm.filter((f) => f.rep).length, 0);
+    assert.equal(oneArm[1].feedback, 'Curl both arms together');
+    const both = [[30, 35], [170, 165]].map(([l, r]) => counter.update(pose(l, r)));
+    assert.equal(both.filter((f) => f.rep).length, 1);
 });
