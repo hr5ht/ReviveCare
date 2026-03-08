@@ -22,6 +22,7 @@
     // measure(lm) -> { value, left, right, labels: [[landmarkIndex, degrees]] }; thresholds come from the Exercise record.
     const RULES = {
         curl: {
+            dir: -1,  // value drops toward the top of the rep
             measure(lm) {
                 const left = angle(lm[11], lm[13], lm[15]), right = angle(lm[12], lm[14], lm[16]);
                 return { value: mean(left, right), left, right, labels: [[13, left], [14, right]] };
@@ -56,6 +57,7 @@
             check: (lm) => (mean(lm[11].y, lm[12].y) < lm[0].y + 0.05 ? "DON'T SHRUG!" : null),
         },
         squat: {
+            dir: -1,  // value drops toward the top of the rep
             measure(lm) {
                 const left = angle(lm[23], lm[25], lm[27]), right = angle(lm[24], lm[26], lm[28]);
                 return { value: mean(left, right), left, right, labels: [[25, left], [26, right]] };
@@ -181,7 +183,21 @@
         };
     }
 
-    const api = { angle, elevation, RULES, createRepCounter };
+    // Personal thresholds from one comfortable repetition (values = rule measurements over time).
+    // Only ever eases the configured targets, so it adapts to limited post-surgery range without making reps harder.
+    function calibrate(exercise, values) {
+        const dir = RULES[exercise.rule].dir || 1;
+        const lo = Math.min(...values), hi = Math.max(...values), range = hi - lo;
+        if (!values.length || range < 5) return null;  // barely moved: keep the doctor's targets
+        if (dir > 0) {
+            return { upAngle: Math.min(exercise.upAngle, Math.round(lo + 0.8 * range)),
+                     downAngle: Math.max(exercise.downAngle, Math.round(lo + 0.3 * range)) };
+        }
+        return { upAngle: Math.max(exercise.upAngle, Math.round(hi - 0.8 * range)),
+                 downAngle: Math.min(exercise.downAngle, Math.round(hi - 0.3 * range)) };
+    }
+
+    const api = { angle, elevation, RULES, createRepCounter, calibrate };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.RepCounter = api;
 })(this);

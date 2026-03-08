@@ -1,7 +1,7 @@
 // Run: node --test static/js/   (from Backend/). Fixtures are MediaPipe Pose landmarks recorded from the demo videos.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { angle, elevation, createRepCounter } = require('./reps.js');
+const { angle, elevation, createRepCounter, calibrate } = require('./reps.js');
 
 // Same thresholds as the seeded Exercise rows (Patients migrations 0019, 0022, 0024)
 const EXERCISES = {
@@ -168,4 +168,16 @@ test('heel raises count the body rising onto the toes', () => {
     const frames = [0, 0.01, 0.03, 0, 0.018, 0.002].map((d) => counter.update(pose(d)));
     assert.equal(frames.filter((f) => f.rep).length, 2);
     assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
+});
+
+test('calibration eases targets to a limited range but never makes them harder', () => {
+    const raise = EXERCISES['lateral-raise'];  // up 85, down 30
+    // Post-surgery patient only reaches 60 degrees: target drops to 80% of their range
+    assert.deepEqual(calibrate(raise, [20, 35, 50, 60, 45, 22]), { upAngle: 52, downAngle: 32 });
+    // Full range: keep the doctor's targets
+    assert.deepEqual(calibrate(raise, [10, 60, 110, 15]), { upAngle: 85, downAngle: 40 });
+    // Curls run the other way (angle closes): a stiff elbow that only reaches 90 degrees
+    assert.deepEqual(calibrate(EXERCISES['bicep-curl'], [165, 120, 90, 160]), { upAngle: 105, downAngle: 143 });
+    // Barely moved: no calibration
+    assert.equal(calibrate(raise, [30, 31, 32]), null);
 });

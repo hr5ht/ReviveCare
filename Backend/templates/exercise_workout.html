@@ -168,7 +168,8 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Target Angle</p>
-                                    <p class="text-sm font-bold text-slate-700">{% if exercise.rule == 'curl' %}&lt; {{ exercise.upAngle }}°{% else %}&gt; {{ exercise.upAngle }}°{% endif %}</p>
+                                    <p id="target-angle" class="text-sm font-bold text-slate-700"></p>
+                                    <p id="target-note" hidden class="text-[10px] font-bold text-emerald-600 mt-1"></p>
                                 </div>
                                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Pace</p>
@@ -202,6 +203,10 @@
                     <div id="achieved" hidden class="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 font-black animate-pulse">
                         TARGET ACHIEVED!
                     </div>
+                    <button id="calibrate-btn" hidden
+                        class="w-full mb-3 inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-3 text-sm transition-all">
+                        <i data-lucide="ruler" class="w-4 h-4"></i> Calibrate to my range
+                    </button>
                     <button id="reset-btn"
                         class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 border border-slate-200 px-6 py-3 text-base w-full py-4 rounded-xl">
                         <i data-lucide="rotate-ccw" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
@@ -383,6 +388,10 @@
         };
 
         const res = counter.update(lm);
+        if (calibration) {  // recording one comfortable repetition: measure only, don't count
+            calibration.values.push(res.measure.value);
+            return;
+        }
         res.measure.labels.forEach(([i, deg]) => drawAngleText(lm[i], deg));
         setDiff(res.diff);
         if (res.graded) gradeRep(res.graded.angle, res.graded.quality, res.feedback);
@@ -392,6 +401,42 @@
             if (res.stage && res.stage !== stage) setStage(res.stage);
         }
     }
+
+    // ---- Targets & calibration ----
+    const doctorTarget = { upAngle: exercise.upAngle, downAngle: exercise.downAngle };
+    function renderTarget() {
+        const dir = RepCounter.RULES[exercise.rule].dir || 1;
+        const fmt = (v) => (exercise.rule === 'heel' ? `${v}% rise` : `${v}°`);
+        $('target-angle').textContent = `${dir < 0 ? '<' : '>'} ${fmt(exercise.upAngle)}`;
+        const changed = exercise.upAngle !== doctorTarget.upAngle;
+        $('target-note').hidden = !changed;
+        $('target-note').textContent = changed ? `Calibrated to your range (doctor's target ${fmt(doctorTarget.upAngle)})` : '';
+    }
+    renderTarget();
+
+    let calibration = null;
+    $('calibrate-btn').onclick = () => {
+        calibration = { values: [] };
+        $('calibrate-btn').disabled = true;
+        let left = 6;
+        const tick = () => {
+            if (left > 0) {
+                setFeedback(`Calibrating: one slow, full repetition (${left}s)`);
+                left -= 1;
+                return setTimeout(tick, 1000);
+            }
+            const result = RepCounter.calibrate(exercise, calibration.values);
+            calibration = null;
+            $('calibrate-btn').disabled = false;
+            counter.reset();
+            setStage('down');
+            if (!result) return setFeedback("Couldn't calibrate. Move through your full range and try again.");
+            Object.assign(exercise, result);
+            renderTarget();
+            setFeedback('Calibrated to your range!');
+        };
+        tick();
+    };
 
     // ---- Controls ----
     // Browser camera + a frame loop into MediaPipe (camera_utils froze the page when camera access was refused)
@@ -410,6 +455,7 @@
         pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         pose.onResults(onResults);
         running = true;
+        $('calibrate-btn').hidden = false;
         requestAnimationFrame(drawPreview);
         requestAnimationFrame(sendFrames);
     };
@@ -442,6 +488,8 @@
     }
     function stopTracking() {
         running = false;
+        $('calibrate-btn').hidden = true;
+        calibration = null;
         pose?.close();
         pose = null;
         video.srcObject?.getTracks().forEach((t) => t.stop());
