@@ -13,6 +13,7 @@ const EXERCISES = {
     'knee-extension': { rule: 'knee_ext', upAngle: 160, downAngle: 110 },
     'shoulder-flexion': { rule: 'front', upAngle: 150, downAngle: 30 },
     'hip-abduction': { rule: 'hip_abd', upAngle: 115, downAngle: 100 },
+    'heel-raise': { rule: 'heel', upAngle: 4, downAngle: 1 },
 };
 
 function run(exercise, fixture) {
@@ -156,6 +157,15 @@ test('hip abduction counts a leg swinging out to the side', () => {
         return lm;
     };
     const frames = [0, 10, 40, 0, 28, 0].map((d) => counter.update(pose(d)));
+    assert.equal(frames.filter((f) => f.rep).length, 2);
+    assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
+});
+
+test('heel raises count the body rising onto the toes', () => {
+    const counter = createRepCounter(EXERCISES['heel-raise']);
+    // Leg 0.4 long: hips at 0.5 standing flat; a 4% rise is 0.016
+    const pose = (lift) => { const lm = []; lm[23] = lm[24] = { x: 0.5, y: 0.5 - lift }; lm[27] = lm[28] = { x: 0.5, y: 0.9 - lift * 0.8 }; return lm; };
+    const frames = [0, 0.01, 0.03, 0, 0.018, 0.002].map((d) => counter.update(pose(d)));
     assert.equal(frames.filter((f) => f.rep).length, 2);
     assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
 });

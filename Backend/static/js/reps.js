@@ -97,6 +97,23 @@
             repMessage: 'Nice lift! Bring the leg back slowly.',
             gradeMessages: { excellent: 'Great range!', good: 'Good, lift a little wider.', partial: 'Lift your leg further out to the side.' },
         },
+        heel: {
+            // Rising onto the toes lifts the whole body: measure how far the hips rise above the lowest
+            // (flat-footed) height seen this session, as a percentage of leg length. Thresholds are in % here.
+            measure(lm, ctx) {
+                const hipY = mean(lm[23].y, lm[24].y), ankleY = mean(lm[27].y, lm[28].y);
+                ctx.baseHip = Math.max(ctx.baseHip || 0, hipY);
+                ctx.legLen = Math.max(ctx.legLen || 0, ankleY - hipY);
+                const rise = Math.round(((ctx.baseHip - hipY) / ctx.legLen) * 1000) / 10;
+                return { value: rise, left: rise, right: rise, labels: [] };
+            },
+            isUp: (m, ex) => m.value > ex.upAngle,
+            isDown: (m, ex) => m.value < ex.downAngle,
+            better: (a, b) => (b.value > a.value ? b : a),
+            grade: (m, ex) => (m.value > ex.upAngle + 2 ? 'excellent' : m.value > ex.upAngle ? 'good' : 'partial'),
+            repMessage: 'Up on your toes! Lower slowly.',
+            gradeMessages: { excellent: 'Great lift!', good: 'Good, rise a little higher.', partial: 'Push up higher onto your toes.' },
+        },
         front: {
             measure(lm, ctx) {
                 ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));
