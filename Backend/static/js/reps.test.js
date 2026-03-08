@@ -12,6 +12,7 @@ const EXERCISES = {
     squat: { rule: 'squat', upAngle: 100, downAngle: 160 },
     'knee-extension': { rule: 'knee_ext', upAngle: 160, downAngle: 110 },
     'shoulder-flexion': { rule: 'front', upAngle: 150, downAngle: 30 },
+    'hip-abduction': { rule: 'hip_abd', upAngle: 115, downAngle: 100 },
 };
 
 function run(exercise, fixture) {
@@ -144,4 +145,17 @@ test('shoulder flexion uses the front-raise rule with an overhead target', () =>
     // rest -> shoulder height only (not overhead: no rep) -> rest -> overhead -> rest
     const frames = [0.6, 0.3, 0.6, 0.0, 0.6].map((y) => counter.update(pose(y)));
     assert.equal(frames.filter((f) => f.rep).length, 1);
+});
+
+test('hip abduction counts a leg swinging out to the side', () => {
+    const counter = createRepCounter(EXERCISES['hip-abduction']);
+    const pose = (leftOut) => {
+        const lm = []; lm[23] = { x: 0.45, y: 0.5 }; lm[24] = { x: 0.55, y: 0.5 }; lm[26] = { x: 0.55, y: 0.7 };
+        const a = leftOut * Math.PI / 180;  // degrees the left thigh swings out from vertical
+        lm[25] = { x: 0.45 - 0.2 * Math.sin(a), y: 0.5 + 0.2 * Math.cos(a) };
+        return lm;
+    };
+    const frames = [0, 10, 40, 0, 28, 0].map((d) => counter.update(pose(d)));
+    assert.equal(frames.filter((f) => f.rep).length, 2);
+    assert.deepEqual(frames.filter((f) => f.graded).map((f) => f.graded.quality), ['excellent', 'good']);
 });

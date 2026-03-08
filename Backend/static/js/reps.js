@@ -84,6 +84,19 @@
             repMessage: 'Straight leg! Hold, then lower slowly.',
             gradeMessages: { excellent: 'Full extension!', good: 'Good, straighten a little more.', partial: 'Try to fully straighten your knee.' },
         },
+        hip_abd: {
+            measure(lm) {
+                // Angle at each hip between the line to the other hip and the thigh: ~90 standing, opens as the leg swings out
+                const left = angle(lm[24], lm[23], lm[25]), right = angle(lm[23], lm[24], lm[26]);
+                return { value: Math.max(left, right), left, right, labels: [[23, left], [24, right]] };
+            },
+            isUp: (m, ex) => m.value > ex.upAngle,
+            isDown: (m, ex) => Math.max(m.left, m.right) < ex.downAngle,
+            better: (a, b) => (b.value > a.value ? b : a),
+            grade: (m, ex) => (m.value > ex.upAngle + 10 ? 'excellent' : m.value > ex.upAngle ? 'good' : 'partial'),
+            repMessage: 'Nice lift! Bring the leg back slowly.',
+            gradeMessages: { excellent: 'Great range!', good: 'Good, lift a little wider.', partial: 'Lift your leg further out to the side.' },
+        },
         front: {
             measure(lm, ctx) {
                 ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));

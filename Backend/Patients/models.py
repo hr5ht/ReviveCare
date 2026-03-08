@@ -81,6 +81,7 @@ class Exercise(models.Model):
         ('front', 'Front arm raise (wrists rise toward shoulder height)'),
         ('squat', 'Squat (knee angle closes on both legs)'),
         ('knee_ext', 'Seated knee extension (either knee straightens)'),
+        ('hip_abd', 'Standing hip abduction (either leg swings out)'),
         ('jack', 'Jumping jack (arms and legs open together)'),
     ]
     COLORS = [(c, c.title()) for c in ('emerald', 'blue', 'purple', 'orange')]
