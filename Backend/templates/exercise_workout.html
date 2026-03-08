@@ -69,6 +69,12 @@
                     </div>
 
                     <div id="live" hidden>
+                        <!-- 3-2-1 before reps start counting -->
+                        <div id="countdown" hidden class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                            <div class="w-32 h-32 rounded-full bg-slate-900/80 backdrop-blur-xl border-4 border-emerald-400 flex items-center justify-center shadow-2xl">
+                                <span id="countdown-num" class="text-6xl font-black text-white">3</span>
+                            </div>
+                        </div>
                         <!-- Shown until MediaPipe returns its first results -->
                         <div id="model-loading" class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
                             <div class="flex items-center gap-3 bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 text-white shadow-2xl">
@@ -333,8 +339,22 @@
         requestAnimationFrame(drawPreview);
     }
 
+    // Counting starts COUNTDOWN_MS after the model first sees the patient
+    const COUNTDOWN_MS = 3000;
+    let countingFrom = null;
+    function updateCountdown() {
+        const left = Math.ceil((countingFrom - performance.now()) / 1000);
+        $('countdown').hidden = left <= 0;
+        if (left > 0) $('countdown-num').textContent = left;
+        return left > 0;
+    }
+
     function onResults(results) {
-        if (!gotResults) $('model-loading').hidden = true;
+        if (!gotResults) {
+            $('model-loading').hidden = true;
+            countingFrom = performance.now() + COUNTDOWN_MS;
+            setFeedback('Get ready...');
+        }
         gotResults = true;
         if (canvas.width !== results.image.width) {
             canvas.width = results.image.width;
@@ -347,6 +367,7 @@
         ctx.drawImage(results.image, -canvas.width, 0, canvas.width, canvas.height);
         ctx.restore();
 
+        const counting = updateCountdown();  // runs even before a person is detected
         const lm = results.poseLandmarks;
         if (!lm) return;
         const getX = (p) => (1 - p.x) * canvas.width;
@@ -387,6 +408,7 @@
             ctx.restore();
         };
 
+        if (counting) return;  // still counting down: show the skeleton, don't count yet
         const res = counter.update(lm);
         if (calibration) {  // recording one comfortable repetition: measure only, don't count
             calibration.values.push(res.measure.value);
@@ -488,6 +510,8 @@
     }
     function stopTracking() {
         running = false;
+        countingFrom = null;
+        $('countdown').hidden = true;
         $('calibrate-btn').hidden = true;
         calibration = null;
         pose?.close();
