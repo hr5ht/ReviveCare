@@ -69,6 +69,14 @@
                     </div>
 
                     <div id="live" hidden>
+                        <!-- Shown while the body parts this exercise needs aren't in view -->
+                        <div id="framing-guide" hidden class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                            <div class="absolute inset-y-6 left-1/2 -translate-x-1/2 w-1/3 border-4 border-dashed border-white/40 rounded-[3rem]"></div>
+                            <div class="relative flex items-center gap-3 bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 text-white shadow-2xl">
+                                <i data-lucide="scan" class="w-5 h-5 text-amber-400"></i>
+                                <span class="text-sm font-bold">Step back so your whole body is in view</span>
+                            </div>
+                        </div>
                         <!-- 3-2-1 before reps start counting -->
                         <div id="countdown" hidden class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
                             <div class="w-32 h-32 rounded-full bg-slate-900/80 backdrop-blur-xl border-4 border-emerald-400 flex items-center justify-center shadow-2xl">
@@ -369,6 +377,7 @@
 
         const counting = updateCountdown();  // runs even before a person is detected
         const lm = results.poseLandmarks;
+        $('framing-guide').hidden = RepCounter.inFrame(exercise, lm);
         if (!lm) return;
         const getX = (p) => (1 - p.x) * canvas.width;
         const getY = (p) => p.y * canvas.height;
@@ -409,6 +418,7 @@
         };
 
         if (counting) return;  // still counting down: show the skeleton, don't count yet
+        if (!RepCounter.inFrame(exercise, lm)) return;  // partial body: don't count from guessed joints
         const res = counter.update(lm);
         if (calibration) {  // recording one comfortable repetition: measure only, don't count
             calibration.values.push(res.measure.value);
@@ -512,6 +522,7 @@
         running = false;
         countingFrom = null;
         $('countdown').hidden = true;
+        $('framing-guide').hidden = true;
         $('calibrate-btn').hidden = true;
         calibration = null;
         pose?.close();

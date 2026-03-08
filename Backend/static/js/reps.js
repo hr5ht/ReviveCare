@@ -22,6 +22,7 @@
     // measure(lm) -> { value, left, right, labels: [[landmarkIndex, degrees]] }; thresholds come from the Exercise record.
     const RULES = {
         curl: {
+            needs: [11, 12, 13, 14, 15, 16],  // landmarks that must be visible
             dir: -1,  // value drops toward the top of the rep
             measure(lm) {
                 const left = angle(lm[11], lm[13], lm[15]), right = angle(lm[12], lm[14], lm[16]);
@@ -43,6 +44,7 @@
             gradeMessages: { excellent: 'Perfect Form!', good: 'Good, pull a little higher next time.', partial: 'Try a fuller curl.' },
         },
         raise: {
+            needs: [11, 12, 13, 14, 23, 24],  // landmarks that must be visible
             measure(lm) {
                 const left = angle(lm[23], lm[11], lm[13]), right = angle(lm[24], lm[12], lm[14]);
                 return { value: mean(left, right), left, right, labels: [[11, left], [12, right]] };
@@ -57,6 +59,7 @@
             check: (lm) => (mean(lm[11].y, lm[12].y) < lm[0].y + 0.05 ? "DON'T SHRUG!" : null),
         },
         squat: {
+            needs: [23, 24, 25, 26, 27, 28],  // landmarks that must be visible
             dir: -1,  // value drops toward the top of the rep
             measure(lm) {
                 const left = angle(lm[23], lm[25], lm[27]), right = angle(lm[24], lm[26], lm[28]);
@@ -74,6 +77,7 @@
             gradeMessages: { excellent: 'Deep and controlled!', good: 'Good, sit a little lower next time.', partial: 'Try to bend your knees more.' },
         },
         knee_ext: {
+            needs: [23, 24, 25, 26, 27, 28],  // landmarks that must be visible
             measure(lm) {
                 const left = angle(lm[23], lm[25], lm[27]), right = angle(lm[24], lm[26], lm[28]);
                 return { value: Math.max(left, right), left, right, labels: [[25, left], [26, right]] };
@@ -87,6 +91,7 @@
             gradeMessages: { excellent: 'Full extension!', good: 'Good, straighten a little more.', partial: 'Try to fully straighten your knee.' },
         },
         hip_abd: {
+            needs: [23, 24, 25, 26],  // landmarks that must be visible
             measure(lm) {
                 // Angle at each hip between the line to the other hip and the thigh: ~90 standing, opens as the leg swings out
                 const left = angle(lm[24], lm[23], lm[25]), right = angle(lm[23], lm[24], lm[26]);
@@ -100,6 +105,7 @@
             gradeMessages: { excellent: 'Great range!', good: 'Good, lift a little wider.', partial: 'Lift your leg further out to the side.' },
         },
         heel: {
+            needs: [23, 24, 27, 28],  // landmarks that must be visible
             // Rising onto the toes lifts the whole body: measure how far the hips rise above the lowest
             // (flat-footed) height seen this session, as a percentage of leg length. Thresholds are in % here.
             measure(lm, ctx) {
@@ -117,6 +123,7 @@
             gradeMessages: { excellent: 'Great lift!', good: 'Good, rise a little higher.', partial: 'Push up higher onto your toes.' },
         },
         front: {
+            needs: [11, 12, 15, 16],  // landmarks that must be visible
             measure(lm, ctx) {
                 ctx.leftLen = Math.max(ctx.leftLen || 0, dist(lm[11], lm[15]));
                 ctx.rightLen = Math.max(ctx.rightLen || 0, dist(lm[12], lm[16]));
@@ -131,6 +138,7 @@
             gradeMessages: { excellent: 'Great height!', good: 'Good, lift a little higher.', partial: 'Raise to shoulder height.' },
         },
         jack: {
+            needs: [11, 12, 13, 14, 23, 24, 25, 26],  // landmarks that must be visible
             measure(lm) {
                 const legs = mean(angle(lm[11], lm[23], lm[25]), angle(lm[12], lm[24], lm[26]));
                 const arms = mean(angle(lm[23], lm[11], lm[13]), angle(lm[24], lm[12], lm[14]));
@@ -183,6 +191,11 @@
         };
     }
 
+    // True when every landmark the exercise needs is detected with reasonable confidence
+    function inFrame(exercise, lm) {
+        return !!lm && RULES[exercise.rule].needs.every((i) => lm[i] && (lm[i].visibility === undefined || lm[i].visibility > 0.5));
+    }
+
     // Personal thresholds from one comfortable repetition (values = rule measurements over time).
     // Only ever eases the configured targets, so it adapts to limited post-surgery range without making reps harder.
     function calibrate(exercise, values) {
@@ -197,7 +210,7 @@
                  downAngle: Math.min(exercise.downAngle, Math.round(hi - 0.3 * range)) };
     }
 
-    const api = { angle, elevation, RULES, createRepCounter, calibrate };
+    const api = { angle, elevation, RULES, createRepCounter, calibrate, inFrame };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.RepCounter = api;
 })(this);

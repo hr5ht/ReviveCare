@@ -1,7 +1,7 @@
 // Run: node --test static/js/   (from Backend/). Fixtures are MediaPipe Pose landmarks recorded from the demo videos.
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { angle, elevation, createRepCounter, calibrate } = require('./reps.js');
+const { angle, elevation, createRepCounter, calibrate, inFrame } = require('./reps.js');
 
 // Same thresholds as the seeded Exercise rows (Patients migrations 0019, 0022, 0024)
 const EXERCISES = {
@@ -180,4 +180,13 @@ test('calibration eases targets to a limited range but never makes them harder',
     assert.deepEqual(calibrate(EXERCISES['bicep-curl'], [165, 120, 90, 160]), { upAngle: 105, downAngle: 143 });
     // Barely moved: no calibration
     assert.equal(calibrate(raise, [30, 31, 32]), null);
+});
+
+test('inFrame checks the landmarks each exercise needs', () => {
+    const lm = []; for (const i of [11, 12, 13, 14, 15, 16]) lm[i] = { x: 0.5, y: 0.5, visibility: 0.9 };
+    assert.equal(inFrame(EXERCISES['bicep-curl'], lm), true);   // arms are enough for curls
+    assert.equal(inFrame(EXERCISES.squat, lm), false);          // squats need hips, knees and ankles
+    lm[15] = { x: 0.5, y: 0.5, visibility: 0.2 };
+    assert.equal(inFrame(EXERCISES['bicep-curl'], lm), false);  // a wrist out of view
+    assert.equal(inFrame(EXERCISES['bicep-curl'], undefined), false);
 });
