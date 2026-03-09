@@ -10,7 +10,7 @@
 <div class="min-h-screen bg-slate-50">
     <!-- Header -->
     <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
             <div class="flex items-center gap-4">
                 <button onclick="location.href='/patient/exercises/'" class="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
                     <i data-lucide="arrow-left" class="w-6 h-6"></i>
@@ -27,12 +27,12 @@
             <div class="flex items-center gap-3">
             <button id="voice-btn" aria-pressed="true" title="Read coach tips aloud"
                 class="inline-flex items-center gap-2 font-semibold rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-lg shadow-slate-900/5 px-4 py-2 text-sm transition-all">
-                <i data-lucide="volume-2" class="w-5 h-5"></i><span>Voice coach on</span>
+                <i data-lucide="volume-2" class="w-5 h-5"></i><span class="hidden sm:inline">Voice coach on</span>
             </button>
             <button id="ref-btn"
                 class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 border border-slate-200 px-4 py-2 text-sm">
                 <i data-lucide="eye" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                <span>Show Reference</span>
+                <span class="hidden sm:inline">Show Reference</span>
             </button>
             </div>
         </div>
@@ -42,7 +42,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Tracker -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl group border-4 border-white aspect-video">
+                <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl group border-4 border-white aspect-[3/4] sm:aspect-video">
                     <video id="video" class="absolute opacity-0 pointer-events-none" playsinline muted></video>
                     <canvas id="canvas" class="w-full h-full object-cover"></canvas>
 
@@ -101,7 +101,7 @@
 
                     <div id="live" hidden>
                         <!-- Shown while the body parts this exercise needs aren't in view -->
-                        <div id="framing-guide" hidden class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                        <div id="framing-guide" hidden class="absolute inset-0 z-10 flex items-end pb-28 sm:items-center sm:pb-0 justify-center pointer-events-none px-3">
                             <div class="absolute inset-y-6 left-1/2 -translate-x-1/2 w-1/3 border-4 border-dashed border-white/40 rounded-[3rem]"></div>
                             <div class="relative flex items-center gap-3 bg-slate-900/90 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 text-white shadow-2xl">
                                 <i data-lucide="scan" class="w-5 h-5 text-amber-400"></i>
@@ -130,7 +130,7 @@
                             </div>
                         </div>
                         <!-- AI HUD (Top-Left) -->
-                        <div class="absolute top-6 left-6 bg-slate-900/90 backdrop-blur-xl p-5 rounded-3xl border border-white/10 z-10 w-52 shadow-2xl">
+                        <div class="absolute top-3 left-3 sm:top-6 sm:left-6 bg-slate-900/90 backdrop-blur-xl p-3 sm:p-5 rounded-3xl border border-white/10 z-10 w-40 sm:w-52 shadow-2xl">
                             <div class="space-y-4">
                                 <div class="flex justify-between items-end border-b border-white/5 pb-3">
                                     <div>
@@ -145,7 +145,7 @@
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="hidden sm:grid grid-cols-3 gap-2 text-center">
                                     <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
                                         <p class="text-[9px] font-black text-emerald-400 mb-0.5">EXC</p>
                                         <p id="q-excellent" class="text-white text-sm font-black">0</p>
@@ -160,7 +160,7 @@
                                     </div>
                                 </div>
 
-                                <div class="space-y-2 pt-1">
+                                <div class="hidden sm:block space-y-2 pt-1">
                                     <div class="flex justify-between items-center text-[10px] font-bold text-white/50 uppercase">
                                         <span>Symmetry</span>
                                         <span id="diff-text" class="text-emerald-400">0° Diff</span>
@@ -173,27 +173,27 @@
                         </div>
 
                         <!-- Live Banner -->
-                        <div class="absolute top-6 right-6 z-10 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 uppercase tracking-tighter text-[11px] font-black text-white">
+                        <div class="absolute top-3 right-3 sm:top-6 sm:right-6 z-10 hidden sm:flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 uppercase tracking-tighter text-[11px] font-black text-white">
                             <div class="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_#f43f5e]"></div>
                             Live AI Telemetry
                         </div>
 
                         <!-- AI Coaching Panel -->
-                        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-30">
-                            <div id="coach" class="p-5 rounded-3xl border shadow-2xl flex items-center gap-5 transition-all duration-300 bg-slate-900/95 backdrop-blur-xl border-white/10 text-white">
-                                <div id="coach-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500/20">
+                        <div class="absolute bottom-3 sm:bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-3 sm:px-6 z-30">
+                            <div id="coach" class="p-3 sm:p-5 rounded-3xl border shadow-2xl flex items-center gap-3 sm:gap-5 transition-all duration-300 bg-slate-900/95 backdrop-blur-xl border-white/10 text-white">
+                                <div id="coach-icon" class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500/20">
                                     <i data-lucide="zap" class="w-8 h-8 text-emerald-400"></i>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">AI Coach Guidance</p>
-                                    <p id="feedback" class="text-xl font-black leading-tight tracking-tight uppercase">Position yourself in frame</p>
+                                    <p id="feedback" class="text-base sm:text-xl font-black leading-tight tracking-tight uppercase">Position yourself in frame</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Reference Video Overlay -->
-                    <div id="reference" hidden class="absolute top-6 right-6 w-64 aspect-video rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-40 bg-black animate-in slide-in-from-right duration-300 cursor-move">
+                    <div id="reference" hidden class="absolute top-3 right-3 sm:top-6 sm:right-6 w-40 sm:w-64 aspect-video rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-40 bg-black animate-in slide-in-from-right duration-300 cursor-move">
                         <div class="absolute top-0 left-0 right-0 bg-black/60 p-2 flex justify-between items-center z-10">
                             <span class="text-[9px] font-black text-white/80 uppercase">Doctor's Demo</span>
                             <button id="ref-close" class="text-white/60 hover:text-white">✕</button>
@@ -352,8 +352,8 @@
         if (text !== $('feedback').textContent) speak(text);
         $('feedback').textContent = text;
         const warn = text.includes("DON'T");
-        $('coach').className = `p-5 rounded-3xl border shadow-2xl flex items-center gap-5 transition-all duration-300 ${warn ? 'bg-rose-500 border-rose-400 text-white animate-bounce' : 'bg-slate-900/95 backdrop-blur-xl border-white/10 text-white'}`;
-        $('coach-icon').className = `w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${warn ? 'bg-white/20' : 'bg-emerald-500/20'}`;
+        $('coach').className = `p-3 sm:p-5 rounded-3xl border shadow-2xl flex items-center gap-3 sm:gap-5 transition-all duration-300 ${warn ? 'bg-rose-500 border-rose-400 text-white animate-bounce' : 'bg-slate-900/95 backdrop-blur-xl border-white/10 text-white'}`;
+        $('coach-icon').className = `w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${warn ? 'bg-white/20' : 'bg-emerald-500/20'}`;
         const icon = $('coach-icon').querySelector('svg');
         icon.classList.toggle('text-white', warn);
         icon.classList.toggle('text-emerald-400', !warn);
@@ -607,7 +607,9 @@
         $('model-loading').hidden = false;
         gotResults = false;
         try {
-            video.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+            // Phones held upright get a portrait stream to match the 3:4 tracker
+            const portrait = matchMedia('(orientation: portrait)').matches;
+            video.srcObject = await navigator.mediaDevices.getUserMedia({ video: portrait ? { width: 720, height: 1280 } : { width: 1280, height: 720 }, audio: false });
             await video.play();
         } catch (err) {
             return showCameraError(err);
