@@ -24,11 +24,17 @@
                     </div>
                 </div>
             </div>
+            <div class="flex items-center gap-3">
+            <button id="voice-btn" aria-pressed="true" title="Read coach tips aloud"
+                class="inline-flex items-center gap-2 font-semibold rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-lg shadow-slate-900/5 px-4 py-2 text-sm transition-all">
+                <i data-lucide="volume-2" class="w-5 h-5"></i><span>Voice coach on</span>
+            </button>
             <button id="ref-btn"
                 class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-white hover:bg-slate-50 text-slate-800 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 border border-slate-200 px-4 py-2 text-sm">
                 <i data-lucide="eye" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                 <span>Show Reference</span>
             </button>
+            </div>
         </div>
     </div>
 
@@ -318,7 +324,32 @@
         el.classList.toggle('bg-blue-500/20', s !== 'up');
         el.classList.toggle('text-blue-400', s !== 'up');
     }
+    // ---- Voice coach: read new tips aloud (at most one every 2.5s), toggle remembered per browser ----
+    let voiceOn = true, lastSpoken = '', lastSpokenAt = -Infinity;
+    try { voiceOn = localStorage.getItem('voiceCoach') !== 'off'; } catch { }
+    function renderVoice() {
+        $('voice-btn').setAttribute('aria-pressed', voiceOn);
+        $('voice-btn').querySelector('span').textContent = voiceOn ? 'Voice coach on' : 'Voice coach off';
+        $('voice-btn').querySelector('svg')?.classList.toggle('text-slate-400', !voiceOn);
+    }
+    $('voice-btn').onclick = () => {
+        voiceOn = !voiceOn;
+        try { localStorage.setItem('voiceCoach', voiceOn ? 'on' : 'off'); } catch { }
+        if (!voiceOn) speechSynthesis.cancel();
+        renderVoice();
+    };
+    function speak(text) {
+        if (!voiceOn || !('speechSynthesis' in window) || text === lastSpoken || performance.now() - lastSpokenAt < 2500) return;
+        lastSpoken = text;
+        lastSpokenAt = performance.now();
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text.replace(/!/g, '.'));
+        u.rate = 1.05;
+        speechSynthesis.speak(u);
+    }
+
     function setFeedback(text) {
+        if (text !== $('feedback').textContent) speak(text);
         $('feedback').textContent = text;
         const warn = text.includes("DON'T");
         $('coach').className = `p-5 rounded-3xl border shadow-2xl flex items-center gap-5 transition-all duration-300 ${warn ? 'bg-rose-500 border-rose-400 text-white animate-bounce' : 'bg-slate-900/95 backdrop-blur-xl border-white/10 text-white'}`;
@@ -542,6 +573,7 @@
     }
     renderTarget();
     renderReps();
+    renderVoice();
 
     let calibration = null;
     $('calibrate-btn').onclick = () => {
