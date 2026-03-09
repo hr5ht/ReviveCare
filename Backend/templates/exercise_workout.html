@@ -54,6 +54,31 @@
                         </div>
                     </div>
 
+                    <!-- Shown when the workout is complete -->
+                    <div id="summary" hidden class="absolute inset-0 bg-slate-900/85 backdrop-blur-md flex items-center justify-center p-8 text-center z-40">
+                        <div class="w-full max-w-md">
+                            <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-500/10">
+                                <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
+                            </div>
+                            <h2 class="text-3xl font-black text-white mb-1 uppercase tracking-tighter">Workout Complete</h2>
+                            <p class="text-white/60 mb-6 font-medium">{{ exercise.name }}</p>
+                            <div class="grid grid-cols-3 gap-3 mb-4">
+                                <div class="bg-white/5 border border-white/10 rounded-2xl p-3"><p class="text-white/40 text-[10px] font-black uppercase">Reps</p><p id="sum-reps" class="text-white text-2xl font-black"></p></div>
+                                <div class="bg-white/5 border border-white/10 rounded-2xl p-3"><p class="text-white/40 text-[10px] font-black uppercase">Time</p><p id="sum-time" class="text-white text-2xl font-black"></p></div>
+                                <div class="bg-white/5 border border-white/10 rounded-2xl p-3"><p class="text-white/40 text-[10px] font-black uppercase">Score</p><p id="sum-score" class="text-emerald-400 text-2xl font-black"></p></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3 mb-6 text-sm font-bold">
+                                <p class="text-emerald-400"><span id="sum-exc"></span> excellent</p>
+                                <p class="text-yellow-400"><span id="sum-good"></span> good</p>
+                                <p class="text-orange-400"><span id="sum-part"></span> partial</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="location.reload()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black py-3 rounded-2xl transition-all">DO IT AGAIN</button>
+                                <button onclick="location.href='/patient/exercises/'" class="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black py-3 rounded-2xl transition-all">ALL EXERCISES</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Camera / model startup errors -->
                     <div id="camera-error" hidden class="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-12 text-center z-30">
                         <div class="max-w-md">
@@ -343,6 +368,8 @@
         renderReps();
         setFeedback(message);
         if (reps % exercise.targetReps === 0 && reps < TOTAL) startRest();
+        // If the last rep is never brought back down (so never graded), still finish
+        if (reps >= TOTAL) summaryFallback = setTimeout(showSummary, 4000);
     }
 
     // ---- Rest between sets: counting pauses until the timer ends or the patient skips ----
@@ -373,7 +400,27 @@
         renderQuality();
         setFeedback(message);
         syncRepWithBackend(angle, q);
+        if (reps >= TOTAL) showSummary();
     }
+
+    // Same weighting as Workout.quality_score on the server
+    function showSummary() {
+        if (!$('summary').hidden) return;
+        clearTimeout(summaryFallback);
+        const t = elapsedSeconds();
+        const graded = quality.excellent + quality.good + quality.partial;
+        const score = graded ? Math.round((quality.excellent * 100 + quality.good * 70 + quality.partial * 40) / graded) : 0;
+        $('sum-reps').textContent = reps;
+        $('sum-time').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+        $('sum-score').textContent = score;
+        $('sum-exc').textContent = quality.excellent;
+        $('sum-good').textContent = quality.good;
+        $('sum-part').textContent = quality.partial;
+        stopTracking();
+        $('live').hidden = true;
+        $('summary').hidden = false;
+    }
+    let summaryFallback = null;
 
     // Show the raw camera feed until MediaPipe starts returning results (the model download can take a while)
     let gotResults = false;
