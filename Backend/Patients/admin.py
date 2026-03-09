@@ -29,7 +29,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     readonly_fields = ('video_preview',)
     fieldsets = [
         (None, {'fields': ('name', 'slug', 'description', 'instructions', 'icon', 'color', 'order', 'is_active')}),
-        ('Tracking', {'fields': ('rule', 'up_angle', 'down_angle', 'target_reps', 'difficulty')}),
+        ('Tracking', {'fields': ('rule', 'up_angle', 'down_angle', 'target_reps', 'sets', 'rest_seconds', 'difficulty')}),
         ('Reference video', {'fields': ('video_url', 'video_preview')}),
     ]
 

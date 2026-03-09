@@ -20,7 +20,7 @@
                     <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
                         <span class="px-2 py-0.5 rounded bg-{{ exercise.color }}-100 text-{{ exercise.color }}-700">{{ exercise.id }}</span>
                         <span>•</span>
-                        <span>{{ exercise.targetReps }} Reps Target</span>
+                        <span>{{ exercise.sets }} × {{ exercise.targetReps }} Reps</span>
                     </div>
                 </div>
             </div>
@@ -77,6 +77,14 @@
                                 <span class="text-sm font-bold">Step back so your whole body is in view</span>
                             </div>
                         </div>
+                        <!-- Rest between sets -->
+                        <div id="rest" hidden class="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/70 backdrop-blur-md">
+                            <div class="text-center">
+                                <p class="text-white/60 text-xs font-black uppercase tracking-widest mb-2">Set <span id="rest-done"></span> done · Rest</p>
+                                <p id="rest-secs" class="text-7xl font-black text-white mb-6">30</p>
+                                <button id="rest-skip" class="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-sm transition-all">SKIP REST</button>
+                            </div>
+                        </div>
                         <!-- 3-2-1 before reps start counting -->
                         <div id="countdown" hidden class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
                             <div class="w-32 h-32 rounded-full bg-slate-900/80 backdrop-blur-xl border-4 border-emerald-400 flex items-center justify-center shadow-2xl">
@@ -96,7 +104,8 @@
                                 <div class="flex justify-between items-end border-b border-white/5 pb-3">
                                     <div>
                                         <p class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Reps</p>
-                                        <p class="text-white text-3xl font-black leading-none"><span data-reps>0</span><span class="text-white/20 text-sm font-normal ml-1">/{{ exercise.targetReps }}</span></p>
+                                        <p class="text-white text-3xl font-black leading-none"><span id="set-reps">0</span><span class="text-white/20 text-sm font-normal ml-1">/{{ exercise.targetReps }}</span></p>
+                                        <p class="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Set <span id="set-num">1</span> of {{ exercise.sets }}</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Stage</p>
@@ -211,7 +220,7 @@
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
                             <p data-reps class="text-3xl font-black text-slate-900 leading-none">0</p>
-                            <p class="text-[10px] font-black text-slate-400 uppercase">of {{ exercise.targetReps }}</p>
+                            <p id="total-label" class="text-[10px] font-black text-slate-400 uppercase"></p>
                         </div>
                     </div>
                     <div id="achieved" hidden class="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 font-black animate-pulse">
@@ -260,11 +269,17 @@
     let running = false, pose = null;
 
     // ---- UI updates ----
+    // Reps are counted across all sets; the HUD shows progress within the current set
+    const TOTAL = exercise.targetReps * exercise.sets;
+    const currentSet = () => Math.min(exercise.sets, Math.floor(reps / exercise.targetReps) + 1);
     function renderReps() {
         document.querySelectorAll('[data-reps]').forEach((el) => el.textContent = reps);
-        const pct = Math.min(100, (reps / exercise.targetReps) * 100);
+        $('total-label').textContent = `of ${TOTAL}`;
+        $('set-num').textContent = currentSet();
+        $('set-reps').textContent = reps >= TOTAL ? exercise.targetReps : reps - (currentSet() - 1) * exercise.targetReps;
+        const pct = Math.min(100, (reps / TOTAL) * 100);
         $('ring').setAttribute('stroke-dashoffset', 364 - (364 * pct) / 100);
-        const done = reps >= exercise.targetReps;
+        const done = reps >= TOTAL;
         $('achieved').hidden = !done;
         $('reset-btn').hidden = done;
     }
@@ -310,11 +325,11 @@
     function syncRepWithBackend(angle, q) {
         api('/api/exercises/update-session/', 'POST', {
             exercise_id: exercise.id,
-            target_reps: exercise.targetReps,
+            target_reps: TOTAL,
             reps,
             angle,
             stage,
-            completed: reps >= exercise.targetReps,
+            completed: reps >= TOTAL,
             quality: q,
         }).catch(() => { });
     }
@@ -325,7 +340,32 @@
         reps += 1;
         renderReps();
         setFeedback(message);
+        if (reps % exercise.targetReps === 0 && reps < TOTAL) startRest();
     }
+
+    // ---- Rest between sets: counting pauses until the timer ends or the patient skips ----
+    let restTimer = null;
+    function startRest() {
+        const until = performance.now() + exercise.restSeconds * 1000;
+        $('rest-done').textContent = currentSet() - 1;
+        $('rest').hidden = false;
+        const tick = () => {
+            const left = Math.ceil((until - performance.now()) / 1000);
+            if (left <= 0) return endRest();
+            $('rest-secs').textContent = left;
+            restTimer = setTimeout(tick, 250);
+        };
+        tick();
+    }
+    function endRest() {
+        clearTimeout(restTimer);
+        restTimer = null;
+        $('rest').hidden = true;
+        counter.reset();
+        setStage('down');
+        setFeedback(`Set ${currentSet()}: go!`);
+    }
+    $('rest-skip').onclick = endRest;
     function gradeRep(angle, q, message) {
         quality[q] += 1;
         renderQuality();
@@ -417,7 +457,7 @@
             ctx.restore();
         };
 
-        if (counting) return;  // still counting down: show the skeleton, don't count yet
+        if (counting || restTimer) return;  // countdown or resting: show the skeleton, don't count yet
         if (!RepCounter.inFrame(exercise, lm)) return;  // partial body: don't count from guessed joints
         const res = counter.update(lm);
         if (calibration) {  // recording one comfortable repetition: measure only, don't count
@@ -445,6 +485,7 @@
         $('target-note').textContent = changed ? `Calibrated to your range (doctor's target ${fmt(doctorTarget.upAngle)})` : '';
     }
     renderTarget();
+    renderReps();
 
     let calibration = null;
     $('calibrate-btn').onclick = () => {
@@ -523,6 +564,7 @@
         countingFrom = null;
         $('countdown').hidden = true;
         $('framing-guide').hidden = true;
+        if (restTimer) endRest();
         $('calibrate-btn').hidden = true;
         calibration = null;
         pose?.close();

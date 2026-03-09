@@ -96,6 +96,8 @@ class Exercise(models.Model):
     color = models.CharField(max_length=20, choices=COLORS, default='emerald')
     target_reps = models.PositiveSmallIntegerField(default=10)
     difficulty = models.CharField(max_length=12, choices=DIFFICULTIES, default='beginner')
+    sets = models.PositiveSmallIntegerField(default=2)
+    rest_seconds = models.PositiveSmallIntegerField(default=30, help_text='Rest between sets')
     video_url = models.CharField(max_length=200, blank=True, help_text='Reference video, e.g. /static/Patients/videos/bc.mp4')
     rule = models.CharField(max_length=10, choices=RULES)
     up_angle = models.PositiveSmallIntegerField(help_text='Angle (degrees) that counts as the top of a rep')
@@ -118,4 +120,5 @@ class Exercise(models.Model):
         return {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
                 'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url,
                 'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps,
-                'difficulty': self.difficulty, 'difficultyLabel': self.get_difficulty_display()}
+                'difficulty': self.difficulty, 'difficultyLabel': self.get_difficulty_display(),
+                'sets': self.sets, 'restSeconds': self.rest_seconds}
