@@ -202,6 +202,7 @@ def api_update_session_data(request):
         if field and reps > workout.excellent_reps + workout.good_reps + workout.partial_reps:
             setattr(workout, field, getattr(workout, field) + 1)
         workout.total_reps = reps
+        workout.duration_seconds = max(workout.duration_seconds, int(data.get('duration_seconds') or 0))
         workout.angles_data.append({'time': timezone.now().isoformat(), 'angle': data.get('angle', 0),
                                     'stage': data.get('stage', 'down'), 'rep': reps})
         if data.get('completed'):

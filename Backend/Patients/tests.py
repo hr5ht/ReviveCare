@@ -164,6 +164,12 @@ class WorkoutSessionTests(TestCase):
         self.assertEqual(Workout.objects.filter(completed=True).count(), 1)
         self.assertEqual(Workout.objects.filter(completed=False).count(), 1)
 
+    def test_duration_saved_and_never_shrinks(self):
+        from .models import Workout
+        self.save(reps=1, quality='good', duration_seconds=40)
+        self.save(reps=2, quality='good', duration_seconds=35)  # an older request arriving late
+        self.assertEqual(Workout.objects.get().duration_seconds, 40)
+
     def test_exercise_required(self):
         self.assertEqual(post_json(self.client, self.url, {'reps': 1}).status_code, 400)
 
