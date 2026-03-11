@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
+
+from Patients.models import Exercise, ExercisePlan, Patient
 
 from .forms import DoctorProfileForm
 from .models import DoctorProfile
@@ -57,3 +59,23 @@ def doctor_profile(request):
         form = DoctorProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email,
                                           'specialty': profile.specialty, 'phone': profile.phone})
     return render(request, 'doctor_profile.html', {'form': form})
+
+
+@login_required
+def patient_plan(request, patient_id):
+    """Choose which exercises a patient should do."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    exercises = Exercise.objects.filter(is_active=True)
+    if request.method == 'POST':
+        chosen = set(request.POST.getlist('exercise'))
+        for exercise in exercises:
+            if str(exercise.id) in chosen:
+                ExercisePlan.objects.update_or_create(patient=patient, exercise=exercise,
+                                                      defaults={'is_active': True, 'assigned_by': request.user})
+            else:
+                ExercisePlan.objects.filter(patient=patient, exercise=exercise).update(is_active=False)
+        messages.success(request, f"Exercise plan saved for {patient.name}.")
+        return redirect('patient_plan', patient_id=patient.id)
+    assigned = {p.exercise_id: p for p in patient.plan.filter(is_active=True)}
+    rows = [{'exercise': e, 'plan': assigned.get(e.id)} for e in exercises]
+    return render(request, 'doctor_patient_plan.html', {'patient': patient, 'rows': rows})

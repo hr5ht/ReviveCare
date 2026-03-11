@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Exercise Plan · {{ patient.name }} · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <button onclick="location.href='/doctor/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to Dashboard</span>
+        </button>
+
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-slate-900">Exercise plan</h1>
+            <p class="text-slate-600">{{ patient.name }}{% if patient.condition %} · {{ patient.condition }}{% endif %}</p>
+        </div>
+
+        {% for message in messages %}
+        <div class="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+            <i data-lucide="circle-check" class="w-5 h-5 text-emerald-600"></i>
+            <p class="text-sm text-emerald-700">{{ message }}</p>
+        </div>
+        {% endfor %}
+
+        <form method="post" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {% csrf_token %}
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="font-semibold text-slate-900">Assign exercises</h2>
+                <p class="text-sm text-slate-500">The patient only sees exercises ticked here</p>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for row in rows %}
+                <label class="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="exercise" value="{{ row.exercise.id }}" {% if row.plan %}checked{% endif %}
+                        class="w-5 h-5 rounded border-slate-300 accent-emerald-600">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="{{ row.exercise.icon }}" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-900">{{ row.exercise.name }}</p>
+                        <p class="text-sm text-slate-500">{{ row.exercise.description }}</p>
+                    </div>
+                    <span class="text-sm text-slate-500 whitespace-nowrap">{{ row.exercise.sets }} × {{ row.exercise.target_reps }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button type="submit" class="inline-flex items-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                    <i data-lucide="save" class="w-5 h-5"></i> Save Plan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

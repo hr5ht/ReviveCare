@@ -106,6 +106,7 @@
                         <p class="text-sm font-semibold text-emerald-800 mb-1">Share this temporary password with the patient</p>
                         <p id="temp-password-note" class="text-sm text-emerald-700 mb-2">It won't be shown again.</p>
                         <code class="block text-lg font-mono font-bold tracking-wider text-emerald-900 bg-white border border-emerald-200 rounded-lg px-3 py-2 select-all"></code>
+                        <a id="plan-link" href="#" class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:text-emerald-800">Next: set their exercise plan <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
                     </div>
 
                     <div id="submit-error" hidden class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2">
@@ -187,6 +188,7 @@
                 phone: v.phone, emergency_contact_name: v.emergencyName, emergency_contact_phone: v.emergencyPhone,
             });
             tempPassword.querySelector('code').textContent = res.temporary_password;
+            document.getElementById('plan-link').href = `/doctor/patients/${res.patient.id}/plan/`;
             document.getElementById('temp-password-note').textContent = res.email_sent
                 ? `We also emailed it to ${v.email}. It won't be shown again.`
                 : "We couldn't email it, so please share it with the patient yourself. It won't be shown again.";
