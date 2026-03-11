@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Exercise, Patient, Workout
+from .models import Exercise, ExercisePlan, Patient, Workout
 
 
 @admin.register(Patient)
@@ -38,3 +38,10 @@ class ExerciseAdmin(admin.ModelAdmin):
         if not obj.video_url:
             return '—'
         return format_html('<video src="{}" controls muted style="max-width:360px;border-radius:8px"></video>', obj.video_url)
+
+
+@admin.register(ExercisePlan)
+class ExercisePlanAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'exercise', 'target_reps', 'sets', 'is_active', 'assigned_by')
+    list_filter = ('is_active', 'exercise')
+    search_fields = ('patient__name', 'patient__email')

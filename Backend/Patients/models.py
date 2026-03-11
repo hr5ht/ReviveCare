@@ -122,3 +122,29 @@ class Exercise(models.Model):
                 'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps,
                 'difficulty': self.difficulty, 'difficultyLabel': self.get_difficulty_display(),
                 'sets': self.sets, 'restSeconds': self.rest_seconds}
+
+
+class ExercisePlan(models.Model):
+    """An exercise a doctor has assigned to a patient, with optional per-patient targets."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='plan')
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='plans')
+    target_reps = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Blank = the exercise's default")
+    sets = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Blank = the exercise's default")
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['exercise__order', 'exercise__name']
+        constraints = [models.UniqueConstraint(fields=['patient', 'exercise'], name='one_plan_entry_per_exercise')]
+
+    def __str__(self):
+        return f"{self.patient.name}: {self.exercise.name}"
+
+    @property
+    def reps(self):
+        return self.target_reps or self.exercise.target_reps
+
+    @property
+    def total_sets(self):
+        return self.sets or self.exercise.sets
