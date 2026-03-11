@@ -60,22 +60,24 @@ def days_in_recovery(patient):
     return str(max(0, (timezone.localdate() - patient.surgery_date).days))
 
 
+def todays_tasks(request):
+    """One task per assigned exercise (empty until the doctor sets a plan)."""
+    return [{'name': e.name, 'detail': f"{p.total_sets} × {p.reps} reps", 'icon': e.icon,
+             'url': f'/patient/exercises/{e.slug}/', 'completed': False}
+            for e, p in exercises_for(request) if p]
+
+
 @patient_page
 def patient_dashboard(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
     if not patient:
         return render(request, 'patient_dashboard.html', {'patient': None})
+    tasks = todays_tasks(request)
     return render(request, 'patient_dashboard.html', {
         'patient': patient,
         'initials': _initials(patient.name or 'Patient'),
-        # Mock data until the backend provides it
-        'tasks': [
-            {'task': 'Morning stretching routine', 'completed': True, 'time': '8:00 AM'},
-            {'task': 'Take prescribed medication', 'completed': True, 'time': '9:00 AM'},
-            {'task': 'Afternoon breathing exercises', 'completed': False, 'time': '2:00 PM'},
-            {'task': 'Evening walk (15 minutes)', 'completed': False, 'time': '5:00 PM'},
-        ],
-        'tasks_done': 2,
+        'tasks': tasks,
+        'tasks_done': sum(t['completed'] for t in tasks),
         'recovery_stats': [
             {'label': 'Days in Recovery', 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
             {'label': 'Progress Score', 'value': '87%', 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},

@@ -75,17 +75,22 @@
 
                     <div class="space-y-3">
                         {% for t in tasks %}
-                        <div class="flex items-center gap-4 p-4 rounded-xl border transition-all {% if t.completed %}bg-emerald-50 border-emerald-200{% else %}bg-white border-slate-200 hover:border-slate-300{% endif %}">
+                        <a href="{{ t.url }}" class="flex items-center gap-4 p-4 rounded-xl border transition-all {% if t.completed %}bg-emerald-50 border-emerald-200{% else %}bg-white border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40{% endif %}">
                             <div class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 {% if t.completed %}bg-emerald-500{% else %}bg-slate-200{% endif %}">
                                 {% if t.completed %}<i data-lucide="circle-check" class="w-4 h-4 text-white"></i>{% endif %}
                             </div>
                             <div class="flex-1">
-                                <p class="font-medium {% if t.completed %}text-slate-500 line-through{% else %}text-slate-900{% endif %}">{{ t.task }}</p>
+                                <p class="font-medium {% if t.completed %}text-slate-500 line-through{% else %}text-slate-900{% endif %}">{{ t.name }}</p>
                             </div>
                             <div class="flex items-center gap-1 text-sm text-slate-500">
-                                <i data-lucide="clock" class="w-4 h-4"></i>
-                                <span>{{ t.time }}</span>
+                                <i data-lucide="{{ t.icon }}" class="w-4 h-4"></i>
+                                <span>{{ t.detail }}</span>
                             </div>
+                        </a>
+                        {% empty %}
+                        <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center">
+                            <p class="font-medium text-slate-700 mb-1">No exercises assigned yet</p>
+                            <p class="text-sm text-slate-500">Your doctor will add your plan. Meanwhile you can <a href="/patient/exercises/" class="text-emerald-600 font-medium hover:text-emerald-700">browse the exercise library</a>.</p>
                         </div>
                         {% endfor %}
                     </div>
