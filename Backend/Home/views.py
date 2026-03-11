@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from Patients.models import Exercise, Patient
+from Patients.models import Exercise, Patient, Workout
 
 from .forms import PatientContactForm
 
@@ -61,10 +61,21 @@ def days_in_recovery(patient):
 
 
 def todays_tasks(request):
-    """One task per assigned exercise (empty until the doctor sets a plan)."""
-    return [{'name': e.name, 'detail': f"{p.total_sets} × {p.reps} reps", 'icon': e.icon,
-             'url': f'/patient/exercises/{e.slug}/', 'completed': False}
-            for e, p in exercises_for(request) if p]
+    """One task per assigned exercise, ticked off once today's workout for it is complete."""
+    patient = _logged_in_patient(request)
+    today = {}  # exercise slug -> (completed, reps done today)
+    for w in Workout.objects.filter(patient=patient, date=timezone.localdate()):
+        done, reps = today.get(w.exercise, (False, 0))
+        today[w.exercise] = (done or w.completed, reps + w.total_reps)
+    tasks = []
+    for e, p in exercises_for(request):
+        if not p:
+            continue
+        done, reps = today.get(e.slug, (False, 0))
+        total = p.total_sets * p.reps
+        detail = f"{p.total_sets} × {p.reps} reps" if done or not reps else f"{min(reps, total)}/{total} reps today"
+        tasks.append({'name': e.name, 'detail': detail, 'icon': e.icon, 'url': f'/patient/exercises/{e.slug}/', 'completed': done})
+    return tasks
 
 
 @patient_page
