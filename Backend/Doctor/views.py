@@ -61,6 +61,15 @@ def doctor_profile(request):
     return render(request, 'doctor_profile.html', {'form': form})
 
 
+def _bounded(value, low, high):
+    """An int within [low, high], or None (use the exercise default) for blank/invalid input."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if low <= number <= high else None
+
+
 @login_required
 def patient_plan(request, patient_id):
     """Choose which exercises a patient should do."""
@@ -70,8 +79,11 @@ def patient_plan(request, patient_id):
         chosen = set(request.POST.getlist('exercise'))
         for exercise in exercises:
             if str(exercise.id) in chosen:
-                ExercisePlan.objects.update_or_create(patient=patient, exercise=exercise,
-                                                      defaults={'is_active': True, 'assigned_by': request.user})
+                ExercisePlan.objects.update_or_create(patient=patient, exercise=exercise, defaults={
+                    'is_active': True, 'assigned_by': request.user,
+                    'target_reps': _bounded(request.POST.get(f'reps_{exercise.id}'), 1, 100),
+                    'sets': _bounded(request.POST.get(f'sets_{exercise.id}'), 1, 10),
+                })
             else:
                 ExercisePlan.objects.filter(patient=patient, exercise=exercise).update(is_active=False)
         messages.success(request, f"Exercise plan saved for {patient.name}.")

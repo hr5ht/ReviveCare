@@ -26,7 +26,7 @@
             {% csrf_token %}
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h2 class="font-semibold text-slate-900">Assign exercises</h2>
-                <p class="text-sm text-slate-500">The patient only sees exercises ticked here</p>
+                <p class="text-sm text-slate-500">Ticked exercises only · leave sets/reps blank for the default</p>
             </div>
             <div class="divide-y divide-slate-100">
                 {% for row in rows %}
@@ -40,7 +40,14 @@
                         <p class="font-semibold text-slate-900">{{ row.exercise.name }}</p>
                         <p class="text-sm text-slate-500">{{ row.exercise.description }}</p>
                     </div>
-                    <span class="text-sm text-slate-500 whitespace-nowrap">{{ row.exercise.sets }} × {{ row.exercise.target_reps }}</span>
+                    <div class="flex items-center gap-2 text-sm text-slate-500" onclick="event.stopPropagation()">
+                        <input type="number" name="sets_{{ row.exercise.id }}" min="1" max="10" value="{{ row.plan.sets|default_if_none:'' }}" placeholder="{{ row.exercise.sets }}" aria-label="Sets"
+                            class="w-14 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                        <span>×</span>
+                        <input type="number" name="reps_{{ row.exercise.id }}" min="1" max="100" value="{{ row.plan.target_reps|default_if_none:'' }}" placeholder="{{ row.exercise.target_reps }}" aria-label="Reps"
+                            class="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                        <span>reps</span>
+                    </div>
                 </label>
                 {% endfor %}
             </div>
