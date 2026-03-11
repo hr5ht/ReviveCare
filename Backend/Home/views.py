@@ -118,25 +118,38 @@ def change_password(request):
     ]})
 
 
+def exercises_for(request):
+    """(exercise, plan) pairs a patient should see: their active plan, or the whole library if they have none."""
+    patient = _logged_in_patient(request)
+    plan = list(patient.plan.filter(is_active=True, exercise__is_active=True).select_related('exercise')) if patient else []
+    if plan:
+        return [(p.exercise, p) for p in plan]
+    return [(e, None) for e in Exercise.objects.filter(is_active=True)]
+
+
+def _find_exercise(request, slug):
+    return next(((e, p) for e, p in exercises_for(request) if e.slug == slug), (None, None))
+
+
 @patient_page
 def exercises(request):
-    return render(request, 'exercises.html', {'exercises': [e.to_dict() for e in Exercise.objects.filter(is_active=True)]})
+    return render(request, 'exercises.html', {'exercises': [e.to_dict(p) for e, p in exercises_for(request)]})
 
 
 @patient_page
 def exercise_detail(request, slug):
-    exercise = Exercise.objects.filter(slug=slug, is_active=True).first()
+    exercise, plan = _find_exercise(request, slug)
     if not exercise:
         return redirect('exercises')
-    return render(request, 'exercise_detail.html', {'exercise': exercise.to_dict()})
+    return render(request, 'exercise_detail.html', {'exercise': exercise.to_dict(plan)})
 
 
 @patient_page
 def exercise_workout(request, exercise_id):
-    exercise = Exercise.objects.filter(slug=exercise_id, is_active=True).first()
+    exercise, plan = _find_exercise(request, exercise_id)
     if not exercise:
         return redirect('exercises')
-    return render(request, 'exercise_workout.html', {'exercise': exercise.to_dict()})
+    return render(request, 'exercise_workout.html', {'exercise': exercise.to_dict(plan)})
 
 
 @patient_page

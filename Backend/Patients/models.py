@@ -115,13 +115,16 @@ class Exercise(models.Model):
     def steps(self):
         return [line.strip() for line in self.instructions.splitlines() if line.strip()]
 
-    def to_dict(self):
-        """Shape the exercise templates and the tracker JS expect."""
-        return {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
+    def to_dict(self, plan=None):
+        """Shape the exercise templates and the tracker JS expect; a patient's plan overrides reps and sets."""
+        data = {'id': self.slug, 'name': self.name, 'description': self.description, 'icon': self.icon,
                 'color': self.color, 'targetReps': self.target_reps, 'videoUrl': self.video_url,
                 'rule': self.rule, 'upAngle': self.up_angle, 'downAngle': self.down_angle, 'steps': self.steps,
                 'difficulty': self.difficulty, 'difficultyLabel': self.get_difficulty_display(),
                 'sets': self.sets, 'restSeconds': self.rest_seconds}
+        if plan:
+            data.update(targetReps=plan.reps, sets=plan.total_sets)
+        return data
 
 
 class ExercisePlan(models.Model):
