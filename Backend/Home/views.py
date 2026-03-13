@@ -180,8 +180,14 @@ def workout_history(request):
     sessions = [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,
                  'score': round(w.quality_score), 'duration': f"{w.duration_seconds // 60}:{w.duration_seconds % 60:02d}",
                  'completed': w.completed} for w in workouts.order_by('-date', '-created_at')]
+    reps_by_day = {}
+    for w in workouts:
+        reps_by_day[w.date] = reps_by_day.get(w.date, 0) + w.total_reps
+    day_list = [since + timedelta(days=i) for i in range(days)]
+    reps_chart = [{'label': d.strftime('%d %b'), 'value': reps_by_day.get(d, 0)} for d in day_list]
     return render(request, 'workout_history.html', {
         'patient': patient, 'initials': _initials(patient.name), 'sessions': sessions, 'days': days, 'ranges': HISTORY_RANGES,
+        'reps_chart': reps_chart, 'reps_total': sum(reps_by_day.values()),
         'exercise': exercise, 'exercise_options': [(s, names.get(s, s)) for s in done_slugs],
     })
 

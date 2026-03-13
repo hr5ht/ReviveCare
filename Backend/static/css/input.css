@@ -4,3 +4,38 @@
 
 /* Classes built at runtime that the scanner can't see, e.g. bg-{{ exercise.color }}-100 */
 @source inline("{bg,text}-{emerald,blue,purple,orange}-{100,700}");
+
+/* Chart tokens (validated reference palette). Dark values apply once the app sets data-theme="dark". */
+.viz-root {
+    --viz-ink: #0b0b0b;
+    --viz-ink-2: #52514e;
+    --viz-muted: #898781;
+    --viz-grid: #e1e0d9;
+    --viz-axis: #c3c2b7;
+    --viz-surface: #ffffff;
+    --viz-series-1: #2a78d6;
+    --viz-q-partial: #86b6ef;
+    --viz-q-good: #2a78d6;
+    --viz-q-excellent: #104281;
+}
+:root[data-theme="dark"] .viz-root {
+    --viz-ink: #f0efec;
+    --viz-ink-2: #c3c2b7;
+    --viz-muted: #898781;
+    --viz-grid: #2c2c2a;
+    --viz-axis: #383835;
+    --viz-surface: #1a1a19;
+    --viz-series-1: #3987e5;
+    --viz-q-partial: #184f95;
+    --viz-q-good: #3987e5;
+    --viz-q-excellent: #9ec5f4;
+}
+.viz-tooltip {
+    position: absolute; pointer-events: none; z-index: 10; padding: 6px 10px; border-radius: 8px;
+    background: var(--viz-surface); color: var(--viz-ink-2); font-size: 12px; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(11, 11, 11, 0.12); border: 1px solid rgba(11, 11, 11, 0.08);
+}
+.viz-tooltip strong { display: block; color: var(--viz-ink); font-size: 14px; font-variant-numeric: tabular-nums; }
+.viz-root svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.viz-root .viz-hit:focus { outline: none; }
+.viz-root .viz-hit:focus-visible + .viz-mark, .viz-root .viz-hit:hover + .viz-mark { filter: brightness(1.12); }
