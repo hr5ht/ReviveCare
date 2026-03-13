@@ -147,6 +147,41 @@
         container.prepend(svg);
     }
 
+    // Stacked columns. data: [{label, parts: [..]}], series: [{name, color}] listed bottom -> top
+    function stackedColumnChart(container, data, series, { unit = '', height = 220 } = {}) {
+        container.replaceChildren();
+        container.style.position = 'relative';
+        const totals = data.map((d) => d.parts.reduce((a, b) => a + b, 0));
+        const { svg, m, band, y } = frame(container, data.map((d) => d.label), niceScale(Math.max(0, ...totals)), height);
+        const tip = tooltip(container);
+        const barW = Math.min(24, band * 0.6), GAP = 2;
+        data.forEach((d, i) => {
+            const cx = m.left + band * (i + 0.5);
+            const hit = el('rect', { x: cx - band / 2, y: m.top, width: band, height: y(0) - m.top, fill: 'transparent', class: 'viz-hit', tabindex: 0,
+                                     'aria-label': `${d.label}: ` + series.map((s, k) => `${d.parts[k]} ${s.name}`).join(', ') }, svg);
+            const group = el('g', { class: 'viz-mark' }, svg);
+            let base = y(0);
+            const top = d.parts.reduce((last, v, k) => (v > 0 ? k : last), -1);
+            d.parts.forEach((v, k) => {
+                if (!v) return;
+                const h = y(0) - y(v);
+                const segTop = base - h, drawH = Math.max(h - (k === top ? 0 : GAP), 1);
+                // only the top segment gets the rounded data-end; a 2px surface gap separates segments
+                el('path', { d: k === top ? columnPath(cx - barW / 2, segTop, barW, drawH) : `M${cx - barW / 2},${segTop + GAP} h${barW} v${drawH} h${-barW} Z`,
+                             fill: series[k].color }, group);
+                base = segTop;
+            });
+            const show = () => {
+                tip.show(cx, y(totals[i]), `${totals[i]} ${unit}`.trim(), `${d.label} · ` + series.map((s, k) => `${d.parts[k]} ${s.name.toLowerCase()}`).join(', '));
+            };
+            hit.addEventListener('pointermove', show);
+            hit.addEventListener('focus', show);
+            hit.addEventListener('pointerleave', tip.hide);
+            hit.addEventListener('blur', tip.hide);
+        });
+        container.prepend(svg);
+    }
+
     // Re-render charts when their container resizes
     function responsive(container, render) {
         render();
@@ -154,5 +189,5 @@
         new ResizeObserver(() => { if (container.clientWidth !== w) { w = container.clientWidth; render(); } }).observe(container);
     }
 
-    root.Charts = { columnChart, lineChart, responsive, niceScale, frame, tooltip, columnPath, el, text, compact };
+    root.Charts = { columnChart, lineChart, stackedColumnChart, responsive, niceScale, frame, tooltip, columnPath, el, text, compact };
 })(this);

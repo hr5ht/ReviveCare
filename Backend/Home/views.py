@@ -199,11 +199,19 @@ def workout_history(request):
             prev = best_by_day.get(w.date)
             best_by_day[w.date] = best if prev is None else (min(prev, best) if lower_is_better else max(prev, best))
     rom_chart = [{'label': d.strftime('%d %b'), 'value': best_by_day.get(d)} for d in day_list]
+
+    quality_by_day = {}
+    for w in workouts:
+        q = quality_by_day.setdefault(w.date, [0, 0, 0])
+        q[0] += w.excellent_reps; q[1] += w.good_reps; q[2] += w.partial_reps
+    quality_chart = [{'label': d.strftime('%d %b'), 'parts': quality_by_day.get(d, [0, 0, 0])} for d in day_list]
+    quality_totals = [sum(q[i] for q in quality_by_day.values()) for i in range(3)]
     return render(request, 'workout_history.html', {
         'patient': patient, 'initials': _initials(patient.name), 'sessions': sessions, 'days': days, 'ranges': HISTORY_RANGES,
         'reps_chart': reps_chart, 'reps_total': sum(reps_by_day.values()),
         'rom_chart': rom_chart, 'rom_has_data': bool(best_by_day), 'rom_exercise': rom_exercise, 'rom_lower_is_better': lower_is_better,
         'rom_unit': '%' if rom_exercise and rom_exercise.rule == 'heel' else '°',
+        'quality_chart': quality_chart, 'quality_totals': quality_totals,
         'exercise': exercise, 'exercise_options': [(s, names.get(s, s)) for s in done_slugs],
     })
 
