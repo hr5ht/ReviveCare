@@ -158,6 +158,34 @@ def _find_exercise(request, slug):
     return next(((e, p) for e, p in exercises_for(request) if e.slug == slug), (None, None))
 
 
+HISTORY_RANGES = [7, 30, 90]
+
+
+@patient_page
+def workout_history(request):
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    days = int(request.GET.get('days', 30)) if request.GET.get('days', '30').isdigit() else 30
+    days = days if days in HISTORY_RANGES else 30
+    since = timezone.localdate() - timedelta(days=days - 1)
+    workouts = Workout.objects.filter(patient=patient, date__gte=since, total_reps__gt=0)
+    names = dict(Exercise.objects.values_list('slug', 'name'))
+    done_slugs = sorted(set(Workout.objects.filter(patient=patient).values_list('exercise', flat=True)), key=lambda s: names.get(s, s))
+    exercise = request.GET.get('exercise', '')
+    if exercise in done_slugs:
+        workouts = workouts.filter(exercise=exercise)
+    else:
+        exercise = ''
+    sessions = [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,
+                 'score': round(w.quality_score), 'duration': f"{w.duration_seconds // 60}:{w.duration_seconds % 60:02d}",
+                 'completed': w.completed} for w in workouts.order_by('-date', '-created_at')]
+    return render(request, 'workout_history.html', {
+        'patient': patient, 'initials': _initials(patient.name), 'sessions': sessions, 'days': days, 'ranges': HISTORY_RANGES,
+        'exercise': exercise, 'exercise_options': [(s, names.get(s, s)) for s in done_slugs],
+    })
+
+
 @patient_page
 def exercises(request):
     return render(request, 'exercises.html', {'exercises': [e.to_dict(p) for e, p in exercises_for(request)]})
