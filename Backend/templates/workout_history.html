@@ -7,6 +7,8 @@
 <script>
     const repsEl = document.getElementById('reps-chart');
     if (repsEl) Charts.responsive(repsEl, () => Charts.columnChart(repsEl, JSON.parse(document.getElementById('reps-data').textContent), { unit: 'reps' }));
+    const romEl = document.getElementById('rom-chart');
+    if (romEl) Charts.responsive(romEl, () => Charts.lineChart(romEl, JSON.parse(document.getElementById('rom-data').textContent), { unit: '{{ rom_unit }}' }));
 </script>
 {% endblock %}
 {% block body %}
@@ -49,8 +51,28 @@
                     </tbody></table>
                 </details>
             </section>
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 class="font-semibold text-slate-900">Range of motion{% if rom_exercise %} · {{ rom_exercise.name }}{% endif %}</h2>
+                <p class="text-sm text-slate-500 mb-4">
+                    {% if rom_exercise.rule == 'heel' %}Best rise each day, as % of leg length (higher is better)
+                    {% elif rom_lower_is_better %}Best joint angle each day (lower means a deeper bend)
+                    {% else %}Best joint angle each day (higher means a bigger lift){% endif %}{% if not exercise %} · pick an exercise above to switch{% endif %}
+                </p>
+                {% if rom_has_data %}
+                <div id="rom-chart" class="h-[220px]"></div>
+                <details class="mt-3 text-sm text-slate-600">
+                    <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Show as table</summary>
+                    <table class="mt-2 w-full tabular-nums"><tbody>
+                        {% for d in rom_chart %}{% if d.value is not None %}<tr><td class="py-1">{{ d.label }}</td><td class="py-1 text-right">{{ d.value }}{{ rom_unit }}</td></tr>{% endif %}{% endfor %}
+                    </tbody></table>
+                </details>
+                {% else %}
+                <p class="h-[220px] flex items-center justify-center text-sm text-slate-400">No angle data recorded for this exercise yet</p>
+                {% endif %}
+            </section>
         </div>
         {{ reps_chart|json_script:"reps-data" }}
+        {{ rom_chart|json_script:"rom-data" }}
         {% endif %}
 
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

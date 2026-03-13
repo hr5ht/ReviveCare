@@ -97,6 +97,56 @@
         container.prepend(svg);
     }
 
+    // Single-series line over a fixed set of x slots; days without a value are skipped. data: [{label, value|null}]
+    function lineChart(container, data, { unit = '', height = 220 } = {}) {
+        container.replaceChildren();
+        container.style.position = 'relative';
+        const values = data.map((d) => d.value).filter((v) => v !== null);
+        const { svg, m, band, y, width } = frame(container, data.map((d) => d.label), niceScale(Math.max(0, ...values)), height);
+        const tip = tooltip(container);
+        const x = (i) => m.left + band * (i + 0.5);
+        // One line through the days that have a value (rest days are skipped, not drawn as zero)
+        let path = '';
+        data.forEach((d, i) => { if (d.value !== null) path += `${path ? 'L' : 'M'}${x(i)},${y(d.value)} `; });
+        el('path', { d: path, fill: 'none', stroke: 'var(--viz-series-1)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+        const lastIdx = data.map((d) => d.value !== null).lastIndexOf(true);
+        data.forEach((d, i) => {
+            if (d.value === null) return;
+            el('circle', { cx: x(i), cy: y(d.value), r: 4, fill: 'var(--viz-series-1)', stroke: 'var(--viz-surface)', 'stroke-width': 2 }, svg);
+        });
+        if (lastIdx >= 0) text(svg, Math.min(x(lastIdx), width - 20), y(data[lastIdx].value) - 10, `${compact(data[lastIdx].value)}${unit}`,
+                               { 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: 'var(--viz-ink-2)' });
+        // Crosshair: snaps to the nearest x slot that has a value
+        const cross = el('line', { y1: m.top, y2: y(0), stroke: 'var(--viz-axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+        const overlay = el('rect', { x: m.left, y: m.top, width: band * data.length, height: y(0) - m.top, fill: 'transparent', tabindex: 0,
+                                     'aria-label': 'Range of motion by day; use arrow keys to step through values' }, svg);
+        const points = data.map((d, i) => [i, d]).filter(([, d]) => d.value !== null);
+        let focus = points.length - 1;
+        const showAt = (k) => {
+            if (!points.length) return;
+            const [i, d] = points[k];
+            cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+            tip.show(x(i), y(d.value), `${d.value}${unit}`, d.label);
+        };
+        overlay.addEventListener('pointermove', (e) => {
+            const px = e.clientX - svg.getBoundingClientRect().left;
+            focus = points.reduce((best, [i], k) => (Math.abs(x(i) - px) < Math.abs(x(points[best][0]) - px) ? k : best), 0);
+            showAt(focus);
+        });
+        overlay.addEventListener('focus', () => showAt(focus));
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') focus = Math.max(0, focus - 1);
+            else if (e.key === 'ArrowRight') focus = Math.min(points.length - 1, focus + 1);
+            else return;
+            e.preventDefault();
+            showAt(focus);
+        });
+        const hide = () => { tip.hide(); cross.setAttribute('visibility', 'hidden'); };
+        overlay.addEventListener('pointerleave', hide);
+        overlay.addEventListener('blur', hide);
+        container.prepend(svg);
+    }
+
     // Re-render charts when their container resizes
     function responsive(container, render) {
         render();
@@ -104,5 +154,5 @@
         new ResizeObserver(() => { if (container.clientWidth !== w) { w = container.clientWidth; render(); } }).observe(container);
     }
 
-    root.Charts = { columnChart, responsive, niceScale, frame, tooltip, columnPath, el, text, compact };
+    root.Charts = { columnChart, lineChart, responsive, niceScale, frame, tooltip, columnPath, el, text, compact };
 })(this);

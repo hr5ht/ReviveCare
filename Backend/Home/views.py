@@ -159,6 +159,7 @@ def _find_exercise(request, slug):
 
 
 HISTORY_RANGES = [7, 30, 90]
+LOWER_IS_BETTER = {'curl', 'squat'}  # rules where the joint angle closes toward the top of a rep
 
 
 @patient_page
@@ -185,9 +186,24 @@ def workout_history(request):
         reps_by_day[w.date] = reps_by_day.get(w.date, 0) + w.total_reps
     day_list = [since + timedelta(days=i) for i in range(days)]
     reps_chart = [{'label': d.strftime('%d %b'), 'value': reps_by_day.get(d, 0)} for d in day_list]
+
+    # Range of motion: best rep angle per day for one exercise (the selected one, else the most practised)
+    rom_slug = exercise or max(done_slugs, key=lambda s: workouts.filter(exercise=s).count(), default='')
+    rom_exercise = Exercise.objects.filter(slug=rom_slug).first()
+    lower_is_better = bool(rom_exercise and rom_exercise.rule in LOWER_IS_BETTER)
+    best_by_day = {}
+    for w in workouts.filter(exercise=rom_slug):
+        angles = [a['angle'] for a in w.angles_data if isinstance(a, dict) and a.get('angle')]
+        if angles:
+            best = min(angles) if lower_is_better else max(angles)
+            prev = best_by_day.get(w.date)
+            best_by_day[w.date] = best if prev is None else (min(prev, best) if lower_is_better else max(prev, best))
+    rom_chart = [{'label': d.strftime('%d %b'), 'value': best_by_day.get(d)} for d in day_list]
     return render(request, 'workout_history.html', {
         'patient': patient, 'initials': _initials(patient.name), 'sessions': sessions, 'days': days, 'ranges': HISTORY_RANGES,
         'reps_chart': reps_chart, 'reps_total': sum(reps_by_day.values()),
+        'rom_chart': rom_chart, 'rom_has_data': bool(best_by_day), 'rom_exercise': rom_exercise, 'rom_lower_is_better': lower_is_better,
+        'rom_unit': '%' if rom_exercise and rom_exercise.rule == 'heel' else '°',
         'exercise': exercise, 'exercise_options': [(s, names.get(s, s)) for s in done_slugs],
     })
 
