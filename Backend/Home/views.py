@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 from functools import wraps
 
 from django.contrib import messages
@@ -78,6 +79,19 @@ def todays_tasks(request):
     return tasks
 
 
+def progress_score(patient, days=14):
+    """Average rep-quality score (0-100) over recent workouts, or a dash with no data yet."""
+    since = timezone.localdate() - timedelta(days=days - 1)
+    scores = [w.quality_score for w in Workout.objects.filter(patient=patient, date__gte=since, total_reps__gt=0)]
+    return f"{round(sum(scores) / len(scores))}%" if scores else '—'
+
+
+def workouts_this_week(patient):
+    """Days in the last 7 with at least one workout session."""
+    since = timezone.localdate() - timedelta(days=6)
+    return Workout.objects.filter(patient=patient, date__gte=since, total_reps__gt=0).values('date').distinct().count()
+
+
 @patient_page
 def patient_dashboard(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
@@ -91,8 +105,8 @@ def patient_dashboard(request):
         'tasks_done': sum(t['completed'] for t in tasks),
         'recovery_stats': [
             {'label': 'Days in Recovery', 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
-            {'label': 'Progress Score', 'value': '87%', 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
-            {'label': 'Goals Achieved', 'value': '8/10', 'icon': 'target', 'cls': 'bg-purple-100 text-purple-600'},
+            {'label': 'Progress Score', 'value': progress_score(patient), 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
+            {'label': 'Workouts This Week', 'value': str(workouts_this_week(patient)), 'icon': 'dumbbell', 'cls': 'bg-purple-100 text-purple-600'},
         ],
     })
 
