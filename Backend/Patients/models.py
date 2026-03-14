@@ -151,3 +151,35 @@ class ExercisePlan(models.Model):
     @property
     def total_sets(self):
         return self.sets or self.exercise.sets
+
+
+class RecoveryGoal(models.Model):
+    """A measurable target a doctor sets for a patient; progress is computed from workouts."""
+    KINDS = [
+        ('sessions', 'Complete workout sessions'),
+        ('total_reps', 'Reach total reps'),
+        ('streak', 'Exercise days in a row'),
+        ('range', 'Reach a range-of-motion angle'),
+    ]
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='goals')
+    kind = models.CharField(max_length=12, choices=KINDS)
+    target = models.PositiveIntegerField(help_text='Sessions, reps, days, or degrees depending on the kind')
+    exercise = models.ForeignKey(Exercise, null=True, blank=True, on_delete=models.SET_NULL,
+                                 help_text='Required for range goals; optional filter for reps/sessions')
+    due_date = models.DateField(null=True, blank=True)
+    achieved_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['achieved_at', 'due_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.patient.name}: {self.describe()}"
+
+    def describe(self):
+        where = f" ({self.exercise.name})" if self.exercise else ''
+        unit = {'sessions': 'workout sessions', 'total_reps': 'reps', 'streak': 'days in a row', 'range': '°'}[self.kind]
+        if self.kind == 'range':
+            return f"Reach {self.target}{unit}{where}"
+        return f"{self.target} {unit}{where}"
