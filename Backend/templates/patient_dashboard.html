@@ -134,6 +134,28 @@
                     </div>
                 </div>
 
+                <!-- This week -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-bold text-slate-900">This week</h3>
+                        <a href="/patient/history/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Progress →</a>
+                    </div>
+                    <p class="text-sm text-slate-500 mb-1">Reps in the last 7 days</p>
+                    <div class="flex items-baseline gap-3 mb-5">
+                        <span class="text-4xl font-bold text-slate-900">{{ week.reps }}</span>
+                        {% if week.change is not None %}
+                        <span class="inline-flex items-center gap-1 text-sm font-medium {% if week.change >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
+                            <i data-lucide="{% if week.change >= 0 %}trending-up{% else %}trending-down{% endif %}" class="w-4 h-4"></i>
+                            {% if week.change >= 0 %}+{% endif %}{{ week.change }}% vs last week
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">Active days</p><p class="text-lg font-bold text-slate-900">{{ week.active_days }}/7</p></div>
+                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">Avg quality</p><p class="text-lg font-bold text-slate-900">{% if week.quality is not None %}{{ week.quality }}{% else %}—{% endif %}</p></div>
+                    </div>
+                </div>
+
                 <!-- Upcoming Appointment -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-600">
                     <div class="flex items-start gap-3 mb-4">

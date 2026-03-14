@@ -99,6 +99,21 @@ def exercise_streak(patient):
     return streak
 
 
+def weekly_summary(patient):
+    """Last 7 days vs the 7 before: reps (with % change), active days and average quality."""
+    today = timezone.localdate()
+    this_week = Workout.objects.filter(patient=patient, date__gt=today - timedelta(days=7), total_reps__gt=0)
+    last_week = Workout.objects.filter(patient=patient, date__gt=today - timedelta(days=14), date__lte=today - timedelta(days=7))
+    reps, prev = sum(w.total_reps for w in this_week), sum(w.total_reps for w in last_week)
+    scores = [w.quality_score for w in this_week]
+    return {
+        'reps': reps,
+        'change': round((reps - prev) / prev * 100) if prev else None,
+        'active_days': this_week.values('date').distinct().count(),
+        'quality': round(sum(scores) / len(scores)) if scores else None,
+    }
+
+
 def workouts_this_week(patient):
     """Days in the last 7 with at least one workout session."""
     since = timezone.localdate() - timedelta(days=6)
@@ -113,6 +128,7 @@ def patient_dashboard(request):
     tasks = todays_tasks(request)
     return render(request, 'patient_dashboard.html', {
         'patient': patient,
+        'week': weekly_summary(patient),
         'initials': _initials(patient.name or 'Patient'),
         'tasks': tasks,
         'tasks_done': sum(t['completed'] for t in tasks),
