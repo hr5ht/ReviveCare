@@ -86,6 +86,19 @@ def progress_score(patient, days=14):
     return f"{round(sum(scores) / len(scores))}%" if scores else '—'
 
 
+def exercise_streak(patient):
+    """Consecutive days with a workout, ending today (or yesterday, so the streak survives until today's session)."""
+    days = set(Workout.objects.filter(patient=patient, total_reps__gt=0).values_list('date', flat=True))
+    day = timezone.localdate()
+    if day not in days:
+        day -= timedelta(days=1)
+    streak = 0
+    while day in days:
+        streak += 1
+        day -= timedelta(days=1)
+    return streak
+
+
 def workouts_this_week(patient):
     """Days in the last 7 with at least one workout session."""
     since = timezone.localdate() - timedelta(days=6)
@@ -107,6 +120,7 @@ def patient_dashboard(request):
             {'label': 'Days in Recovery', 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
             {'label': 'Progress Score', 'value': progress_score(patient), 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
             {'label': 'Workouts This Week', 'value': str(workouts_this_week(patient)), 'icon': 'dumbbell', 'cls': 'bg-purple-100 text-purple-600'},
+            {'label': 'Exercise Streak', 'value': f"{exercise_streak(patient)} days", 'icon': 'flame', 'cls': 'bg-orange-100 text-orange-600'},
         ],
     })
 
