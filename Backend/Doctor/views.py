@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
 
-from Patients.models import Exercise, ExercisePlan, Patient
+from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal
 
-from .forms import DoctorProfileForm
+from .forms import DoctorProfileForm, RecoveryGoalForm
 from .models import DoctorProfile
 
 
@@ -91,3 +91,19 @@ def patient_plan(request, patient_id):
     assigned = {p.exercise_id: p for p in patient.plan.filter(is_active=True)}
     rows = [{'exercise': e, 'plan': assigned.get(e.id)} for e in exercises]
     return render(request, 'doctor_patient_plan.html', {'patient': patient, 'rows': rows})
+
+
+@login_required
+def patient_goals(request, patient_id):
+    """Set measurable recovery goals for a patient."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    if request.method == 'POST' and 'delete' in request.POST:
+        patient.goals.filter(id=request.POST['delete']).delete()
+        messages.success(request, 'Goal removed.')
+        return redirect('patient_goals', patient_id=patient.id)
+    form = RecoveryGoalForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        RecoveryGoal.objects.create(patient=patient, created_by=request.user, **form.cleaned_data)
+        messages.success(request, 'Goal added.')
+        return redirect('patient_goals', patient_id=patient.id)
+    return render(request, 'doctor_patient_goals.html', {'patient': patient, 'form': form, 'goals': patient.goals.all()})

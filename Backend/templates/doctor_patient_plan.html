@@ -10,9 +10,12 @@
             <span class="font-medium">Back to Dashboard</span>
         </button>
 
-        <div class="mb-6">
-            <h1 class="text-3xl font-bold text-slate-900">Exercise plan</h1>
-            <p class="text-slate-600">{{ patient.name }}{% if patient.condition %} · {{ patient.condition }}{% endif %}</p>
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Exercise plan</h1>
+                <p class="text-slate-600">{{ patient.name }}{% if patient.condition %} · {{ patient.condition }}{% endif %}</p>
+            </div>
+            <a href="/doctor/patients/{{ patient.id }}/goals/" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"><i data-lucide="target" class="w-4 h-4"></i> Recovery goals →</a>
         </div>
 
         {% for message in messages %}
