@@ -8,6 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.db import models
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from Patients.models import Exercise, Patient, Workout
@@ -114,6 +115,33 @@ def weekly_summary(patient):
     }
 
 
+def best_streak(patient):
+    days = sorted(set(Workout.objects.filter(patient=patient, total_reps__gt=0).values_list('date', flat=True)))
+    best = run = 0
+    for i, day in enumerate(days):
+        run = run + 1 if i and (day - days[i - 1]).days == 1 else 1
+        best = max(best, run)
+    return best
+
+
+def achievements(patient, tasks):
+    """Badges derived from workout history (nothing stored, so they can't drift from the data)."""
+    workouts = Workout.objects.filter(patient=patient, total_reps__gt=0)
+    total_reps = sum(workouts.values_list('total_reps', flat=True))
+    streak = best_streak(patient)
+    perfect = workouts.filter(total_reps__gte=10).filter(excellent_reps=models.F('total_reps')).exists()
+    return [
+        {'name': 'First workout', 'how': 'Finish any exercise session', 'icon': 'play', 'earned': workouts.exists()},
+        {'name': '3-day streak', 'how': 'Exercise 3 days in a row', 'icon': 'flame', 'earned': streak >= 3},
+        {'name': '7-day streak', 'how': 'Exercise 7 days in a row', 'icon': 'flame', 'earned': streak >= 7},
+        {'name': '100 reps', 'how': 'Reach 100 reps in total', 'icon': 'dumbbell', 'earned': total_reps >= 100},
+        {'name': '500 reps', 'how': 'Reach 500 reps in total', 'icon': 'trophy', 'earned': total_reps >= 500},
+        {'name': 'Perfect session', 'how': '10+ reps, every one excellent', 'icon': 'star', 'earned': perfect},
+        {'name': 'Full day', 'how': "Complete every task in today's plan", 'icon': 'circle-check',
+         'earned': bool(tasks) and all(t['completed'] for t in tasks)},
+    ]
+
+
 def workouts_this_week(patient):
     """Days in the last 7 with at least one workout session."""
     since = timezone.localdate() - timedelta(days=6)
@@ -126,9 +154,12 @@ def patient_dashboard(request):
     if not patient:
         return render(request, 'patient_dashboard.html', {'patient': None})
     tasks = todays_tasks(request)
+    badges = achievements(patient, tasks)
     return render(request, 'patient_dashboard.html', {
         'patient': patient,
         'week': weekly_summary(patient),
+        'badges': badges,
+        'badges_earned': sum(b['earned'] for b in badges),
         'initials': _initials(patient.name or 'Patient'),
         'tasks': tasks,
         'tasks_done': sum(t['completed'] for t in tasks),
