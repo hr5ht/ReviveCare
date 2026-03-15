@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
+from .goals import update_goals
 from .models import Patient, Workout
 from django.utils import timezone
 import json
@@ -208,7 +209,8 @@ def api_update_session_data(request):
         if data.get('completed'):
             workout.completed = True
         workout.save()
-        return JsonResponse({'success': True, 'reps': reps})
+        reached = update_goals(workout.patient)
+        return JsonResponse({'success': True, 'reps': reps, 'goals_reached': [g.describe() for g in reached]})
 
     except Exception:
         logger.exception('Saving workout session failed for patient %s', patient_id)

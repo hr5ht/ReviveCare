@@ -295,3 +295,46 @@ class AddPatientRecoveryDetailsTests(TestCase):
         self.assertEqual(self.add(surgery_date='not-a-date').status_code, 400)
         self.assertEqual(self.add(surgery_date='2999-01-01').status_code, 400)
         self.assertFalse(Patient.objects.exists())
+
+
+class GoalProgressTests(TestCase):
+    def setUp(self):
+        from .models import Exercise
+        self.patient = Patient.objects.create(name='G', email='g@example.com', info='x', password=make_password('Right-pass-1'))
+        post_json(self.client, '/api/patient/login/', {'email': 'g@example.com', 'password': 'Right-pass-1'})
+        self.curl = Exercise.objects.get(slug='bicep-curl')
+
+    def goal(self, kind, target, exercise=None):
+        from .models import RecoveryGoal
+        return RecoveryGoal.objects.create(patient=self.patient, kind=kind, target=target, exercise=exercise)
+
+    def save(self, reps, angle, exercise='bicep-curl', completed=False):
+        return post_json(self.client, '/api/exercises/update-session/', {
+            'exercise_id': exercise, 'target_reps': 10, 'reps': reps, 'angle': angle, 'quality': 'good', 'completed': completed})
+
+    def test_reps_goal_reached_while_exercising(self):
+        from .goals import progress
+        goal = self.goal('total_reps', 3)
+        self.save(1, 50)
+        self.assertEqual(progress(goal)[:2], (1, 33))
+        self.save(2, 50)
+        r = self.save(3, 50)
+        self.assertEqual(r.json()['goals_reached'], ['3 reps'])
+        goal.refresh_from_db()
+        self.assertIsNotNone(goal.achieved_at)
+
+    def test_range_goal_respects_direction(self):
+        from .goals import progress
+        curl_goal = self.goal('range', 60, self.curl)  # curls: a smaller elbow angle is better
+        self.save(1, 75)
+        self.assertFalse(progress(curl_goal)[2])
+        self.save(2, 58)
+        self.assertEqual(progress(curl_goal), (58, 100, True))
+
+    def test_exercise_filter_and_sessions(self):
+        from .goals import progress
+        goal = self.goal('sessions', 2, self.curl)
+        self.save(1, 50, exercise='squat')
+        self.assertEqual(progress(goal)[0], 0)
+        self.save(1, 50)
+        self.assertEqual(progress(goal)[0], 1)
