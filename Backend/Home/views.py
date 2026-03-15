@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.db import models
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Exercise, Patient, Workout
 
 from .forms import PatientContactForm
@@ -148,6 +149,15 @@ def workouts_this_week(patient):
     return Workout.objects.filter(patient=patient, date__gte=since, total_reps__gt=0).values('date').distinct().count()
 
 
+def goal_cards(patient):
+    cards = []
+    for goal in patient.goals.select_related('exercise'):
+        current, percent, achieved = progress(goal)
+        cards.append({'text': goal.describe(), 'percent': 100 if goal.achieved_at else percent,
+                      'achieved': bool(goal.achieved_at) or achieved, 'current': current, 'due': goal.due_date})
+    return cards
+
+
 @patient_page
 def patient_dashboard(request):
     patient = Patient.objects.filter(id=request.session.get('patient_id')).first()
@@ -155,7 +165,9 @@ def patient_dashboard(request):
         return render(request, 'patient_dashboard.html', {'patient': None})
     tasks = todays_tasks(request)
     badges = achievements(patient, tasks)
+    goals = goal_cards(patient)
     return render(request, 'patient_dashboard.html', {
+        'goals': goals,
         'patient': patient,
         'week': weekly_summary(patient),
         'badges': badges,
@@ -168,6 +180,7 @@ def patient_dashboard(request):
             {'label': 'Progress Score', 'value': progress_score(patient), 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
             {'label': 'Workouts This Week', 'value': str(workouts_this_week(patient)), 'icon': 'dumbbell', 'cls': 'bg-purple-100 text-purple-600'},
             {'label': 'Exercise Streak', 'value': f"{exercise_streak(patient)} days", 'icon': 'flame', 'cls': 'bg-orange-100 text-orange-600'},
+            {'label': 'Goals Achieved', 'value': f"{sum(g['achieved'] for g in goals)}/{len(goals)}" if goals else '—', 'icon': 'target', 'cls': 'bg-purple-100 text-purple-600'},
         ],
     })
 
@@ -220,7 +233,6 @@ def _find_exercise(request, slug):
 
 
 HISTORY_RANGES = [7, 30, 90]
-LOWER_IS_BETTER = {'curl', 'squat'}  # rules where the joint angle closes toward the top of a rep
 
 
 @patient_page

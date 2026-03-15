@@ -153,6 +153,27 @@
                     </div>
                 </div>
 
+                {% if goals %}
+                <!-- Goals set by the doctor -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <h3 class="text-xl font-bold text-slate-900 mb-5">Your goals</h3>
+                    <ul class="space-y-4">
+                        {% for g in goals %}
+                        <li>
+                            <div class="flex items-center justify-between gap-3 mb-1.5 text-sm">
+                                <span class="font-medium text-slate-800 flex items-center gap-1.5">{% if g.achieved %}<i data-lucide="circle-check" class="w-4 h-4 text-emerald-600"></i>{% endif %}{{ g.text }}</span>
+                                <span class="text-slate-500 tabular-nums">{% if g.achieved %}Done{% else %}{{ g.percent }}%{% endif %}</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-emerald-100 overflow-hidden" role="progressbar" aria-valuenow="{{ g.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ g.text }}">
+                                <div class="h-full rounded-full bg-emerald-500" style="width: {{ g.percent }}%"></div>
+                            </div>
+                            {% if g.due and not g.achieved %}<p class="mt-1 text-xs text-slate-400">Due {{ g.due|date:"d M" }}{% if g.current is not None %} · now {{ g.current }}{% endif %}</p>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
                 <!-- This week -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-5">
