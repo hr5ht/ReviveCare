@@ -4,22 +4,33 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
 
-from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal
+from django.db.models import Max
+from django.utils import timezone
+
+from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, RecoveryGoalForm
 from .models import DoctorProfile
 
 
+def patient_rows(patients):
+    """Patients with their latest workout and a status: active (worked out in the last 3 days), inactive or new."""
+    last = dict(Workout.objects.filter(patient__in=patients, total_reps__gt=0).values('patient')
+                .annotate(latest=Max('date')).values_list('patient', 'latest'))
+    today = timezone.localdate()
+    rows = []
+    for p in patients:
+        latest = last.get(p.id)
+        status = 'new' if not latest else 'active' if (today - latest).days <= 3 else 'inactive'
+        rows.append({'id': p.id, 'name': p.name, 'initials': _initials(p.name), 'condition': p.condition or 'No condition recorded',
+                     'status': status, 'last_workout': latest})
+    rows.sort(key=lambda r: r['last_workout'] or today.replace(year=1), reverse=True)
+    return rows
+
+
 @login_required
 def doctor_dashboard(request):
-    patients = [
-        {'name': 'Sarah Mitchell', 'condition': 'Post-Surgery Recovery', 'status': 'improving', 'lastUpdate': '2 hours ago'},
-        {'name': 'James Wilson', 'condition': 'Cardiac Rehabilitation', 'status': 'stable', 'lastUpdate': '5 hours ago'},
-        {'name': 'Emily Davis', 'condition': 'Physical Therapy', 'status': 'critical', 'lastUpdate': '30 min ago'},
-        {'name': 'Michael Chen', 'condition': 'Medication Management', 'status': 'improving', 'lastUpdate': '1 day ago'},
-    ]
-    for p in patients:
-        p['initials'] = _initials(p['name'])
+    patients = patient_rows(Patient.for_doctor(request.user).filter(is_active=True))
     return render(request, 'doctor_dashboard.html', {
         'stats': [
             {'icon': 'users', 'label': 'Active Patients', 'value': '127', 'cls': 'bg-emerald-50 text-emerald-600'},
@@ -33,7 +44,8 @@ def doctor_dashboard(request):
             {'icon': 'pill', 'label': 'Prescribe Medication', 'cls': 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'},
             {'icon': 'video', 'label': 'Start Telehealth', 'cls': 'bg-blue-50 text-blue-600 hover:bg-blue-100'},
         ],
-        'patients': patients,
+        'patients': patients[:10],
+        'patient_count': len(patients),
     })
 
 
