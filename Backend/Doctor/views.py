@@ -4,13 +4,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
 
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, RecoveryGoalForm
 from .models import DoctorProfile
+
+
+STATUSES = ['active', 'inactive', 'new']
 
 
 def patient_rows(patients):
@@ -30,7 +33,14 @@ def patient_rows(patients):
 
 @login_required
 def doctor_dashboard(request):
-    patients = patient_rows(Patient.for_doctor(request.user).filter(is_active=True))
+    q = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '')
+    patients = Patient.for_doctor(request.user).filter(is_active=True)
+    if q:
+        patients = patients.filter(Q(name__icontains=q) | Q(email__icontains=q) | Q(condition__icontains=q))
+    patients = patient_rows(patients)
+    if status in STATUSES:
+        patients = [p for p in patients if p['status'] == status]
     return render(request, 'doctor_dashboard.html', {
         'stats': [
             {'icon': 'users', 'label': 'Active Patients', 'value': '127', 'cls': 'bg-emerald-50 text-emerald-600'},
@@ -46,6 +56,7 @@ def doctor_dashboard(request):
         ],
         'patients': patients[:10],
         'patient_count': len(patients),
+        'q': q, 'status': status if status in STATUSES else '', 'statuses': STATUSES,
     })
 
 
