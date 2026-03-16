@@ -5,9 +5,9 @@
     {% include "partials/doctor_navbar.html" %}
 
     <div class="max-w-4xl mx-auto px-6 py-8">
-        <button onclick="location.href='/doctor/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+        <button onclick="location.href='/doctor/patients/{{ patient.id }}/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            <span class="font-medium">Back to Dashboard</span>
+            <span class="font-medium">{{ patient.name }}</span>
         </button>
 
         <div class="mb-6 flex flex-wrap items-end justify-between gap-3">

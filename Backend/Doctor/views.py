@@ -1,16 +1,14 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect, render
-
-from Home.views import _initials
-
 from datetime import timedelta
 from urllib.parse import urlencode
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from Home.views import _initials, days_in_recovery, exercise_streak, goal_cards
 from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, RecoveryGoalForm
@@ -147,3 +145,29 @@ def patient_goals(request, patient_id):
         messages.success(request, 'Goal added.')
         return redirect('patient_goals', patient_id=patient.id)
     return render(request, 'doctor_patient_goals.html', {'patient': patient, 'form': form, 'goals': patient.goals.all()})
+
+
+@login_required
+def patient_detail(request, patient_id):
+    """Everything a doctor needs about one patient on a single page."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    today = timezone.localdate()
+    workouts = Workout.objects.filter(patient=patient, total_reps__gt=0)
+    recent = workouts.filter(date__gt=today - timedelta(days=30))
+    scores = [w.quality_score for w in recent]
+    names = dict(Exercise.objects.values_list('slug', 'name'))
+    return render(request, 'patient_detail.html', {
+        'patient': patient,
+        'initials': _initials(patient.name),
+        'stats': [
+            {'label': 'Days in recovery', 'value': days_in_recovery(patient)},
+            {'label': 'Current streak', 'value': f"{exercise_streak(patient)} days"},
+            {'label': 'Sessions (30 days)', 'value': recent.count()},
+            {'label': 'Avg quality (30 days)', 'value': f"{round(sum(scores) / len(scores))}%" if scores else '—'},
+        ],
+        'plan': patient.plan.filter(is_active=True).select_related('exercise'),
+        'goals': goal_cards(patient),
+        'sessions': [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,
+                      'score': round(w.quality_score), 'completed': w.completed}
+                     for w in workouts.order_by('-date', '-created_at')[:10]],
+    })
