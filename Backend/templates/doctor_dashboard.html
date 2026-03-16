@@ -107,7 +107,7 @@
                                     <span class="text-xs font-medium px-3 py-1.5 rounded-lg {% if p.status == 'active' %}bg-emerald-100 text-emerald-700{% elif p.status == 'new' %}bg-blue-100 text-blue-700{% else %}bg-amber-100 text-amber-700{% endif %}">
                                         {{ p.status }}
                                     </span>
-                                    <p class="text-xs text-slate-400 mt-1">{% if p.last_workout %}Last workout {{ p.last_workout|timesince }} ago{% else %}No workouts yet{% endif %}</p>
+                                    <p class="text-xs text-slate-400 mt-1">{% if p.last_workout %}Last workout {{ p.last_workout_ago }}{% else %}No workouts yet{% endif %}</p>
                                 </div>
                             </div>
                         </a>
@@ -123,6 +123,15 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% if patients.paginator.num_pages > 1 %}
+                    <nav class="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-sm" aria-label="Patient pages">
+                        <span class="text-slate-500">Page {{ patients.number }} of {{ patients.paginator.num_pages }}</span>
+                        <div class="flex gap-2">
+                            {% if patients.has_previous %}<a href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ patients.previous_page_number }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">Previous</a>{% endif %}
+                            {% if patients.has_next %}<a href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ patients.next_page_number }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">Next</a>{% endif %}
+                        </div>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
 

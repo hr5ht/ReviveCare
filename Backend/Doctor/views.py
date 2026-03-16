@@ -4,6 +4,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
 
+from urllib.parse import urlencode
+
+from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.utils import timezone
 
@@ -14,6 +17,7 @@ from .models import DoctorProfile
 
 
 STATUSES = ['active', 'inactive', 'new']
+PER_PAGE = 10
 
 
 def patient_rows(patients):
@@ -25,8 +29,9 @@ def patient_rows(patients):
     for p in patients:
         latest = last.get(p.id)
         status = 'new' if not latest else 'active' if (today - latest).days <= 3 else 'inactive'
+        ago = None if not latest else 'today' if latest == today else 'yesterday' if (today - latest).days == 1 else f"{(today - latest).days} days ago"
         rows.append({'id': p.id, 'name': p.name, 'initials': _initials(p.name), 'condition': p.condition or 'No condition recorded',
-                     'status': status, 'last_workout': latest})
+                     'status': status, 'last_workout': latest, 'last_workout_ago': ago})
     rows.sort(key=lambda r: r['last_workout'] or today.replace(year=1), reverse=True)
     return rows
 
@@ -41,6 +46,7 @@ def doctor_dashboard(request):
     patients = patient_rows(patients)
     if status in STATUSES:
         patients = [p for p in patients if p['status'] == status]
+    page = Paginator(patients, PER_PAGE).get_page(request.GET.get('page'))
     return render(request, 'doctor_dashboard.html', {
         'stats': [
             {'icon': 'users', 'label': 'Active Patients', 'value': '127', 'cls': 'bg-emerald-50 text-emerald-600'},
@@ -54,8 +60,9 @@ def doctor_dashboard(request):
             {'icon': 'pill', 'label': 'Prescribe Medication', 'cls': 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'},
             {'icon': 'video', 'label': 'Start Telehealth', 'cls': 'bg-blue-50 text-blue-600 hover:bg-blue-100'},
         ],
-        'patients': patients[:10],
+        'patients': page,
         'patient_count': len(patients),
+        'page_query': urlencode({k: v for k, v in (('q', q), ('status', status)) if v}),
         'q': q, 'status': status if status in STATUSES else '', 'statuses': STATUSES,
     })
 
