@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from Home.views import _initials
 
+from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.core.paginator import Paginator
@@ -36,6 +37,20 @@ def patient_rows(patients):
     return rows
 
 
+def dashboard_stats(doctor):
+    rows = patient_rows(Patient.for_doctor(doctor).filter(is_active=True))
+    today = timezone.localdate()
+    recent = Workout.objects.filter(patient__in=Patient.for_doctor(doctor), total_reps__gt=0)
+    scores = [w.quality_score for w in recent.filter(date__gt=today - timedelta(days=14))]
+    active = sum(r['status'] == 'active' for r in rows)
+    return [
+        {'icon': 'users', 'label': 'Active Patients', 'value': f"{active}/{len(rows)}", 'cls': 'bg-emerald-50 text-emerald-600'},
+        {'icon': 'circle-alert', 'label': 'Need Attention', 'value': sum(r['status'] == 'inactive' for r in rows), 'cls': 'bg-rose-50 text-rose-600'},
+        {'icon': 'trending-up', 'label': 'Avg Quality (14 days)', 'value': f"{round(sum(scores) / len(scores))}%" if scores else '—', 'cls': 'bg-blue-50 text-blue-600'},
+        {'icon': 'dumbbell', 'label': 'Workouts This Week', 'value': recent.filter(date__gt=today - timedelta(days=7)).count(), 'cls': 'bg-amber-50 text-amber-600'},
+    ]
+
+
 @login_required
 def doctor_dashboard(request):
     q = request.GET.get('q', '').strip()
@@ -48,12 +63,7 @@ def doctor_dashboard(request):
         patients = [p for p in patients if p['status'] == status]
     page = Paginator(patients, PER_PAGE).get_page(request.GET.get('page'))
     return render(request, 'doctor_dashboard.html', {
-        'stats': [
-            {'icon': 'users', 'label': 'Active Patients', 'value': '127', 'cls': 'bg-emerald-50 text-emerald-600'},
-            {'icon': 'bell', 'label': 'New Alerts', 'value': '8', 'cls': 'bg-rose-50 text-rose-600'},
-            {'icon': 'trending-up', 'label': 'Avg Progress Rate', 'value': '92%', 'cls': 'bg-blue-50 text-blue-600'},
-            {'icon': 'file-text', 'label': 'Pending Reviews', 'value': '15', 'cls': 'bg-amber-50 text-amber-600'},
-        ],
+        'stats': dashboard_stats(request.user),
         'quick_actions': [
             {'icon': 'calendar', 'label': 'Schedule Appointment', 'cls': 'bg-purple-50 text-purple-600 hover:bg-purple-100'},
             {'icon': 'activity', 'label': 'Monitor Vitals', 'cls': 'bg-rose-50 text-rose-600 hover:bg-rose-100'},
