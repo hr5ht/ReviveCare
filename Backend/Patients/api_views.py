@@ -81,7 +81,7 @@ def api_patient_login(request):
             }, status=400)
         
         try:
-            patient = Patient.objects.get(email=email)
+            patient = Patient.objects.get(email=email, is_active=True)
 
             if patient.locked_until and patient.locked_until > timezone.now():
                 return JsonResponse({

@@ -20,10 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 def patient_page(view):
-    """Send patients still on a temporary password to the change-password page first."""
+    """Sign out deactivated patients; send those still on a temporary password to the change-password page first."""
     @wraps(view)
     def wrapper(request, *args, **kwargs):
-        if Patient.objects.filter(id=request.session.get('patient_id'), must_change_password=True).exists():
+        patient = _logged_in_patient(request)
+        if patient and not patient.is_active:
+            request.session.flush()
+            return redirect('patient_login')
+        if patient and patient.must_change_password:
             return redirect('change_password')
         return view(request, *args, **kwargs)
     return wrapper

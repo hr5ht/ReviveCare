@@ -110,6 +110,17 @@ def edit_patient(request, patient_id):
     return render(request, 'edit_patient.html', {'patient': patient, 'form': form})
 
 
+@login_required
+def set_patient_active(request, patient_id):
+    """Deactivate a patient (hidden from the dashboard, can't sign in) or bring them back."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    if request.method == 'POST':
+        patient.is_active = request.POST.get('active') == '1'
+        patient.save(update_fields=['is_active', 'updated_at'])
+        messages.success(request, f"{patient.name} {'reactivated' if patient.is_active else 'deactivated'}.")
+    return redirect('patient_detail', patient_id=patient.id)
+
+
 def _bounded(value, low, high):
     """An int within [low, high], or None (use the exercise default) for blank/invalid input."""
     try:
