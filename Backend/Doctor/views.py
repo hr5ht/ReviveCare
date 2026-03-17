@@ -11,7 +11,7 @@ from django.utils import timezone
 from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards
 from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
-from .forms import DoctorProfileForm, RecoveryGoalForm
+from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
 from .models import DoctorProfile
 
 
@@ -97,6 +97,17 @@ def doctor_profile(request):
         form = DoctorProfileForm(initial={'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email,
                                           'specialty': profile.specialty, 'phone': profile.phone})
     return render(request, 'doctor_profile.html', {'form': form})
+
+
+@login_required
+def edit_patient(request, patient_id):
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    form = PatientForm(request.POST or None, instance=patient)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Patient details saved.')
+        return redirect('patient_detail', patient_id=patient.id)
+    return render(request, 'edit_patient.html', {'patient': patient, 'form': form})
 
 
 def _bounded(value, low, high):

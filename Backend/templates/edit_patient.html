@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ patient.name }} · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <button onclick="location.href='/doctor/patients/{{ patient.id }}/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to {{ patient.name }}</span>
+        </button>
+
+        <div class="flex justify-center">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5 w-full max-w-2xl p-8">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="pencil" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Edit Patient</h2>
+                    <p class="text-slate-600">Update {{ patient.name }}'s details</p>
+                </div>
+
+                <form method="post" class="grid grid-cols-1 md:grid-cols-2 gap-x-5">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-5 {% if field.name == 'name' or field.name == 'email' or field.name == 'info' %}md:col-span-2{% endif %}">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-2">{{ field.label }}{% if field.field.required %}<span class="text-rose-500 ml-1">*</span>{% endif %}</label>
+                        {% with cls="w-full px-4 py-3 bg-white border rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all" %}
+                        {% if field.name == 'info' %}
+                        <textarea id="{{ field.id_for_label }}" name="{{ field.html_name }}" rows="6" class="{{ cls }} resize-none {% if field.errors %}border-rose-300 focus:border-rose-500 focus:ring-rose-500/20{% else %}border-slate-200 focus:border-emerald-400 focus:ring-emerald-500/20{% endif %}">{{ field.value|default:'' }}</textarea>
+                        {% else %}
+                        <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" value="{{ field.value|default:''|stringformat:'s' }}"
+                            type="{% if field.name == 'email' %}email{% elif field.name == 'surgery_date' %}date{% elif 'phone' in field.name %}tel{% else %}text{% endif %}"
+                            {% if field.name == 'surgery_date' %}max="{% now 'Y-m-d' %}"{% endif %}
+                            class="{{ cls }} {% if field.errors %}border-rose-300 focus:border-rose-500 focus:ring-rose-500/20{% else %}border-slate-200 focus:border-emerald-400 focus:ring-emerald-500/20{% endif %}" />
+                        {% endif %}
+                        {% endwith %}
+                        {% for error in field.errors %}<p class="mt-1.5 text-sm text-rose-600">{{ error }}</p>{% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="md:col-span-2 mt-2 inline-flex items-center justify-center gap-3 font-semibold rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-8 py-4 text-lg transition-all">
+                        <i data-lucide="save" class="w-5 h-5"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

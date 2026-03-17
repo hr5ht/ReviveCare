@@ -19,10 +19,18 @@
                 <p class="text-slate-600">{{ patient.condition|default:"No condition recorded" }}{% if patient.surgery_date %} · surgery {{ patient.surgery_date|date:"d M Y" }}{% endif %}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                <a href="/doctor/patients/{{ patient.id }}/edit/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-semibold text-sm"><i data-lucide="pencil" class="w-4 h-4"></i> Edit details</a>
                 <a href="/doctor/patients/{{ patient.id }}/plan/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-semibold text-sm"><i data-lucide="dumbbell" class="w-4 h-4"></i> Exercise plan</a>
                 <a href="/doctor/patients/{{ patient.id }}/goals/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 font-semibold text-sm"><i data-lucide="target" class="w-4 h-4"></i> Goals</a>
             </div>
         </div>
+
+        {% for message in messages %}
+        <div class="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+            <i data-lucide="circle-check" class="w-5 h-5 text-emerald-600"></i>
+            <p class="text-sm text-emerald-700">{{ message }}</p>
+        </div>
+        {% endfor %}
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {% for s in stats %}

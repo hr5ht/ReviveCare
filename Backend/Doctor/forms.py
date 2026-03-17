@@ -3,7 +3,7 @@ import datetime
 from django import forms
 from django.utils import timezone
 
-from Patients.models import Exercise, RecoveryGoal
+from Patients.models import Exercise, Patient, RecoveryGoal
 
 
 class DoctorProfileForm(forms.Form):
@@ -31,3 +31,16 @@ class RecoveryGoalForm(forms.Form):
         if due and due < timezone.localdate():
             self.add_error('due_date', 'The due date is in the past.')
         return data
+
+
+class PatientForm(forms.ModelForm):
+    class Meta:
+        model = Patient
+        fields = ['name', 'email', 'condition', 'surgery_date', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'info']
+        labels = {'info': 'Patient information', 'surgery_date': 'Surgery / discharge date'}
+
+    def clean_surgery_date(self):
+        date = self.cleaned_data['surgery_date']
+        if date and date > timezone.localdate():
+            raise forms.ValidationError('The surgery date is in the future.')
+        return date
