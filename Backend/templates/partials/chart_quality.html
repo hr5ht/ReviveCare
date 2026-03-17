@@ -1,0 +1,21 @@
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h2 class="font-semibold text-slate-900">Rep quality</h2>
+                        <p class="text-sm text-slate-500">How cleanly each day's reps were done</p>
+                    </div>
+                    <ul class="flex items-center gap-4 text-sm text-slate-600" aria-label="Legend">
+                        <li class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background: var(--viz-q-excellent)"></span>Excellent <span class="text-slate-400 tabular-nums">{{ quality_totals.0 }}</span></li>
+                        <li class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background: var(--viz-q-good)"></span>Good <span class="text-slate-400 tabular-nums">{{ quality_totals.1 }}</span></li>
+                        <li class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm" style="background: var(--viz-q-partial)"></span>Partial <span class="text-slate-400 tabular-nums">{{ quality_totals.2 }}</span></li>
+                    </ul>
+                </div>
+                <div id="quality-chart" class="h-[220px]"></div>
+                <details class="mt-3 text-sm text-slate-600">
+                    <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Show as table</summary>
+                    <table class="mt-2 w-full tabular-nums">
+                        <thead class="text-slate-400"><tr><th class="py-1 text-left font-medium">Day</th><th class="py-1 text-right font-medium">Excellent</th><th class="py-1 text-right font-medium">Good</th><th class="py-1 text-right font-medium">Partial</th></tr></thead>
+                        <tbody>{% for d in quality_chart %}{% if d.parts.0 or d.parts.1 or d.parts.2 %}<tr><td class="py-1">{{ d.label }}</td><td class="py-1 text-right">{{ d.parts.0 }}</td><td class="py-1 text-right">{{ d.parts.1 }}</td><td class="py-1 text-right">{{ d.parts.2 }}</td></tr>{% endif %}{% endfor %}</tbody>
+                    </table>
+                </details>
+            </section>

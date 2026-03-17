@@ -8,7 +8,7 @@ from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from Home.views import _initials, days_in_recovery, exercise_streak, goal_cards
+from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards
 from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, RecoveryGoalForm
@@ -156,7 +156,10 @@ def patient_detail(request, patient_id):
     recent = workouts.filter(date__gt=today - timedelta(days=30))
     scores = [w.quality_score for w in recent]
     names = dict(Exercise.objects.values_list('slug', 'name'))
+    since = today - timedelta(days=29)
     return render(request, 'patient_detail.html', {
+        **daily_charts(workouts.filter(date__gte=since), [since + timedelta(days=i) for i in range(30)]),
+        'days': 30,
         'patient': patient,
         'initials': _initials(patient.name),
         'stats': [

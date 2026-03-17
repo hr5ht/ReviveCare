@@ -1,0 +1,13 @@
+{% load static %}
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+    const repsEl = document.getElementById('reps-chart');
+    if (repsEl) Charts.responsive(repsEl, () => Charts.columnChart(repsEl, JSON.parse(document.getElementById('reps-data').textContent), { unit: 'reps' }));
+    const qualityEl = document.getElementById('quality-chart');
+    if (qualityEl) {
+        const series = [['Excellent', '--viz-q-excellent'], ['Good', '--viz-q-good'], ['Partial', '--viz-q-partial']].map(([name, v]) => ({ name, color: `var(${v})` }));
+        Charts.responsive(qualityEl, () => Charts.stackedColumnChart(qualityEl, JSON.parse(document.getElementById('quality-data').textContent), series, { unit: 'reps' }));
+    }
+    const romEl = document.getElementById('rom-chart');
+    if (romEl) Charts.responsive(romEl, () => Charts.lineChart(romEl, JSON.parse(document.getElementById('rom-data').textContent), { unit: '{{ rom_unit }}' }));
+</script>
