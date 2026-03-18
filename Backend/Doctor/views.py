@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Max, Q
+from django.db.models import Count, Max, Min, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -18,21 +18,29 @@ from .models import ClinicalNote, DoctorProfile
 
 STATUSES = ['active', 'inactive', 'new']
 PER_PAGE = 10
+ADHERENCE_DAYS = 14
 
 
 def patient_rows(patients):
-    """Patients with their latest workout and a status: active (worked out in the last 3 days), inactive or new."""
-    last = dict(Workout.objects.filter(patient__in=patients, total_reps__gt=0).values('patient')
-                .annotate(latest=Max('date')).values_list('patient', 'latest'))
+    """Patients with their latest workout, adherence (share of the last 14 days with a workout, counted from
+    registration if that's more recent) and a status: active (worked out in the last 3 days), inactive or new."""
+    done = Workout.objects.filter(patient__in=patients, total_reps__gt=0)
+    spans = {p: (first, latest) for p, first, latest in
+             done.values('patient').annotate(first=Min('date'), latest=Max('date')).values_list('patient', 'first', 'latest')}
     today = timezone.localdate()
+    since = today - timedelta(days=ADHERENCE_DAYS - 1)
+    active_days = dict(done.filter(date__gte=since).values('patient')
+                       .annotate(days=Count('date', distinct=True)).values_list('patient', 'days'))
     rows = []
     for p in patients:
-        latest = last.get(p.id)
+        first, latest = spans.get(p.id, (None, None))
+        start = max(since, min(timezone.localdate(p.created_at), first or today))  # imported history can predate registration
         status = 'new' if not latest else 'active' if (today - latest).days <= 3 else 'inactive'
         ago = None if not latest else 'today' if latest == today else 'yesterday' if (today - latest).days == 1 else f"{(today - latest).days} days ago"
         rows.append({'id': p.id, 'name': p.name, 'initials': _initials(p.name), 'condition': p.condition or 'No condition recorded',
                      'status': status, 'last_workout': latest, 'last_workout_ago': ago,
-                     'idle_days': (today - (latest or timezone.localdate(p.created_at))).days})
+                     'idle_days': (today - (latest or timezone.localdate(p.created_at))).days,
+                     'adherence': round(100 * active_days.get(p.id, 0) / ((today - start).days + 1))})
     rows.sort(key=lambda r: r['last_workout'] or today.replace(year=1), reverse=True)
     return rows
 

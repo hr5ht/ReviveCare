@@ -103,11 +103,17 @@
                                         <p class="text-sm text-slate-500">{{ p.condition }}</p>
                                     </div>
                                 </div>
-                                <div class="text-right">
+                                <div class="flex items-center gap-6">
+                                <div class="hidden sm:block w-28" title="Days with a workout in the last 14 days">
+                                    <p class="text-xs text-slate-500 mb-1 flex justify-between"><span>Adherence</span><span class="font-semibold text-slate-700 tabular-nums">{{ p.adherence }}%</span></p>
+                                    <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-emerald-500" style="width: {{ p.adherence }}%"></div></div>
+                                </div>
+                                <div class="text-right sm:w-36">
                                     <span class="text-xs font-medium px-3 py-1.5 rounded-lg {% if p.status == 'active' %}bg-emerald-100 text-emerald-700{% elif p.status == 'new' %}bg-blue-100 text-blue-700{% else %}bg-amber-100 text-amber-700{% endif %}">
                                         {{ p.status }}
                                     </span>
                                     <p class="text-xs text-slate-400 mt-1">{% if p.last_workout %}Last workout {{ p.last_workout_ago }}{% else %}No workouts yet{% endif %}</p>
+                                </div>
                                 </div>
                             </div>
                         </a>
