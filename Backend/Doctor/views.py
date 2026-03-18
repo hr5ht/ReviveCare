@@ -78,12 +78,6 @@ def doctor_dashboard(request):
     return render(request, 'doctor_dashboard.html', {
         'stats': dashboard_stats(request.user, everyone),
         'at_risk': at_risk(everyone),
-        'quick_actions': [
-            {'icon': 'calendar', 'label': 'Schedule Appointment', 'cls': 'bg-purple-50 text-purple-600 hover:bg-purple-100'},
-            {'icon': 'activity', 'label': 'Monitor Vitals', 'cls': 'bg-rose-50 text-rose-600 hover:bg-rose-100'},
-            {'icon': 'pill', 'label': 'Prescribe Medication', 'cls': 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'},
-            {'icon': 'video', 'label': 'Start Telehealth', 'cls': 'bg-blue-50 text-blue-600 hover:bg-blue-100'},
-        ],
         'patients': page,
         'patient_count': len(patients),
         'page_query': urlencode({k: v for k, v in (('q', q), ('status', status)) if v}),

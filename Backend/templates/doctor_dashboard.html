@@ -58,24 +58,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Quick Actions -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
-                    <h3 class="text-xl font-semibold text-slate-900 mb-5">Quick Actions</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        {% for action in quick_actions %}
-                        <button class="flex items-center gap-3 p-4 rounded-xl {{ action.cls }} transition-all duration-200 text-left">
-                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                <i data-lucide="{{ action.icon }}" class="w-5 h-5"></i>
-                            </div>
-                            <span class="font-medium text-sm">{{ action.label }}</span>
-                        </button>
-                        {% endfor %}
-                    </div>
-                </div>
-
                 <!-- Recent Patients -->
-                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm hover:shadow-md mt-6 overflow-hidden">
+                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm hover:shadow-md overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 space-y-3">
                         <h3 class="text-xl font-semibold text-slate-900">Your Patients <span class="text-sm font-normal text-slate-400">({{ patient_count }})</span></h3>
                         <form method="get" class="flex flex-wrap items-center gap-2">
@@ -141,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- Sidebar - Today's Schedule -->
+            <!-- Sidebar -->
             <div class="space-y-6">
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                     <div class="flex items-center gap-2 mb-4">
@@ -160,41 +145,6 @@
                         {% endfor %}
                     </ul>
                 </section>
-
-                <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-4">Today's Schedule</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl">
-                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-slate-900 text-sm">Morning Rounds</p>
-                                <p class="text-xs text-slate-600">8:00 AM - 10:00 AM</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="video" class="w-5 h-5 text-blue-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-slate-900 text-sm">Telehealth Sessions</p>
-                                <p class="text-xs text-slate-600">11:00 AM - 2:00 PM</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-start gap-3 p-3 bg-purple-50 rounded-xl">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-slate-900 text-sm">Review Reports</p>
-                                <p class="text-xs text-slate-600">3:00 PM - 4:00 PM</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Contact Support -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-gradient-to-br from-slate-900 to-slate-800 text-white">
