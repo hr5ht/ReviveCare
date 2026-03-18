@@ -137,6 +137,24 @@
 
             <!-- Sidebar - Today's Schedule -->
             <div class="space-y-6">
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="triangle-alert" class="w-5 h-5 text-amber-600"></i>
+                        <h3 class="text-lg font-semibold text-slate-900">At risk</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">No workouts in more than 3 days</p>
+                    <ul class="divide-y divide-slate-100">
+                        {% for p in at_risk %}
+                        <li><a href="/doctor/patients/{{ p.id }}/" class="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50 -mx-2 px-2 rounded-lg">
+                            <span class="min-w-0"><span class="block font-medium text-slate-900 text-sm truncate">{{ p.name }}</span><span class="block text-xs text-slate-500 truncate">{{ p.condition }}</span></span>
+                            <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-md whitespace-nowrap tabular-nums">{% if p.last_workout %}{{ p.idle_days }} days{% else %}never{% endif %}</span>
+                        </a></li>
+                        {% empty %}
+                        <li class="py-2 text-sm text-slate-500 flex items-center gap-2"><i data-lucide="circle-check" class="w-4 h-4 text-emerald-600"></i> Everyone is on track.</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
                     <h3 class="text-lg font-semibold text-slate-900 mb-4">Today's Schedule</h3>
                     <div class="space-y-4">

@@ -31,13 +31,18 @@ def patient_rows(patients):
         status = 'new' if not latest else 'active' if (today - latest).days <= 3 else 'inactive'
         ago = None if not latest else 'today' if latest == today else 'yesterday' if (today - latest).days == 1 else f"{(today - latest).days} days ago"
         rows.append({'id': p.id, 'name': p.name, 'initials': _initials(p.name), 'condition': p.condition or 'No condition recorded',
-                     'status': status, 'last_workout': latest, 'last_workout_ago': ago})
+                     'status': status, 'last_workout': latest, 'last_workout_ago': ago,
+                     'idle_days': (today - (latest or timezone.localdate(p.created_at))).days})
     rows.sort(key=lambda r: r['last_workout'] or today.replace(year=1), reverse=True)
     return rows
 
 
-def dashboard_stats(doctor):
-    rows = patient_rows(Patient.for_doctor(doctor).filter(is_active=True))
+def at_risk(rows, limit=5):
+    """Patients who haven't worked out in more than 3 days (or since they were added), longest gap first."""
+    return sorted((r for r in rows if r['idle_days'] > 3), key=lambda r: r['idle_days'], reverse=True)[:limit]
+
+
+def dashboard_stats(doctor, rows):
     today = timezone.localdate()
     recent = Workout.objects.filter(patient__in=Patient.for_doctor(doctor), total_reps__gt=0)
     scores = [w.quality_score for w in recent.filter(date__gt=today - timedelta(days=14))]
@@ -55,6 +60,7 @@ def doctor_dashboard(request):
     q = request.GET.get('q', '').strip()
     status = request.GET.get('status', '')
     patients = Patient.for_doctor(request.user).filter(is_active=True)
+    everyone = patient_rows(patients)
     if q:
         patients = patients.filter(Q(name__icontains=q) | Q(email__icontains=q) | Q(condition__icontains=q))
     patients = patient_rows(patients)
@@ -62,7 +68,8 @@ def doctor_dashboard(request):
         patients = [p for p in patients if p['status'] == status]
     page = Paginator(patients, PER_PAGE).get_page(request.GET.get('page'))
     return render(request, 'doctor_dashboard.html', {
-        'stats': dashboard_stats(request.user),
+        'stats': dashboard_stats(request.user, everyone),
+        'at_risk': at_risk(everyone),
         'quick_actions': [
             {'icon': 'calendar', 'label': 'Schedule Appointment', 'cls': 'bg-purple-50 text-purple-600 hover:bg-purple-100'},
             {'icon': 'activity', 'label': 'Monitor Vitals', 'cls': 'bg-rose-50 text-rose-600 hover:bg-rose-100'},
