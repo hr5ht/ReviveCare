@@ -6,13 +6,14 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards
 from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
-from .models import DoctorProfile
+from .models import ClinicalNote, DoctorProfile
 
 
 STATUSES = ['active', 'inactive', 'new']
@@ -111,6 +112,16 @@ def edit_patient(request, patient_id):
 
 
 @login_required
+def add_note(request, patient_id):
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    text = request.POST.get('text', '').strip()[:3000]
+    if request.method == 'POST' and text:
+        ClinicalNote.objects.create(patient=patient, author=request.user, text=text)
+        messages.success(request, 'Note added.')
+    return redirect(f"{reverse('patient_detail', args=[patient.id])}#notes")
+
+
+@login_required
 def set_patient_active(request, patient_id):
     """Deactivate a patient (hidden from the dashboard, can't sign in) or bring them back."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
@@ -192,6 +203,7 @@ def patient_detail(request, patient_id):
         ],
         'plan': patient.plan.filter(is_active=True).select_related('exercise'),
         'goals': goal_cards(patient),
+        'notes': patient.notes.select_related('author'),
         'sessions': [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,
                       'score': round(w.quality_score), 'completed': w.completed}
                      for w in workouts.order_by('-date', '-created_at')[:10]],

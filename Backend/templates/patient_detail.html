@@ -74,6 +74,31 @@
                     <p class="px-6 py-8 text-center text-slate-500">No workouts yet.</p>
                     {% endif %}
                 </section>
+
+                <section id="notes" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h2 class="font-semibold text-slate-900 mb-4">Clinical notes</h2>
+                    <form method="post" action="/doctor/patients/{{ patient.id }}/notes/" class="mb-6">
+                        {% csrf_token %}
+                        <label for="note-text" class="sr-only">New note</label>
+                        <textarea id="note-text" name="text" rows="3" maxlength="3000" required placeholder="Add a note: progress, pain reported, changes to the plan..."
+                            class="w-full px-4 py-3 bg-white border border-slate-200 focus:border-emerald-400 focus:ring-emerald-500/20 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all resize-y"></textarea>
+                        <button class="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-semibold text-sm"><i data-lucide="plus" class="w-4 h-4"></i> Add note</button>
+                    </form>
+                    <ol class="relative border-l-2 border-slate-100 ml-2 space-y-5">
+                        {% for note in notes %}
+                        <li class="pl-5 relative">
+                            <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-white"></span>
+                            <p class="text-xs text-slate-500 mb-1">{{ note.created_at|date:"d M Y, H:i" }}{% if note.author %} · Dr. {{ note.author.get_full_name|default:note.author.username }}{% endif %}</p>
+                            <p class="text-sm text-slate-800 whitespace-pre-line">{{ note.text }}</p>
+                        </li>
+                        {% endfor %}
+                        <li class="pl-5 relative">
+                            <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-slate-300 ring-4 ring-white"></span>
+                            <p class="text-xs text-slate-500 mb-1">{{ patient.created_at|date:"d M Y" }} · At registration</p>
+                            <p class="text-sm text-slate-800 whitespace-pre-line">{{ patient.info }}</p>
+                        </li>
+                    </ol>
+                </section>
             </div>
 
             <div class="space-y-6">
@@ -104,11 +129,6 @@
                         </li>
                         {% empty %}<li class="text-sm text-slate-500">No goals set.</li>{% endfor %}
                     </ul>
-                </section>
-
-                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <h2 class="font-semibold text-slate-900 mb-2">Clinical notes from setup</h2>
-                    <p class="text-sm text-slate-600 whitespace-pre-line">{{ patient.info }}</p>
                 </section>
             </div>
         </div>

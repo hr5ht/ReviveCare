@@ -40,6 +40,7 @@ urlpatterns = [
     path('doctor/patients/<int:patient_id>/', doctor.patient_detail, name='patient_detail'),
     path('doctor/patients/<int:patient_id>/edit/', doctor.edit_patient, name='edit_patient'),
     path('doctor/patients/<int:patient_id>/active/', doctor.set_patient_active, name='set_patient_active'),
+    path('doctor/patients/<int:patient_id>/notes/', doctor.add_note, name='add_note'),
     path('doctor/patients/<int:patient_id>/plan/', doctor.patient_plan, name='patient_plan'),
     path('doctor/patients/<int:patient_id>/goals/', doctor.patient_goals, name='patient_goals'),
     path('patient/', RedirectView.as_view(url='/patient/login/')),
