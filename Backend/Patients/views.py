@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .models import Patient
+from .models import Alert, Patient
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +166,7 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
 
 MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
                      "If this is urgent, contact your doctor or hospital directly.")
+ALERT_THRESHOLD = 0.75  # seriousness above this goes to the doctor's alerts
 CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
@@ -238,8 +239,8 @@ def chatbot_send(request):
         request.session['chat_history'] = chat_history
         request.session.modified = True
         
-        # Send email alert if high seriousness
-        if seriousness_score > 0.75:
+        if seriousness_score > ALERT_THRESHOLD:
+            Alert.objects.create(patient=patient, message=user_message, response=patient_response, seriousness=seriousness_score)
             send_email_alert(patient, user_message, patient_response, seriousness_score)
         
         return JsonResponse({
