@@ -183,3 +183,20 @@ class RecoveryGoal(models.Model):
         if self.kind == 'range':
             return f"Reach {self.target}{unit}{where}"
         return f"{self.target} {unit}{where}"
+
+
+class Alert(models.Model):
+    """A chat message the chatbot scored as serious, waiting for the doctor to review it."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='alerts')
+    message = models.TextField()
+    response = models.TextField(blank=True)
+    seriousness = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    acknowledged_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.patient.name} · {self.seriousness:.2f} · {self.created_at:%d %b %H:%M}"

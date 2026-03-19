@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
+from .models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 
 @admin.register(Patient)
@@ -52,3 +52,10 @@ class RecoveryGoalAdmin(admin.ModelAdmin):
     list_display = ('patient', 'kind', 'target', 'exercise', 'due_date', 'achieved_at')
     list_filter = ('kind',)
     search_fields = ('patient__name',)
+
+
+@admin.register(Alert)
+class AlertAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'seriousness', 'created_at', 'acknowledged_at')
+    list_filter = ('acknowledged_at',)
+    search_fields = ('patient__name', 'message')
