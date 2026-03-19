@@ -36,6 +36,7 @@ urlpatterns = [
     path('doctor/password-reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('doctor/password-reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     path('doctor/add-patient/', doctor.add_patient, name='add_patient'),
+    path('doctor/alerts/', doctor.alerts, name='alerts'),
     path('doctor/profile/', doctor.doctor_profile, name='doctor_profile'),
     path('doctor/patients/<int:patient_id>/', doctor.patient_detail, name='patient_detail'),
     path('doctor/patients/<int:patient_id>/edit/', doctor.edit_patient, name='edit_patient'),

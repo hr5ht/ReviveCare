@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards
-from Patients.models import Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
+from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
@@ -139,6 +139,19 @@ def set_patient_active(request, patient_id):
         patient.save(update_fields=['is_active', 'updated_at'])
         messages.success(request, f"{patient.name} {'reactivated' if patient.is_active else 'deactivated'}.")
     return redirect('patient_detail', patient_id=patient.id)
+
+
+@login_required
+def alerts(request):
+    """Serious chat messages from the doctor's patients; unread first."""
+    mine = Alert.objects.filter(patient__in=Patient.for_doctor(request.user)).select_related('patient')
+    if request.method == 'POST':
+        mine.filter(id=request.POST.get('alert'), acknowledged_at=None).update(acknowledged_at=timezone.now(), acknowledged_by=request.user)
+        return redirect('alerts')
+    return render(request, 'alerts.html', {
+        'unread': mine.filter(acknowledged_at=None),
+        'read': mine.exclude(acknowledged_at=None).select_related('acknowledged_by')[:30],
+    })
 
 
 def _bounded(value, low, high):
