@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import threading
 
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -131,8 +132,19 @@ def parse_response(raw_response):
         return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
 
 
+def _send_quietly(subject, body, to, patient_id):
+    try:
+        send_mail(subject, body, None, [to])
+    except Exception:
+        logger.exception('Doctor alert email for patient %s failed', patient_id)
+
+
 def send_email_alert(patient, user_query, patient_response, seriousness_score):
-    """Email the doctor when a chat message scores as serious. Returns True if it was sent."""
+    """Email the patient's doctor (or DOCTOR_EMAIL) about a serious chat message, without making the patient wait.
+
+    Everything that touches the database happens here; the thread only talks to SMTP. The Alert row is the record if mail fails.
+    """
+    to = (patient.doctor and patient.doctor.email) or os.getenv('DOCTOR_EMAIL', 'harshitxgarg@gmail.com')
     body = f"""URGENT PATIENT ALERT - ReViveCare
 ============================================
 
@@ -155,13 +167,9 @@ Please contact the patient immediately to assess their condition and provide app
 
 This is an automated alert from the ReViveCare post-discharge monitoring system.
 """
-    try:
-        send_mail(f"URGENT - Patient Alert: {patient.name} (Score: {seriousness_score:.2f})",
-                  body, None, [os.getenv('DOCTOR_EMAIL', 'harshitxgarg@gmail.com')])
-        return True
-    except Exception:
-        logger.exception('Doctor alert email for patient %s failed', patient.id)
-        return False
+    subject = f"URGENT - Patient Alert: {patient.name} (Score: {seriousness_score:.2f})"
+    # ponytail: plain thread; a serverless instance may freeze it after the response, move to a task queue if mails go missing
+    threading.Thread(target=_send_quietly, args=(subject, body, to, patient.id), daemon=True).start()
 
 
 MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
