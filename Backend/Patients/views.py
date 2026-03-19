@@ -1,5 +1,6 @@
 # Patients/views.py — chatbot endpoint and doctor alert email
-# Env (loaded by settings): GROQ_API_KEY, GROQ_MODEL, DOCTOR_EMAIL; email settings live in settings.py
+# Env (loaded by settings): GROQ_API_KEY, GROQ_MODEL, DOCTOR_EMAIL; optional SMS: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
+# TWILIO_PHONE_NUMBER, TO_NUMBER (fallback when the doctor's profile has no phone); email settings live in settings.py
 import json
 import logging
 import os
@@ -11,6 +12,8 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+
+from Doctor.models import DoctorProfile
 
 from .models import Alert, Patient
 
@@ -132,15 +135,30 @@ def parse_response(raw_response):
         return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
 
 
-def _send_quietly(subject, body, to, patient_id):
+def _send_quietly(subject, body, to, sms_to, patient_id):
     try:
         send_mail(subject, body, None, [to])
     except Exception:
         logger.exception('Doctor alert email for patient %s failed', patient_id)
+    if sms_to:
+        try:
+            from twilio.rest import Client
+            Client(os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN']).messages.create(
+                to=sms_to, from_=os.environ['TWILIO_PHONE_NUMBER'], body=f"ReViveCare: {subject}. Check your alerts.")
+        except Exception:
+            logger.exception('Doctor alert SMS for patient %s failed', patient_id)
+
+
+def _doctor_phone(patient):
+    """Where to text alerts: the doctor's profile phone, else TO_NUMBER; None when Twilio isn't configured."""
+    if not all(os.getenv(k) for k in ('TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER')):
+        return None
+    profile = patient.doctor and DoctorProfile.objects.filter(user=patient.doctor).first()
+    return (profile and profile.phone) or os.getenv('TO_NUMBER') or None
 
 
 def send_email_alert(patient, user_query, patient_response, seriousness_score):
-    """Email the patient's doctor (or DOCTOR_EMAIL) about a serious chat message, without making the patient wait.
+    """Email (and text, if Twilio is set up) the patient's doctor about a serious chat message, without making the patient wait.
 
     Everything that touches the database happens here; the thread only talks to SMTP. The Alert row is the record if mail fails.
     """
@@ -169,7 +187,7 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
 """
     subject = f"URGENT - Patient Alert: {patient.name} (Score: {seriousness_score:.2f})"
     # ponytail: plain thread; a serverless instance may freeze it after the response, move to a task queue if mails go missing
-    threading.Thread(target=_send_quietly, args=(subject, body, to, patient.id), daemon=True).start()
+    threading.Thread(target=_send_quietly, args=(subject, body, to, _doctor_phone(patient), patient.id), daemon=True).start()
 
 
 MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
