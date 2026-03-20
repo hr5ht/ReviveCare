@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from Doctor.models import DoctorProfile
+from Home.views import days_in_recovery, exercise_streak, goal_cards, weekly_summary
 
 from .models import Alert, ChatMessage, Patient
 
@@ -80,6 +81,26 @@ STRICT OUTPUT FORMAT (valid JSON only, no extra text):
 PATIENT MEDICAL CONTEXT:
 {patient_context}
 """
+
+
+def patient_context(patient):
+    """The doctor's notes plus the patient's current plan and recent workout progress, for the system prompt."""
+    week = weekly_summary(patient)
+    lines = [patient.info, '']
+    if patient.condition:
+        lines.append(f"Condition: {patient.condition}")
+    if patient.surgery_date:
+        lines.append(f"Surgery/discharge date: {patient.surgery_date:%d %b %Y} ({days_in_recovery(patient)} days ago)")
+    plan = [f"{p.exercise.name} {p.total_sets} x {p.reps}" for p in patient.plan.filter(is_active=True).select_related('exercise')]
+    lines.append(f"Exercise plan: {', '.join(plan) or 'none assigned'}")
+    lines.append(f"Last 7 days: {week['reps']} reps on {week['active_days']} days"
+                 + (f", average form quality {week['quality']}%" if week['quality'] is not None else '')
+                 + f". Current streak: {exercise_streak(patient)} days.")
+    goals = [f"{g['text']} ({'done' if g['achieved'] else str(g['percent']) + '%'})" for g in goal_cards(patient)]
+    if goals:
+        lines.append(f"Recovery goals: {'; '.join(goals)}")
+    return '\n'.join(lines)
+
 
 # ============================================================================
 # PATIENT AUTHENTICATION & DASHBOARD VIEWS
@@ -226,7 +247,7 @@ def chatbot_send(request):
         chat_history = list(patient.chat_messages.order_by('-created_at', '-id')[:CHAT_CONTEXT_MESSAGES])[::-1]
         
         # Prepare system prompt with patient context
-        system_prompt = SYSTEM_PROMPT.format(patient_context=patient.info)
+        system_prompt = SYSTEM_PROMPT.format(patient_context=patient_context(patient))
         
         if LANGCHAIN_AVAILABLE:
             # Build messages
