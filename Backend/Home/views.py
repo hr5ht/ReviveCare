@@ -320,9 +320,16 @@ def exercise_workout(request, exercise_id):
     return render(request, 'exercise_workout.html', {'exercise': exercise.to_dict(plan)})
 
 
+CHAT_HISTORY_SHOWN = 50
+
+
 @patient_page
 def chat(request):
-    return render(request, 'chat.html')
+    patient = _logged_in_patient(request)
+    recent = patient.chat_messages.order_by('-created_at', '-id')[:CHAT_HISTORY_SHOWN] if patient else []
+    history = [{'role': m.role, 'content': m.content, 'seriousness': m.seriousness, 'time': timezone.localtime(m.created_at).isoformat()}
+               for m in reversed(recent)]
+    return render(request, 'chat.html', {'history': history})
 
 
 RESET_SALT = 'patient-password-reset'

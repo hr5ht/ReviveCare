@@ -64,6 +64,7 @@
 {% endblock %}
 
 {% block scripts %}
+{{ history|json_script:"chat-history" }}
 <script>
     const T = {
         english: {
@@ -99,9 +100,12 @@
     let messageCount = 0;
     let typing = false;
 
-    const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const history = JSON.parse(document.getElementById('chat-history').textContent);
+    const clock = (d = new Date()) => d.toDateString() === new Date().toDateString()
+        ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-    function addMessage(text, isAI, score) {
+    function addMessage(text, isAI, score, when) {
         const row = document.createElement('div');
         row.className = `flex gap-3 mb-4 ${isAI ? 'justify-start' : 'justify-end'}`;
         const avatar = isAI
@@ -117,7 +121,7 @@
                 <div class="rounded-2xl px-4 py-3 ${isAI ? 'bg-white border border-gray-200 shadow-sm' : 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-md'}">
                     <p class="text-sm leading-relaxed whitespace-pre-line ${isAI ? 'text-gray-800' : 'text-white'}"></p>${badge}
                 </div>
-                <span class="text-xs text-gray-500 mt-1 block ${isAI ? 'text-left' : 'text-right'}">${now()}</span>
+                <span class="text-xs text-gray-500 mt-1 block ${isAI ? 'text-left' : 'text-right'}">${clock(when)}</span>
             </div>`;
         row.innerHTML = isAI ? avatar + body : body + avatar;
         row.querySelector('p').textContent = text;
@@ -173,7 +177,7 @@
             quick.appendChild(b);
         });
         // Swap the welcome message if the user hasn't chatted yet
-        if (messageCount <= 1) {
+        if (!history.length && messageCount <= 1) {
             messagesEl.innerHTML = '';
             messageCount = 0;
             addMessage(t.welcome, true);
@@ -207,6 +211,8 @@
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
     sendBtn.onclick = send;
 
+    history.forEach((m) => addMessage(m.content, m.role === 'assistant', m.seriousness ?? undefined, new Date(m.time)));
     setLanguage('english');
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 </script>
 {% endblock %}
