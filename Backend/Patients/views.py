@@ -15,7 +15,7 @@ from django.views.decorators.http import require_http_methods
 
 from Doctor.models import DoctorProfile
 
-from .models import Alert, Patient
+from .models import Alert, ChatMessage, Patient
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +193,7 @@ This is an automated alert from the ReViveCare post-discharge monitoring system.
 MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again in a few minutes. "
                      "If this is urgent, contact your doctor or hospital directly.")
 ALERT_THRESHOLD = 0.75  # seriousness above this goes to the doctor's alerts
+CHAT_CONTEXT_MESSAGES = 20
 CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
@@ -221,8 +222,8 @@ def chatbot_send(request):
         if not user_message:
             return JsonResponse({'success': False, 'error': 'Empty message'})
         
-        # Get or initialize chat history
-        chat_history = request.session.get('chat_history', [])
+        # The model sees the last CHAT_CONTEXT_MESSAGES turns of the stored conversation
+        chat_history = list(patient.chat_messages.order_by('-created_at', '-id')[:CHAT_CONTEXT_MESSAGES])[::-1]
         
         # Prepare system prompt with patient context
         system_prompt = SYSTEM_PROMPT.format(patient_context=patient.info)
@@ -233,10 +234,7 @@ def chatbot_send(request):
             
             # Add conversation history
             for msg in chat_history:
-                if msg['role'] == 'user':
-                    messages.append(HumanMessage(content=msg['content']))
-                else:
-                    messages.append(AIMessage(content=msg['content']))
+                messages.append((HumanMessage if msg.role == 'user' else AIMessage)(content=msg.content))
             
             # Add current query
             messages.append(HumanMessage(content=user_message))
@@ -254,16 +252,10 @@ def chatbot_send(request):
             patient_response = f"I understand your concern about: '{user_message}'. Based on your recovery plan, this seems normal. However, I'm currently in development mode. Please consult your doctor for specific medical advice."
             seriousness_score = 0.2
         
-        # Update chat history
-        chat_history.append({'role': 'user', 'content': user_message})
-        chat_history.append({'role': 'assistant', 'content': patient_response})
-        
-        # Keep only last 20 messages to prevent session bloat
-        if len(chat_history) > 20:
-            chat_history = chat_history[-20:]
-        
-        request.session['chat_history'] = chat_history
-        request.session.modified = True
+        ChatMessage.objects.bulk_create([
+            ChatMessage(patient=patient, role='user', content=user_message),
+            ChatMessage(patient=patient, role='assistant', content=patient_response, seriousness=seriousness_score),
+        ])
         
         if seriousness_score > ALERT_THRESHOLD:
             Alert.objects.create(patient=patient, message=user_message, response=patient_response, seriousness=seriousness_score)

@@ -217,11 +217,26 @@ class ChatbotEndpointTests(TestCase):
     def test_reply_and_history(self):
         r = self.send_with_reply('{"patient_response": "Drink water.", "seriousness_score": 0.3}').json()
         self.assertEqual((r['response'], r['seriousness_score']), ('Drink water.', 0.3))
-        self.assertEqual(len(self.client.session['chat_history']), 2)
+        stored = list(Patient.objects.get(email='c@example.com').chat_messages.values_list('role', 'content', 'seriousness'))
+        self.assertEqual(stored, [('user', 'I have a fever', None), ('assistant', 'Drink water.', 0.3)])
+
+    def test_history_is_sent_to_the_model(self):
+        self.send_with_reply('{"patient_response": "Drink water.", "seriousness_score": 0.3}')
+        from types import SimpleNamespace
+        from unittest import mock
+        model = mock.Mock(invoke=mock.Mock(return_value=SimpleNamespace(content='{"patient_response": "ok", "seriousness_score": 0}')))
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), mock.patch('Patients.views.initialize_model', return_value=model):
+            post_json(self.client, self.url, {'message': 'Still hot'})
+        sent = [m.content for m in model.invoke.call_args.args[0][1:]]
+        self.assertEqual(sent, ['I have a fever', 'Drink water.', 'Still hot'])
 
     def test_serious_reply_emails_the_doctor(self):
+        from unittest import mock
         from django.core import mail
-        self.send_with_reply('{"patient_response": "Go to hospital.", "seriousness_score": 0.9}')
+        # Run the background email thread inline so the outbox is filled before we look
+        inline = lambda target, args, **kw: mock.Mock(start=lambda: target(*args))
+        with mock.patch('Patients.views.threading.Thread', inline):
+            self.send_with_reply('{"patient_response": "Go to hospital.", "seriousness_score": 0.9}')
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('I have a fever', mail.outbox[0].body)
 
