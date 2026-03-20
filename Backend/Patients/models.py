@@ -200,3 +200,20 @@ class Alert(models.Model):
 
     def __str__(self):
         return f"{self.patient.name} · {self.seriousness:.2f} · {self.created_at:%d %b %H:%M}"
+
+
+class ChatMessage(models.Model):
+    """One turn of a patient's conversation with the chatbot."""
+    ROLES = [('user', 'Patient'), ('assistant', 'Assistant')]
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='chat_messages')
+    role = models.CharField(max_length=10, choices=ROLES)
+    content = models.TextField()
+    seriousness = models.FloatField(null=True, blank=True)  # assistant replies only
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [models.Index(fields=['patient', 'created_at'])]
+
+    def __str__(self):
+        return f"{self.patient.name} · {self.role} · {self.created_at:%d %b %H:%M}"
