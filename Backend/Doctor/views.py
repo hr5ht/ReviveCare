@@ -226,6 +226,7 @@ def patient_detail(request, patient_id):
         'plan': patient.plan.filter(is_active=True).select_related('exercise'),
         'goals': goal_cards(patient),
         'notes': patient.notes.select_related('author'),
+        'chat': patient.chat_messages.order_by('-created_at', '-id')[:30],  # newest first; the template stacks them bottom-up
         'sessions': [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,
                       'score': round(w.quality_score), 'completed': w.completed}
                      for w in workouts.order_by('-date', '-created_at')[:10]],

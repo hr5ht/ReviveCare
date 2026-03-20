@@ -75,6 +75,22 @@
                     {% endif %}
                 </section>
 
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between"><h2 class="font-semibold text-slate-900">Chatbot conversation</h2><span class="text-xs text-slate-500">Latest 30 messages</span></div>
+                    <ol class="max-h-96 overflow-y-auto px-6 py-4 flex flex-col-reverse gap-3 bg-slate-50 text-sm">
+                        {% for m in chat %}
+                        <li class="flex {% if m.role == 'user' %}justify-end{% endif %}">
+                            <div class="max-w-[80%] rounded-xl px-3 py-2 {% if m.role == 'user' %}bg-emerald-600 text-white{% elif m.seriousness > 0.75 %}bg-rose-50 border border-rose-200 text-slate-800{% else %}bg-white border border-slate-200 text-slate-800{% endif %}">
+                                <p class="whitespace-pre-line">{{ m.content }}</p>
+                                <p class="mt-1 text-xs {% if m.role == 'user' %}text-emerald-100{% else %}text-slate-500{% endif %}">{{ m.created_at|date:"d M, H:i" }}{% if m.seriousness is not None %} · seriousness {{ m.seriousness|floatformat:2 }}{% endif %}</p>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="text-center text-slate-500 py-4">{{ patient.name }} hasn't used the chatbot yet.</li>
+                        {% endfor %}
+                    </ol>
+                </section>
+
                 <section id="notes" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                     <h2 class="font-semibold text-slate-900 mb-4">Clinical notes</h2>
                     <form method="post" action="/doctor/patients/{{ patient.id }}/notes/" class="mb-6">
