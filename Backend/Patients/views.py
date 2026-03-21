@@ -6,10 +6,11 @@ import logging
 import os
 import re
 import threading
+from types import SimpleNamespace
 
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
@@ -156,6 +157,31 @@ def parse_response(raw_response):
         return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
 
 
+_REPLY_START = re.compile(r'"patient_response"\s*:\s*"')
+
+
+def partial_reply(raw):
+    """The patient_response text decoded so far from a JSON reply that is still being generated."""
+    m = _REPLY_START.search(raw)
+    if not m:
+        return ''
+    text, escaped = raw[m.end():], False
+    for i, ch in enumerate(text):
+        if escaped:
+            escaped = False
+        elif ch == '\\':
+            escaped = True
+        elif ch == '"':
+            text = text[:i]
+            break
+    for cut in range(6):  # a half-received escape (\ or \u00e) can't decode yet; trim it off
+        try:
+            return json.loads(f'"{text[:len(text) - cut]}"', strict=False)
+        except ValueError:
+            pass
+    return ''
+
+
 def _send_quietly(subject, body, to, sms_to, patient_id):
     try:
         send_mail(subject, body, None, [to])
@@ -219,6 +245,35 @@ CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
 
+def _save_turn(patient, user_message, reply, score):
+    ChatMessage.objects.bulk_create([
+        ChatMessage(patient=patient, role='user', content=user_message),
+        ChatMessage(patient=patient, role='assistant', content=reply, seriousness=score),
+    ])
+    if score > ALERT_THRESHOLD:
+        Alert.objects.create(patient=patient, message=user_message, response=reply, seriousness=score)
+        send_email_alert(patient, user_message, reply, score)
+
+
+def _stream_reply(model, messages, patient, user_message):
+    """NDJSON lines: {"delta": text} while the reply generates, then {"done": true, "response", "seriousness_score"}."""
+    raw, sent = '', ''
+    try:
+        for chunk in model.stream(messages):
+            raw += chunk.content
+            text = partial_reply(raw)
+            if len(text) > len(sent):
+                yield json.dumps({'delta': text[len(sent):]}) + '\n'
+                sent = text
+    except Exception:
+        logger.exception('Chatbot model stream failed')
+        yield json.dumps({'error': MODEL_UNAVAILABLE}) + '\n'
+        return
+    reply, score = parse_response(SimpleNamespace(content=raw))
+    _save_turn(patient, user_message, reply, score)
+    yield json.dumps({'done': True, 'response': reply, 'seriousness_score': score}) + '\n'
+
+
 @require_http_methods(["POST"])
 def chatbot_send(request):
     """Handle chatbot message sending"""
@@ -262,7 +317,10 @@ def chatbot_send(request):
             
             # Get AI response (model creation is inside the try: a missing API key fails here too)
             try:
-                response = initialize_model().invoke(messages)
+                model = initialize_model()
+                if data.get('stream'):
+                    return StreamingHttpResponse(_stream_reply(model, messages, patient, user_message), content_type='application/x-ndjson')
+                response = model.invoke(messages)
             except Exception:
                 logger.exception('Chatbot model call failed')
                 return JsonResponse({'success': False, 'error': MODEL_UNAVAILABLE}, status=503)
@@ -273,15 +331,7 @@ def chatbot_send(request):
             patient_response = f"I understand your concern about: '{user_message}'. Based on your recovery plan, this seems normal. However, I'm currently in development mode. Please consult your doctor for specific medical advice."
             seriousness_score = 0.2
         
-        ChatMessage.objects.bulk_create([
-            ChatMessage(patient=patient, role='user', content=user_message),
-            ChatMessage(patient=patient, role='assistant', content=patient_response, seriousness=seriousness_score),
-        ])
-        
-        if seriousness_score > ALERT_THRESHOLD:
-            Alert.objects.create(patient=patient, message=user_message, response=patient_response, seriousness=seriousness_score)
-            send_email_alert(patient, user_message, patient_response, seriousness_score)
-        
+        _save_turn(patient, user_message, patient_response, seriousness_score)
         return JsonResponse({
             'success': True,
             'response': patient_response,

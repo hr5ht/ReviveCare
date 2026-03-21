@@ -105,17 +105,18 @@
         ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+    function badgeHtml(score) {
+        const [, bg, color, msg] = SERIOUSNESS.find(([min]) => score > min);
+        return `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span></div>`;
+    }
+
     function addMessage(text, isAI, score, when) {
         const row = document.createElement('div');
         row.className = `flex gap-3 mb-4 ${isAI ? 'justify-start' : 'justify-end'}`;
         const avatar = isAI
             ? '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm"><i data-lucide="bot" class="w-5 h-5 text-white"></i></div>'
             : '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm order-2"><i data-lucide="user" class="w-5 h-5 text-white"></i></div>';
-        let badge = '';
-        if (isAI && typeof score === 'number') {
-            const [, bg, color, msg] = SERIOUSNESS.find(([min]) => score > min);
-            badge = `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span></div>`;
-        }
+        const badge = isAI && typeof score === 'number' ? badgeHtml(score) : '';
         const body = `
             <div class="max-w-[70%] ${isAI ? 'order-2' : 'order-1'}">
                 <div class="rounded-2xl px-4 py-3 ${isAI ? 'bg-white border border-gray-200 shadow-sm' : 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-md'}">
@@ -190,14 +191,46 @@
         addMessage(text, false);
         input.value = '';
         setTyping(true);
+        let bubble = null;  // the reply's <p>, created on the first streamed words
         try {
-            const res = await api('/patient/chatbot/send/', 'POST', { message: text, language });
-            setTyping(false);
-            addMessage(res.success ? res.response : (res.error || T[language].error), true, res.success ? res.seriousness_score : undefined);
+            const res = await fetch('/patient/chatbot/send/', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ message: text, language, stream: true }),
+            });
+            if (!res.headers.get('Content-Type')?.includes('ndjson')) {  // errors and the dev mock reply come back as plain JSON
+                const json = await res.json().catch(() => ({}));
+                setTyping(false);
+                addMessage(json.success ? json.response : (json.error || T[language].error), true, json.success ? json.seriousness_score : undefined);
+                return;
+            }
+            const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+            let buffer = '';
+            for (;;) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += value;
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines.filter(Boolean)) {
+                    const msg = JSON.parse(line);
+                    if (!bubble) { setTyping(false); typing = true; bubble = addMessage('', true).querySelector('p'); }
+                    if (msg.delta) bubble.textContent += msg.delta;
+                    if (msg.error) bubble.textContent = msg.error;
+                    if (msg.done) {
+                        bubble.textContent = msg.response;
+                        bubble.insertAdjacentHTML('afterend', badgeHtml(msg.seriousness_score));
+                    }
+                    scrollDown();
+                }
+            }
         } catch (err) {
             console.error('Chatbot error:', err);
-            setTyping(false);
-            addMessage(err.message || T[language].error, true);
+            if (bubble) bubble.textContent = T[language].error;
+            else { setTyping(false); addMessage(T[language].error, true); }
+        } finally {
+            typing = false;
+            updateSend();
         }
     }
 

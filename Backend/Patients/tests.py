@@ -240,6 +240,18 @@ class ChatbotEndpointTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('I have a fever', mail.outbox[0].body)
 
+    def test_streamed_reply(self):
+        from types import SimpleNamespace
+        from unittest import mock
+        raw = '{"patient_response": "Drink water.", "seriousness_score": 0.3}'
+        model = mock.Mock(stream=mock.Mock(return_value=[SimpleNamespace(content=raw[i:i + 7]) for i in range(0, len(raw), 7)]))
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), mock.patch('Patients.views.initialize_model', return_value=model):
+            r = post_json(self.client, self.url, {'message': 'I have a fever', 'stream': True})
+        lines = [json.loads(l) for l in b''.join(r.streaming_content).decode().splitlines()]
+        self.assertEqual(''.join(l.get('delta', '') for l in lines), 'Drink water.')
+        self.assertEqual(lines[-1], {'done': True, 'response': 'Drink water.', 'seriousness_score': 0.3})
+        self.assertEqual(Patient.objects.get(email='c@example.com').chat_messages.count(), 2)
+
     def test_model_failure_returns_friendly_503(self):
         from unittest import mock
         with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
@@ -353,3 +365,13 @@ class GoalProgressTests(TestCase):
         self.assertEqual(progress(goal)[0], 0)
         self.save(1, 50)
         self.assertEqual(progress(goal)[0], 1)
+
+
+class PartialReplyTests(TestCase):
+    def test_decodes_growing_prefixes(self):
+        from Patients.views import partial_reply
+        full = '```json\n{"patient_response": "Rest \\"well\\"\\nIce it \\u00e9 \\\\ ok", "seriousness_score": 0.2}'
+        seen = [partial_reply(full[:i]) for i in range(len(full) + 1)]
+        self.assertEqual(seen[-1], 'Rest "well"\nIce it é \\ ok')
+        for a, b in zip(seen, seen[1:]):
+            self.assertTrue(b.startswith(a), (a, b))
