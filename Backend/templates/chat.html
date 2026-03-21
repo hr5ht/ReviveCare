@@ -14,6 +14,11 @@
                 <p class="text-slate-600">Chat with your AI recovery assistant</p>
             </div>
 
+            <div class="flex items-center gap-2">
+            <button id="new-chat" title="Start a new conversation" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                <i data-lucide="message-square-plus" class="w-4 h-4 text-gray-600"></i>
+                <span class="text-sm font-medium hidden sm:inline">New chat</span>
+            </button>
             <div class="relative">
                 <button id="lang-btn" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
                     <i data-lucide="globe" class="w-4 h-4 text-gray-600"></i>
@@ -24,6 +29,7 @@
                     <button data-lang="english" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"><span></span><span>English</span></button>
                     <button data-lang="hindi" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"><span></span><span>हिंदी</span></button>
                 </div>
+            </div>
             </div>
         </div>
 
@@ -178,7 +184,7 @@
             quick.appendChild(b);
         });
         // Swap the welcome message if the user hasn't chatted yet
-        if (!history.length && messageCount <= 1) {
+        if (!messagesEl.dataset.chatted && messageCount <= 1) {
             messagesEl.innerHTML = '';
             messageCount = 0;
             addMessage(t.welcome, true);
@@ -245,6 +251,16 @@
     sendBtn.onclick = send;
 
     history.forEach((m) => addMessage(m.content, m.role === 'assistant', m.seriousness ?? undefined, new Date(m.time)));
+    if (history.length) messagesEl.dataset.chatted = '1';
+    document.getElementById('new-chat').onclick = async () => {
+        if (typing) return;
+        await api('/patient/chatbot/new/', 'POST').catch(() => {});
+        delete messagesEl.dataset.chatted;
+        messagesEl.innerHTML = '';
+        messageCount = 0;
+        setLanguage(language);
+        input.focus();
+    };
     setLanguage('english');
     messagesEl.scrollTop = messagesEl.scrollHeight;
 </script>

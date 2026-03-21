@@ -323,10 +323,16 @@ def exercise_workout(request, exercise_id):
 CHAT_HISTORY_SHOWN = 50
 
 
+def conversation(patient):
+    """The patient's messages since they last started a new conversation (the doctor still sees all of them)."""
+    messages = patient.chat_messages.all()
+    return messages.filter(created_at__gt=patient.chat_since) if patient.chat_since else messages
+
+
 @patient_page
 def chat(request):
     patient = _logged_in_patient(request)
-    recent = patient.chat_messages.order_by('-created_at', '-id')[:CHAT_HISTORY_SHOWN] if patient else []
+    recent = conversation(patient).order_by('-created_at', '-id')[:CHAT_HISTORY_SHOWN] if patient else []
     history = [{'role': m.role, 'content': m.content, 'seriousness': m.seriousness, 'time': timezone.localtime(m.created_at).isoformat()}
                for m in reversed(recent)]
     return render(request, 'chat.html', {'history': history})

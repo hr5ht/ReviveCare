@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from Doctor.models import DoctorProfile
-from Home.views import days_in_recovery, exercise_streak, goal_cards, weekly_summary
+from Home.views import conversation, days_in_recovery, exercise_streak, goal_cards, weekly_summary
 
 from .models import Alert, ChatMessage, Patient
 
@@ -245,6 +245,13 @@ CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
 
+@require_http_methods(["POST"])
+def chatbot_new(request):
+    if not Patient.objects.filter(id=request.session.get('patient_id')).update(chat_since=timezone.now()):
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=401)
+    return JsonResponse({'success': True})
+
+
 def _save_turn(patient, user_message, reply, score):
     ChatMessage.objects.bulk_create([
         ChatMessage(patient=patient, role='user', content=user_message),
@@ -299,7 +306,7 @@ def chatbot_send(request):
             return JsonResponse({'success': False, 'error': 'Empty message'})
         
         # The model sees the last CHAT_CONTEXT_MESSAGES turns of the stored conversation
-        chat_history = list(patient.chat_messages.order_by('-created_at', '-id')[:CHAT_CONTEXT_MESSAGES])[::-1]
+        chat_history = list(conversation(patient).order_by('-created_at', '-id')[:CHAT_CONTEXT_MESSAGES])[::-1]
         
         # Prepare system prompt with patient context
         system_prompt = SYSTEM_PROMPT.format(patient_context=patient_context(patient))

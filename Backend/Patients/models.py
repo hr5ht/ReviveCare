@@ -21,6 +21,7 @@ class Patient(models.Model):
     created_at = models.DateTimeField(default=timezone.now)  # Changed from auto_now_add
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    chat_since = models.DateTimeField(null=True, blank=True)  # start of the current chatbot conversation
 
     def __str__(self):
         return self.name

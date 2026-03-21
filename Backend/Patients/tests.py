@@ -252,6 +252,18 @@ class ChatbotEndpointTests(TestCase):
         self.assertEqual(lines[-1], {'done': True, 'response': 'Drink water.', 'seriousness_score': 0.3})
         self.assertEqual(Patient.objects.get(email='c@example.com').chat_messages.count(), 2)
 
+    def test_new_conversation_hides_earlier_messages_from_model_and_page(self):
+        self.send_with_reply('{"patient_response": "Drink water.", "seriousness_score": 0.3}')
+        self.assertEqual(post_json(self.client, '/patient/chatbot/new/', {}).status_code, 200)
+        self.assertNotIn('Drink water.', self.client.get('/patient/chat/').content.decode())
+        from types import SimpleNamespace
+        from unittest import mock
+        model = mock.Mock(invoke=mock.Mock(return_value=SimpleNamespace(content='{"patient_response": "ok", "seriousness_score": 0}')))
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), mock.patch('Patients.views.initialize_model', return_value=model):
+            post_json(self.client, self.url, {'message': 'Fresh start'})
+        self.assertEqual([m.content for m in model.invoke.call_args.args[0][1:]], ['Fresh start'])
+        self.assertEqual(Patient.objects.get(email='c@example.com').chat_messages.count(), 4)  # the doctor still sees everything
+
     def test_model_failure_returns_friendly_503(self):
         from unittest import mock
         with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
