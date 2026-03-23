@@ -66,5 +66,6 @@ urlpatterns = [
     # Chatbot endpoint
     path('patient/chatbot/send/', chatbot_send, name='chatbot_send'),
     path('patient/chatbot/new/', chatbot_new, name='chatbot_new'),
+    path('patient/chatbot/feedback/', chatbot_feedback, name='chatbot_feedback'),
 ]
 

@@ -333,7 +333,8 @@ def conversation(patient):
 def chat(request):
     patient = _logged_in_patient(request)
     recent = conversation(patient).order_by('-created_at', '-id')[:CHAT_HISTORY_SHOWN] if patient else []
-    history = [{'role': m.role, 'content': m.content, 'seriousness': m.seriousness, 'time': timezone.localtime(m.created_at).isoformat()}
+    history = [{'id': m.id, 'role': m.role, 'content': m.content, 'seriousness': m.seriousness, 'helpful': m.helpful,
+                'time': timezone.localtime(m.created_at).isoformat()}
                for m in reversed(recent)]
     return render(request, 'chat.html', {'history': history})
 

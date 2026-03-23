@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 from django.test import Client, TestCase
 
-from .models import Patient
+from .models import ChatMessage, Patient
 
 
 def post_json(client, url, data):
@@ -249,7 +249,7 @@ class ChatbotEndpointTests(TestCase):
             r = post_json(self.client, self.url, {'message': 'I have a fever', 'stream': True})
         lines = [json.loads(l) for l in b''.join(r.streaming_content).decode().splitlines()]
         self.assertEqual(''.join(l.get('delta', '') for l in lines), 'Drink water.')
-        self.assertEqual(lines[-1], {'done': True, 'response': 'Drink water.', 'seriousness_score': 0.3})
+        self.assertEqual(lines[-1], {'done': True, 'id': ChatMessage.objects.get(role='assistant').id, 'response': 'Drink water.', 'seriousness_score': 0.3})
         self.assertEqual(Patient.objects.get(email='c@example.com').chat_messages.count(), 2)
 
     def test_new_conversation_hides_earlier_messages_from_model_and_page(self):
@@ -263,6 +263,15 @@ class ChatbotEndpointTests(TestCase):
             post_json(self.client, self.url, {'message': 'Fresh start'})
         self.assertEqual([m.content for m in model.invoke.call_args.args[0][1:]], ['Fresh start'])
         self.assertEqual(Patient.objects.get(email='c@example.com').chat_messages.count(), 4)  # the doctor still sees everything
+
+    def test_feedback_on_own_replies_only(self):
+        reply_id = self.send_with_reply('{"patient_response": "Drink water.", "seriousness_score": 0.3}').json()['id']
+        other = Patient.objects.create(name='O', email='o@example.com', info='x', password='x')
+        theirs = other.chat_messages.create(role='assistant', content='x')
+        self.assertEqual(post_json(self.client, '/patient/chatbot/feedback/', {'id': reply_id, 'helpful': False}).status_code, 200)
+        self.assertEqual(post_json(self.client, '/patient/chatbot/feedback/', {'id': theirs.id, 'helpful': True}).status_code, 404)
+        self.assertIs(ChatMessage.objects.get(id=reply_id).helpful, False)
+        self.assertIsNone(ChatMessage.objects.get(id=theirs.id).helpful)
 
     def test_model_failure_returns_friendly_503(self):
         from unittest import mock

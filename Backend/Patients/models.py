@@ -210,6 +210,7 @@ class ChatMessage(models.Model):
     role = models.CharField(max_length=10, choices=ROLES)
     content = models.TextField()
     seriousness = models.FloatField(null=True, blank=True)  # assistant replies only
+    helpful = models.BooleanField(null=True, blank=True)  # patient's thumbs up/down on an assistant reply
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

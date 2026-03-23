@@ -116,6 +116,35 @@
         return `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span></div>`;
     }
 
+    // Thumbs up/down under a stored assistant reply; clicking the active one again clears it
+    function addFeedback(row, id, helpful = null) {
+        const box = document.createElement('div');
+        box.className = 'flex gap-1 mt-1';
+        const paint = () => box.querySelectorAll('button').forEach((b) => {
+            const on = String(helpful) === b.dataset.value;
+            b.classList.toggle('text-emerald-600', on);
+            b.classList.toggle('text-gray-400', !on);
+            b.setAttribute('aria-pressed', on);
+        });
+        [['true', 'thumbs-up', 'Helpful'], ['false', 'thumbs-down', 'Not helpful']].forEach(([value, icon, label]) => {
+            const b = document.createElement('button');
+            b.dataset.value = value;
+            b.title = label;
+            b.setAttribute('aria-label', label);
+            b.className = 'p-1 rounded hover:bg-gray-100 hover:text-gray-600 transition-colors';
+            b.innerHTML = `<i data-lucide="${icon}" class="w-3.5 h-3.5"></i>`;
+            b.onclick = async () => {
+                const next = String(helpful) === value ? null : value === 'true';
+                const res = await api('/patient/chatbot/feedback/', 'POST', { id, helpful: next }).catch(() => null);
+                if (res) { helpful = next; paint(); }
+            };
+            box.appendChild(b);
+        });
+        row.lastElementChild.appendChild(box);  // the message column (avatar comes first in AI rows)
+        paint();
+        icons();
+    }
+
     function addMessage(text, isAI, score, when) {
         const row = document.createElement('div');
         row.className = `flex gap-3 mb-4 ${isAI ? 'justify-start' : 'justify-end'}`;
@@ -207,7 +236,8 @@
             if (!res.headers.get('Content-Type')?.includes('ndjson')) {  // errors and the dev mock reply come back as plain JSON
                 const json = await res.json().catch(() => ({}));
                 setTyping(false);
-                addMessage(json.success ? json.response : (json.error || T[language].error), true, json.success ? json.seriousness_score : undefined);
+                const row = addMessage(json.success ? json.response : (json.error || T[language].error), true, json.success ? json.seriousness_score : undefined);
+                if (json.id) addFeedback(row, json.id);
                 return;
             }
             const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -226,6 +256,7 @@
                     if (msg.done) {
                         bubble.textContent = msg.response;
                         bubble.insertAdjacentHTML('afterend', badgeHtml(msg.seriousness_score));
+                        addFeedback(bubble.closest('#messages > div'), msg.id);
                     }
                     scrollDown();
                 }
@@ -250,7 +281,10 @@
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
     sendBtn.onclick = send;
 
-    history.forEach((m) => addMessage(m.content, m.role === 'assistant', m.seriousness ?? undefined, new Date(m.time)));
+    history.forEach((m) => {
+        const row = addMessage(m.content, m.role === 'assistant', m.seriousness ?? undefined, new Date(m.time));
+        if (m.role === 'assistant') addFeedback(row, m.id, m.helpful);
+    });
     if (history.length) messagesEl.dataset.chatted = '1';
     document.getElementById('new-chat').onclick = async () => {
         if (typing) return;

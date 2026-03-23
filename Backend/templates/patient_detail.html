@@ -82,7 +82,7 @@
                         <li class="flex {% if m.role == 'user' %}justify-end{% endif %}">
                             <div class="max-w-[80%] rounded-xl px-3 py-2 {% if m.role == 'user' %}bg-emerald-600 text-white{% elif m.seriousness > 0.75 %}bg-rose-50 border border-rose-200 text-slate-800{% else %}bg-white border border-slate-200 text-slate-800{% endif %}">
                                 <p class="whitespace-pre-line">{{ m.content }}</p>
-                                <p class="mt-1 text-xs {% if m.role == 'user' %}text-emerald-100{% else %}text-slate-500{% endif %}">{{ m.created_at|date:"d M, H:i" }}{% if m.seriousness is not None %} · seriousness {{ m.seriousness|floatformat:2 }}{% endif %}</p>
+                                <p class="mt-1 text-xs {% if m.role == 'user' %}text-emerald-100{% else %}text-slate-500{% endif %}">{{ m.created_at|date:"d M, H:i" }}{% if m.seriousness is not None %} · seriousness {{ m.seriousness|floatformat:2 }}{% endif %}{% if m.helpful %} · rated helpful{% elif m.helpful is False %} · rated not helpful{% endif %}</p>
                             </div>
                         </li>
                         {% empty %}

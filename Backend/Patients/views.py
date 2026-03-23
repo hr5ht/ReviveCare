@@ -142,7 +142,7 @@ def parse_response(raw_response):
             json_str = json_match.group(0)
             parsed = json.loads(json_str)
             
-            patient_response = parsed.get("patient_response", "")
+            patient_response = _line_breaks(parsed.get("patient_response", ""))
             seriousness_score = float(parsed.get("seriousness_score", 0.0))
             
             # Clamp seriousness score between 0 and 1
@@ -155,6 +155,11 @@ def parse_response(raw_response):
     except (json.JSONDecodeError, ValueError, KeyError) as e:
         logger.warning("Could not parse chatbot response: %s", e)
         return "I apologize, but I'm having trouble processing your request. Please try rephrasing your question.", 0.0
+
+
+def _line_breaks(text):
+    """Models sometimes double-escape newlines in their JSON, which would show up as a literal \\n in the chat bubble."""
+    return text.replace('\\n', '\n')
 
 
 _REPLY_START = re.compile(r'"patient_response"\s*:\s*"')
@@ -176,7 +181,7 @@ def partial_reply(raw):
             break
     for cut in range(6):  # a half-received escape (\ or \u00e) can't decode yet; trim it off
         try:
-            return json.loads(f'"{text[:len(text) - cut]}"', strict=False)
+            return _line_breaks(json.loads(f'"{text[:len(text) - cut]}"', strict=False)).rstrip('\\')
         except ValueError:
             pass
     return ''
@@ -253,13 +258,23 @@ def chatbot_new(request):
 
 
 def _save_turn(patient, user_message, reply, score):
-    ChatMessage.objects.bulk_create([
-        ChatMessage(patient=patient, role='user', content=user_message),
-        ChatMessage(patient=patient, role='assistant', content=reply, seriousness=score),
-    ])
+    """Store both messages (and an alert if serious); returns the reply's id for feedback."""
+    ChatMessage.objects.create(patient=patient, role='user', content=user_message)
+    saved = ChatMessage.objects.create(patient=patient, role='assistant', content=reply, seriousness=score)
     if score > ALERT_THRESHOLD:
         Alert.objects.create(patient=patient, message=user_message, response=reply, seriousness=score)
         send_email_alert(patient, user_message, reply, score)
+    return saved.id
+
+
+@require_http_methods(["POST"])
+def chatbot_feedback(request):
+    """Thumbs up/down on a reply: {"id": message id, "helpful": true/false/null}."""
+    data = json.loads(request.body or '{}')
+    helpful = data.get('helpful')
+    updated = ChatMessage.objects.filter(id=data.get('id'), role='assistant', patient_id=request.session.get('patient_id')) \
+        .update(helpful=helpful if helpful in (True, False) else None)
+    return JsonResponse({'success': bool(updated)}, status=200 if updated else 404)
 
 
 def _stream_reply(model, messages, patient, user_message):
@@ -277,8 +292,8 @@ def _stream_reply(model, messages, patient, user_message):
         yield json.dumps({'error': MODEL_UNAVAILABLE}) + '\n'
         return
     reply, score = parse_response(SimpleNamespace(content=raw))
-    _save_turn(patient, user_message, reply, score)
-    yield json.dumps({'done': True, 'response': reply, 'seriousness_score': score}) + '\n'
+    message_id = _save_turn(patient, user_message, reply, score)
+    yield json.dumps({'done': True, 'id': message_id, 'response': reply, 'seriousness_score': score}) + '\n'
 
 
 @require_http_methods(["POST"])
@@ -338,9 +353,10 @@ def chatbot_send(request):
             patient_response = f"I understand your concern about: '{user_message}'. Based on your recovery plan, this seems normal. However, I'm currently in development mode. Please consult your doctor for specific medical advice."
             seriousness_score = 0.2
         
-        _save_turn(patient, user_message, patient_response, seriousness_score)
+        message_id = _save_turn(patient, user_message, patient_response, seriousness_score)
         return JsonResponse({
             'success': True,
+            'id': message_id,
             'response': patient_response,
             'seriousness_score': seriousness_score
         })
