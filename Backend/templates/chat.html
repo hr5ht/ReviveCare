@@ -71,6 +71,7 @@
 
 {% block scripts %}
 {{ history|json_script:"chat-history" }}
+{{ doctor_phone|json_script:"doctor-phone" }}
 <script>
     const T = {
         english: {
@@ -111,9 +112,16 @@
         ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+    const DOCTOR_PHONE = JSON.parse(document.getElementById('doctor-phone').textContent);
+
     function badgeHtml(score) {
         const [, bg, color, msg] = SERIOUSNESS.find(([min]) => score > min);
-        return `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span></div>`;
+        const call = score > 0.75 ? `
+            <div class="mt-2 flex flex-wrap gap-2">
+                ${DOCTOR_PHONE ? `<a href="tel:${DOCTOR_PHONE.replace(/[^+\d]/g, '')}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700"><i data-lucide="phone" class="w-3.5 h-3.5"></i> Call your doctor</a>` : ''}
+                <a href="tel:112" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-300 text-red-700 bg-white text-xs font-semibold hover:bg-red-50"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Emergency 112</a>
+            </div>` : '';
+        return `<div class="mt-2 px-3 py-2 rounded-lg border ${bg} ${color} text-xs"><span>${msg}</span>${call}</div>`;
     }
 
     // Thumbs up/down under a stored assistant reply; clicking the active one again clears it

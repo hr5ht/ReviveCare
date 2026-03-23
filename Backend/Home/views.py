@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.db import models
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Exercise, Patient, Workout
 
@@ -336,7 +337,8 @@ def chat(request):
     history = [{'id': m.id, 'role': m.role, 'content': m.content, 'seriousness': m.seriousness, 'helpful': m.helpful,
                 'time': timezone.localtime(m.created_at).isoformat()}
                for m in reversed(recent)]
-    return render(request, 'chat.html', {'history': history})
+    profile = patient and patient.doctor and DoctorProfile.objects.filter(user=patient.doctor).first()
+    return render(request, 'chat.html', {'history': history, 'doctor_phone': (profile and profile.phone) or ''})
 
 
 RESET_SALT = 'patient-password-reset'
