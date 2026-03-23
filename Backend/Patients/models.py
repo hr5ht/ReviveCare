@@ -219,3 +219,27 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.patient.name} · {self.role} · {self.created_at:%d %b %H:%M}"
+
+
+class DiaryEntry(models.Model):
+    """A patient's own note on how they feel: pain 0-10 plus any symptoms."""
+    SYMPTOMS = [
+        ('swelling', 'Swelling'), ('stiffness', 'Stiffness'), ('redness', 'Redness or warmth'), ('fever', 'Fever'),
+        ('numbness', 'Numbness or tingling'), ('nausea', 'Nausea'), ('fatigue', 'Tiredness'), ('poor_sleep', 'Poor sleep'),
+    ]
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='diary')
+    pain = models.PositiveSmallIntegerField()  # 0 (none) to 10 (worst imaginable)
+    symptoms = models.JSONField(default=list, blank=True)  # keys from SYMPTOMS
+    notes = models.TextField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'diary entries'
+
+    def __str__(self):
+        return f"{self.patient.name} · pain {self.pain} · {self.created_at:%d %b %H:%M}"
+
+    def symptom_labels(self):
+        names = dict(self.SYMPTOMS)
+        return [names.get(s, s) for s in self.symptoms]

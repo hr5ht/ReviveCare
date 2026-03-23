@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Alert, ChatMessage, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
+from .models import Alert, ChatMessage, DiaryEntry, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 
 @admin.register(Patient)
@@ -66,3 +66,9 @@ class ChatMessageAdmin(admin.ModelAdmin):
     list_display = ('patient', 'role', 'seriousness', 'created_at')
     list_filter = ('role',)
     search_fields = ('patient__name', 'content')
+
+
+@admin.register(DiaryEntry)
+class DiaryEntryAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'pain', 'created_at')
+    search_fields = ('patient__name', 'notes')

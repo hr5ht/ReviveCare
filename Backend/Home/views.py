@@ -13,9 +13,9 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
-from Patients.models import Exercise, Patient, Workout
+from Patients.models import DiaryEntry, Exercise, Patient, Workout
 
-from .forms import PatientContactForm
+from .forms import DiaryForm, PatientContactForm
 
 logger = logging.getLogger(__name__)
 
@@ -211,6 +211,21 @@ def patient_profile(request):
     else:
         form = PatientContactForm(initial={f: getattr(patient, f) for f in fields})
     return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form})
+
+
+@patient_page
+def patient_diary(request):
+    """Log pain (0-10) and symptoms; the doctor sees these on the patient's page."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    form = DiaryForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        DiaryEntry.objects.create(patient=patient, **form.cleaned_data)
+        messages.success(request, 'Saved to your diary.')
+        return redirect('patient_diary')
+    return render(request, 'diary.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
+                                          'pain_scale': range(11), 'symptoms': DiaryEntry.SYMPTOMS, 'entries': patient.diary.all()[:30]})
 
 
 def change_password(request):

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Pain Diary · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/patient_header.html" %}
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to Dashboard</span>
+        </button>
+        <h1 class="text-3xl font-bold text-slate-900">Pain diary</h1>
+        <p class="text-slate-600 mb-6">Note how you feel. Your doctor can see these entries.</p>
+
+        {% for message in messages %}
+        <p class="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2"><i data-lucide="circle-check" class="w-4 h-4"></i> {{ message }}</p>
+        {% endfor %}
+
+        <form method="post" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
+            {% csrf_token %}
+            <fieldset class="mb-6">
+                <legend class="block text-sm font-medium text-slate-700 mb-1">How bad is your pain right now?<span class="text-rose-500 ml-1">*</span></legend>
+                <p class="text-xs text-slate-500 mb-3">0 = no pain, 10 = worst pain imaginable</p>
+                <div class="grid grid-cols-11 gap-1.5">
+                    {% for n in pain_scale %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="pain" value="{{ n }}" class="peer sr-only" {% if form.pain.value|stringformat:"s" == n|stringformat:"s" %}checked{% endif %} required>
+                        <span class="block text-center py-2.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 peer-checked:text-white peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-500/30 {% if n <= 3 %}peer-checked:bg-emerald-600 peer-checked:border-emerald-600{% elif n <= 6 %}peer-checked:bg-amber-500 peer-checked:border-amber-500{% else %}peer-checked:bg-rose-600 peer-checked:border-rose-600{% endif %}">{{ n }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% for error in form.pain.errors %}<p class="mt-1.5 text-sm text-rose-600">{{ error }}</p>{% endfor %}
+            </fieldset>
+
+            <fieldset class="mb-6">
+                <legend class="block text-sm font-medium text-slate-700 mb-3">Any of these today?</legend>
+                <div class="flex flex-wrap gap-2">
+                    {% for value, label in symptoms %}
+                    <label class="cursor-pointer">
+                        <input type="checkbox" name="symptoms" value="{{ value }}" class="peer sr-only" {% if value in form.symptoms.value %}checked{% endif %}>
+                        <span class="inline-block px-3 py-1.5 rounded-full border border-slate-200 text-sm text-slate-700 hover:bg-slate-50 peer-checked:bg-emerald-50 peer-checked:border-emerald-400 peer-checked:text-emerald-800 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-500/30">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="mb-6">
+                <label for="diary-notes" class="block text-sm font-medium text-slate-700 mb-2">Notes</label>
+                <textarea id="diary-notes" name="notes" rows="3" maxlength="1000" placeholder="Anything else? e.g. pain got worse after climbing stairs"
+                    class="w-full px-4 py-3 bg-white border border-slate-200 focus:border-emerald-400 focus:ring-emerald-500/20 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all resize-y">{{ form.notes.value|default:'' }}</textarea>
+            </div>
+
+            <button type="submit" class="inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                <i data-lucide="notebook-pen" class="w-5 h-5"></i> Save entry
+            </button>
+        </form>
+
+        <h2 class="font-semibold text-slate-900 mb-3">Recent entries</h2>
+        <ul class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+            {% for e in entries %}
+            <li class="px-5 py-4 flex gap-4">
+                <span class="w-12 h-12 flex-shrink-0 rounded-xl flex flex-col items-center justify-center font-bold {% if e.pain <= 3 %}bg-emerald-50 text-emerald-700{% elif e.pain <= 6 %}bg-amber-50 text-amber-700{% else %}bg-rose-50 text-rose-700{% endif %}">
+                    <span class="text-lg leading-none tabular-nums">{{ e.pain }}</span><span class="text-[10px] font-medium">/10</span>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs text-slate-500">{{ e.created_at|date:"D d M, H:i" }}</p>
+                    {% if e.symptoms %}<p class="text-sm text-slate-800">{{ e.symptom_labels|join:", " }}</p>{% endif %}
+                    {% if e.notes %}<p class="text-sm text-slate-600 whitespace-pre-line">{{ e.notes }}</p>{% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li class="px-5 py-8 text-center text-slate-500">No entries yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
