@@ -273,6 +273,14 @@ class ChatbotEndpointTests(TestCase):
         self.assertIs(ChatMessage.objects.get(id=reply_id).helpful, False)
         self.assertIsNone(ChatMessage.objects.get(id=theirs.id).helpful)
 
+    def test_reply_language_follows_the_picker(self):
+        from types import SimpleNamespace
+        from unittest import mock
+        model = mock.Mock(invoke=mock.Mock(return_value=SimpleNamespace(content='{"patient_response": "ok", "seriousness_score": 0}')))
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), mock.patch('Patients.views.initialize_model', return_value=model):
+            post_json(self.client, self.url, {'message': 'hi', 'language': 'tamil'})
+        self.assertIn('Write patient_response in Tamil', model.invoke.call_args.args[0][0].content)
+
     def test_model_failure_returns_friendly_503(self):
         from unittest import mock
         with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \

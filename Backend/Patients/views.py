@@ -246,6 +246,7 @@ MODEL_UNAVAILABLE = ("I'm having trouble answering right now. Please try again i
                      "If this is urgent, contact your doctor or hospital directly.")
 ALERT_THRESHOLD = 0.75  # seriousness above this goes to the doctor's alerts
 CHAT_CONTEXT_MESSAGES = 20
+CHAT_LANGUAGES = {'english': 'English', 'hindi': 'Hindi', 'marathi': 'Marathi', 'tamil': 'Tamil'}
 CHAT_RATE_LIMIT = 20  # messages per patient
 CHAT_RATE_WINDOW = 10 * 60  # seconds
 
@@ -325,6 +326,9 @@ def chatbot_send(request):
         
         # Prepare system prompt with patient context
         system_prompt = SYSTEM_PROMPT.format(patient_context=patient_context(patient))
+        language = CHAT_LANGUAGES.get(data.get('language'), 'English')
+        if language != 'English':
+            system_prompt += f"\nWrite patient_response in {language}, in simple everyday words. Keep the JSON keys in English.\n"
         
         if LANGCHAIN_AVAILABLE:
             # Build messages
