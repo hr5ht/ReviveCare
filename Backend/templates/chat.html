@@ -136,6 +136,27 @@
 
     const DOCTOR_PHONE = JSON.parse(document.getElementById('doctor-phone').textContent);
 
+    // Read a reply aloud in the chat language; pressing again (or another reply's button) stops it
+    function addSpeaker(row) {
+        const b = document.createElement('button');
+        b.title = 'Read aloud';
+        b.setAttribute('aria-label', 'Read aloud');
+        b.className = 'ml-1 p-1 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors align-middle';
+        b.innerHTML = '<i data-lucide="volume-2" class="w-3.5 h-3.5"></i>';
+        b.onclick = () => {
+            const speaking = speechSynthesis.speaking && b.classList.contains('text-emerald-600');
+            speechSynthesis.cancel();
+            document.querySelectorAll('#messages .text-emerald-600[aria-label="Read aloud"]').forEach((x) => x.classList.replace('text-emerald-600', 'text-gray-400'));
+            if (speaking) return;
+            const say = new SpeechSynthesisUtterance(row.querySelector('p').textContent);
+            say.lang = T[language].speech;
+            say.onend = () => b.classList.replace('text-emerald-600', 'text-gray-400');
+            b.classList.replace('text-gray-400', 'text-emerald-600');
+            speechSynthesis.speak(say);
+        };
+        row.querySelector('span.text-xs').appendChild(b);
+    }
+
     function badgeHtml(score) {
         const [, bg, color, msg] = SERIOUSNESS.find(([min]) => score > min);
         const call = score > 0.75 ? `
@@ -191,6 +212,7 @@
             </div>`;
         row.innerHTML = isAI ? avatar + body : body + avatar;
         row.querySelector('p').textContent = text;
+        if (isAI && window.speechSynthesis) addSpeaker(row);
         messagesEl.appendChild(row);
         messageCount++;
         icons();
