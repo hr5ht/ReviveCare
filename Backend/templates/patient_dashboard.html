@@ -196,6 +196,38 @@
                     </div>
                 </div>
 
+                <!-- Pain trend from the diary -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-bold text-slate-900">Pain</h3>
+                        <a href="/patient/diary/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Diary →</a>
+                    </div>
+                    {% if pain.this_week is not None or pain.change is not None %}
+                    <p class="text-sm text-slate-500 mb-1">Average this week (0–10)</p>
+                    <div class="flex items-baseline gap-3 mb-5">
+                        <span class="text-4xl font-bold text-slate-900">{{ pain.this_week|default_if_none:"—" }}</span>
+                        {% if pain.change is not None %}
+                        <span class="inline-flex items-center gap-1 text-sm font-medium {% if pain.change <= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
+                            <i data-lucide="{% if pain.change <= 0 %}trending-down{% else %}trending-up{% endif %}" class="w-4 h-4"></i>
+                            {% if pain.change > 0 %}+{% endif %}{{ pain.change }} vs last week
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-end gap-1 h-16" role="img" aria-label="Daily average pain over the last 14 days">
+                        {% for d in pain.days %}
+                        <div class="flex-1 h-full flex items-end" title="{{ d.date|date:'D d M' }}: {% if d.pain is None %}not logged{% else %}pain {{ d.pain }}{% endif %}">
+                            {% if d.pain is None %}<div class="w-full h-1 rounded-full bg-slate-100"></div>
+                            {% else %}<div class="w-full rounded-t {% if d.pain <= 3 %}bg-emerald-400{% elif d.pain <= 6 %}bg-amber-400{% else %}bg-rose-500{% endif %}" style="height: {% widthratio d.pain 10 100 %}%; min-height: 4px"></div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-400 mt-1"><span>{{ pain.days.0.date|date:"d M" }}</span><span>Today</span></div>
+                    {% else %}
+                    <p class="text-sm text-slate-600 mb-4">Track how your pain changes as you recover. It takes a few seconds.</p>
+                    <a href="/patient/diary/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-semibold text-sm"><i data-lucide="notebook-pen" class="w-4 h-4"></i> Log pain</a>
+                    {% endif %}
+                </div>
+
                 <!-- Upcoming Appointment -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-600">
                     <div class="flex items-start gap-3 mb-4">

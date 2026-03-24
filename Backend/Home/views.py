@@ -151,6 +151,26 @@ def achievements(patient, tasks):
     ]
 
 
+def pain_by_day(patient, days=14):
+    """Average logged pain (0-10, one decimal) for each of the last `days` days, oldest first; None where nothing was logged."""
+    today = timezone.localdate()
+    since = today - timedelta(days=days - 1)
+    scores = {}
+    for e in patient.diary.filter(created_at__gte=timezone.now() - timedelta(days=days + 1)):
+        scores.setdefault(timezone.localdate(e.created_at), []).append(e.pain)
+    return [{'date': d, 'pain': round(sum(scores[d]) / len(scores[d]), 1) if d in scores else None}
+            for d in (since + timedelta(days=i) for i in range(days))]
+
+
+def pain_trend(patient):
+    """Last 14 days of pain plus this week's average against the week before (lower is better)."""
+    days = pain_by_day(patient, 14)
+    avg = lambda part: (lambda v: round(sum(v) / len(v), 1) if v else None)([d['pain'] for d in part if d['pain'] is not None])
+    this_week, last_week = avg(days[7:]), avg(days[:7])
+    return {'days': days, 'this_week': this_week,
+            'change': round(this_week - last_week, 1) if this_week is not None and last_week is not None else None}
+
+
 def workouts_this_week(patient):
     """Days in the last 7 with at least one workout session."""
     since = timezone.localdate() - timedelta(days=6)
@@ -178,6 +198,7 @@ def patient_dashboard(request):
         'goals': goals,
         'patient': patient,
         'week': weekly_summary(patient),
+        'pain': pain_trend(patient),
         'badges': badges,
         'badges_earned': sum(b['earned'] for b in badges),
         'initials': _initials(patient.name or 'Patient'),
