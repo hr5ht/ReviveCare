@@ -59,6 +59,25 @@
                 {{ reps_chart|json_script:"reps-data" }}
                 {{ quality_chart|json_script:"quality-data" }}
                 {% endif %}
+                <section class="viz-root bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-baseline justify-between gap-3"><h2 class="font-semibold text-slate-900">Pain</h2><span class="text-xs text-slate-500">Daily average, 0–10, last {{ days }} days</span></div>
+                    {% if diary %}
+                    <div id="pain-chart" class="h-[220px] mt-4"></div>
+                    {{ pain_chart|json_script:"pain-data" }}
+                    <ul class="mt-4 divide-y divide-slate-100 text-sm">
+                        {% for e in diary %}
+                        <li class="py-2 flex gap-3">
+                            <span class="w-9 text-center font-semibold tabular-nums rounded-md {% if e.pain <= 3 %}bg-emerald-50 text-emerald-700{% elif e.pain <= 6 %}bg-amber-50 text-amber-700{% else %}bg-rose-50 text-rose-700{% endif %}">{{ e.pain }}</span>
+                            <span class="min-w-0"><span class="text-xs text-slate-500">{{ e.created_at|date:"d M, H:i" }}{% if e.context != 'diary' %} · {{ e.get_context_display }}{% endif %}</span>
+                                {% if e.symptoms %}<span class="block text-slate-800">{{ e.symptom_labels|join:", " }}</span>{% endif %}
+                                {% if e.notes %}<span class="block text-slate-600">{{ e.notes }}</span>{% endif %}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="mt-3 text-sm text-slate-500">{{ patient.name }} hasn't logged any pain yet.</p>
+                    {% endif %}
+                </section>
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100"><h2 class="font-semibold text-slate-900">Recent sessions</h2></div>
                     {% if sessions %}

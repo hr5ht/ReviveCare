@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards
+from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, pain_by_day
 from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
 
 from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
@@ -225,6 +225,8 @@ def patient_detail(request, patient_id):
         ],
         'plan': patient.plan.filter(is_active=True).select_related('exercise'),
         'goals': goal_cards(patient),
+        'pain_chart': [{'label': d['date'].strftime('%d %b'), 'value': d['pain']} for d in pain_by_day(patient, 30)],
+        'diary': patient.diary.all()[:5],
         'notes': patient.notes.select_related('author'),
         'chat': patient.chat_messages.order_by('-created_at', '-id')[:30],  # newest first; the template stacks them bottom-up
         'sessions': [{'date': w.date, 'name': names.get(w.exercise, w.exercise), 'reps': w.total_reps, 'target': w.target_reps,

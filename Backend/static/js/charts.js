@@ -98,11 +98,11 @@
     }
 
     // Single-series line over a fixed set of x slots; days without a value are skipped. data: [{label, value|null}]
-    function lineChart(container, data, { unit = '', height = 220 } = {}) {
+    function lineChart(container, data, { unit = '', height = 220, max = null, label = 'Range of motion by day' } = {}) {
         container.replaceChildren();
         container.style.position = 'relative';
         const values = data.map((d) => d.value).filter((v) => v !== null);
-        const { svg, m, band, y, width } = frame(container, data.map((d) => d.label), niceScale(Math.max(0, ...values)), height);
+        const { svg, m, band, y, width } = frame(container, data.map((d) => d.label), niceScale(max ?? Math.max(0, ...values)), height);
         const tip = tooltip(container);
         const x = (i) => m.left + band * (i + 0.5);
         // One line through the days that have a value (rest days are skipped, not drawn as zero)
@@ -119,7 +119,7 @@
         // Crosshair: snaps to the nearest x slot that has a value
         const cross = el('line', { y1: m.top, y2: y(0), stroke: 'var(--viz-axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
         const overlay = el('rect', { x: m.left, y: m.top, width: band * data.length, height: y(0) - m.top, fill: 'transparent', tabindex: 0,
-                                     'aria-label': 'Range of motion by day; use arrow keys to step through values' }, svg);
+                                     'aria-label': `${label}; use arrow keys to step through values` }, svg);
         const points = data.map((d, i) => [i, d]).filter(([, d]) => d.value !== null);
         let focus = points.length - 1;
         const showAt = (k) => {

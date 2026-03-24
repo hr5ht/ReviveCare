@@ -1,5 +1,7 @@
 {% load static %}
-<script src="{% static 'js/charts.js' %}"></script>
+<script src="{% static 'js/charts.js' %}">    const painEl = document.getElementById('pain-chart');
+    if (painEl) Charts.responsive(painEl, () => Charts.lineChart(painEl, JSON.parse(document.getElementById('pain-data').textContent), { max: 10, label: 'Average pain by day, 0 to 10' }));
+</script>
 <script>
     const repsEl = document.getElementById('reps-chart');
     if (repsEl) Charts.responsive(repsEl, () => Charts.columnChart(repsEl, JSON.parse(document.getElementById('reps-data').textContent), { unit: 'reps' }));
@@ -10,4 +12,6 @@
     }
     const romEl = document.getElementById('rom-chart');
     if (romEl) Charts.responsive(romEl, () => Charts.lineChart(romEl, JSON.parse(document.getElementById('rom-data').textContent), { unit: '{{ rom_unit }}' }));
+    const painEl = document.getElementById('pain-chart');
+    if (painEl) Charts.responsive(painEl, () => Charts.lineChart(painEl, JSON.parse(document.getElementById('pain-data').textContent), { max: 10, label: 'Average pain by day, 0 to 10' }));
 </script>
