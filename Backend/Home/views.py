@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
-from Patients.models import DiaryEntry, Exercise, Patient, Workout
+from Patients.models import Alert, DiaryEntry, Exercise, Patient, Workout
 
 from .forms import DiaryForm, PatientContactForm
 
@@ -171,6 +171,27 @@ def pain_trend(patient):
             'change': round(this_week - last_week, 1) if this_week is not None and last_week is not None else None}
 
 
+PAIN_SEVERE = 8  # any single score this high alerts the doctor
+PAIN_RISE = 2  # ... as does the last 3 days averaging this much above the 4 days before
+
+
+def flag_rising_pain(patient, entry):
+    """After a pain entry, raise an Alert for the doctor if pain is severe or clearly climbing (at most one a day)."""
+    days = [d['pain'] for d in pain_by_day(patient, 7)]
+    avg = lambda v: sum(v) / len(v) if v else None
+    recent, before = avg([p for p in days[4:] if p is not None]), avg([p for p in days[:4] if p is not None])
+    rising = recent is not None and before is not None and recent - before >= PAIN_RISE
+    if not (entry.pain >= PAIN_SEVERE or rising):
+        return None
+    if Alert.objects.filter(patient=patient, message__startswith='Pain', created_at__gte=timezone.now() - timedelta(days=1)).exists():
+        return None
+    why = f"rising: {recent:.1f} average over the last 3 days, up from {before:.1f}" if rising else "severe"
+    details = ', '.join(entry.symptom_labels())
+    message = f"Pain {why}. Latest score {entry.pain}/10" + (f" with {details.lower()}" if details else '') + '.' \
+        + (f"\nPatient note: {entry.notes}" if entry.notes else '')
+    return Alert.objects.create(patient=patient, message=message, seriousness=min(1.0, entry.pain / 10))
+
+
 def workouts_this_week(patient):
     """Days in the last 7 with at least one workout session."""
     since = timezone.localdate() - timedelta(days=6)
@@ -245,7 +266,7 @@ def patient_diary(request):
         return redirect('patient_login')
     form = DiaryForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        DiaryEntry.objects.create(patient=patient, **form.cleaned_data)
+        flag_rising_pain(patient, DiaryEntry.objects.create(patient=patient, **form.cleaned_data))
         messages.success(request, 'Saved to your diary.')
         return redirect('patient_diary')
     return render(request, 'diary.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
@@ -265,7 +286,8 @@ def pain_check(request):
         return JsonResponse({'error': 'Pain must be a number from 0 to 10'}, status=400)
     if not 0 <= pain <= 10 or data.get('context') not in ('before', 'after'):
         return JsonResponse({'error': 'Pain must be a number from 0 to 10'}, status=400)
-    DiaryEntry.objects.create(patient=patient, pain=pain, context=data['context'], exercise=str(data.get('exercise', ''))[:40])
+    flag_rising_pain(patient, DiaryEntry.objects.create(patient=patient, pain=pain, context=data['context'],
+                                                        exercise=str(data.get('exercise', ''))[:40]))
     return JsonResponse({'success': True})
 
 

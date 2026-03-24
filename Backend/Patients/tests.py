@@ -404,3 +404,40 @@ class PartialReplyTests(TestCase):
         self.assertEqual(seen[-1], 'Rest "well"\nIce it é \\ ok')
         for a, b in zip(seen, seen[1:]):
             self.assertTrue(b.startswith(a), (a, b))
+
+
+class PainAlertTests(TestCase):
+    def setUp(self):
+        self.patient = Patient.objects.create(name='P', email='p@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = self.patient.id
+        session.save()
+
+    def log(self, pain, days_ago=0):
+        """Today's entries go through the diary page (which runs the check); earlier ones are backdated directly."""
+        if not days_ago:
+            return self.client.post('/patient/diary/', {'pain': pain})
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import DiaryEntry
+        entry = DiaryEntry.objects.create(patient=self.patient, pain=pain)
+        DiaryEntry.objects.filter(id=entry.id).update(created_at=timezone.now() - timedelta(days=days_ago))
+
+    def test_steady_pain_does_not_alert(self):
+        for d in (6, 5, 4, 2, 1, 0):
+            self.log(4, d)
+        self.assertFalse(self.patient.alerts.exists())
+
+    def test_rising_pain_alerts_once_a_day(self):
+        for d, pain in ((6, 3), (5, 3), (4, 3), (2, 5), (1, 6)):
+            self.log(pain, d)
+        self.log(2)  # last 3 days average 4.3 vs 3.0 before: not enough
+        self.assertFalse(self.patient.alerts.exists())
+        self.log(7)  # today now averages 4.5, so the last 3 days average 5.2: alert
+        self.log(7)  # still rising, but one alert a day
+        self.assertEqual(self.patient.alerts.count(), 1)
+        self.assertIn('Pain rising', self.patient.alerts.get().message)
+
+    def test_severe_pain_alerts(self):
+        self.log(9)
+        self.assertIn('Pain severe', self.patient.alerts.get().message)
