@@ -63,7 +63,7 @@
                     <span class="text-lg leading-none tabular-nums">{{ e.pain }}</span><span class="text-[10px] font-medium">/10</span>
                 </span>
                 <div class="min-w-0">
-                    <p class="text-xs text-slate-500">{{ e.created_at|date:"D d M, H:i" }}</p>
+                    <p class="text-xs text-slate-500">{{ e.created_at|date:"D d M, H:i" }}{% if e.context != 'diary' %} · {{ e.get_context_display }}{% if e.exercise %} ({{ e.exercise }}){% endif %}{% endif %}</p>
                     {% if e.symptoms %}<p class="text-sm text-slate-800">{{ e.symptom_labels|join:", " }}</p>{% endif %}
                     {% if e.notes %}<p class="text-sm text-slate-600 whitespace-pre-line">{{ e.notes }}</p>{% endif %}
                 </div>

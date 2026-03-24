@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import timedelta
 from functools import wraps
@@ -9,7 +10,9 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
@@ -226,6 +229,23 @@ def patient_diary(request):
         return redirect('patient_diary')
     return render(request, 'diary.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                           'pain_scale': range(11), 'symptoms': DiaryEntry.SYMPTOMS, 'entries': patient.diary.all()[:30]})
+
+
+@require_POST
+def pain_check(request):
+    """Quick 0-10 pain score from the workout page, before or after an exercise."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    try:
+        data = json.loads(request.body)
+        pain = int(data.get('pain'))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Pain must be a number from 0 to 10'}, status=400)
+    if not 0 <= pain <= 10 or data.get('context') not in ('before', 'after'):
+        return JsonResponse({'error': 'Pain must be a number from 0 to 10'}, status=400)
+    DiaryEntry.objects.create(patient=patient, pain=pain, context=data['context'], exercise=str(data.get('exercise', ''))[:40])
+    return JsonResponse({'success': True})
 
 
 def change_password(request):

@@ -51,6 +51,7 @@ urlpatterns = [
     path('patient/profile/', pages.patient_profile, name='patient_profile'),
     path('patient/history/', pages.workout_history, name='workout_history'),
     path('patient/diary/', pages.patient_diary, name='patient_diary'),
+    path('patient/pain-check/', pages.pain_check, name='pain_check'),
     path('patient/forgot-password/', pages.patient_forgot_password, name='patient_forgot_password'),
     path('patient/reset-password/<str:token>/', pages.patient_reset_password, name='patient_reset_password'),
     path('patient/exercises/', pages.exercises, name='exercises'),

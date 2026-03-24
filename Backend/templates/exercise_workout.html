@@ -47,13 +47,18 @@
                     <canvas id="canvas" class="w-full h-full object-cover"></canvas>
 
                     <!-- Start overlay -->
-                    <div id="start-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-12 text-center z-20">
-                        <div class="max-w-md animate-in fade-in zoom-in duration-500">
-                            <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-8 ring-8 ring-emerald-500/10">
-                                <i data-lucide="activity" class="w-12 h-12 text-emerald-400"></i>
+                    <div id="start-overlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 text-center z-20 overflow-y-auto">
+                        <div class="max-w-md m-auto animate-in fade-in zoom-in duration-500">
+                            <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-500/10">
+                                <i data-lucide="activity" class="w-8 h-8 text-emerald-400"></i>
                             </div>
-                            <h2 class="text-3xl font-black text-white mb-4 uppercase tracking-tighter">Initialize AI Tracker</h2>
-                            <p class="text-white/70 mb-8 text-lg font-medium">Position your full body in the frame. The AI will curate your form and count reps automatically.</p>
+                            <h2 class="text-3xl font-black text-white mb-3 uppercase tracking-tighter">Initialize AI Tracker</h2>
+                            <p class="text-white/70 mb-5 text-lg font-medium">Position your full body in the frame. The AI will curate your form and count reps automatically.</p>
+                            <div class="pain-check mb-5" data-context="before">
+                                <p class="text-white/70 text-sm font-bold mb-2">How much pain do you have right now? <span class="text-white/40 font-medium">(optional, 0 = none, 10 = worst)</span></p>
+                                <div class="grid grid-cols-11 gap-1"></div>
+                                <p class="pain-saved text-emerald-400 text-sm font-bold" hidden></p>
+                            </div>
                             <button id="start-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg">
                                 <i data-lucide="play" class="w-6 h-6 fill-current"></i> START WORKOUT
                             </button>
@@ -61,8 +66,8 @@
                     </div>
 
                     <!-- Shown when the workout is complete -->
-                    <div id="summary" hidden class="absolute inset-0 bg-slate-900/85 backdrop-blur-md flex items-center justify-center p-8 text-center z-40">
-                        <div class="w-full max-w-md">
+                    <div id="summary" hidden class="absolute inset-0 bg-slate-900/85 backdrop-blur-md flex items-center justify-center p-6 text-center z-40 overflow-y-auto">
+                        <div class="w-full max-w-md m-auto">
                             <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-500/10">
                                 <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
                             </div>
@@ -77,6 +82,11 @@
                                 <p class="text-emerald-400"><span id="sum-exc"></span> excellent</p>
                                 <p class="text-yellow-400"><span id="sum-good"></span> good</p>
                                 <p class="text-orange-400"><span id="sum-part"></span> partial</p>
+                            </div>
+                            <div class="pain-check mb-6" data-context="after">
+                                <p class="text-white/70 text-sm font-bold mb-2">How much pain now, after the workout? <span class="text-white/40 font-medium">(optional, 0 = none, 10 = worst)</span></p>
+                                <div class="grid grid-cols-11 gap-1"></div>
+                                <p class="pain-saved text-emerald-400 text-sm font-bold" hidden></p>
                             </div>
                             <div class="flex gap-3">
                                 <button onclick="location.reload()" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black py-3 rounded-2xl transition-all">DO IT AGAIN</button>
@@ -664,6 +674,26 @@
     }
     // Release the camera when the patient leaves the page (also covers back/forward cache)
     window.addEventListener('pagehide', stopTracking);
+
+    // Optional pain score before and after the workout; saved once to the pain diary
+    document.querySelectorAll('.pain-check').forEach((box) => {
+        const row = box.querySelector('div');
+        for (let n = 0; n <= 10; n++) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = n;
+            b.className = 'py-1.5 rounded-lg bg-white/10 hover:bg-white/25 border border-white/10 text-white text-sm font-bold transition-colors';
+            b.onclick = async () => {
+                try {
+                    await api('/patient/pain-check/', 'POST', { pain: n, context: box.dataset.context, exercise: exercise.id });
+                    row.hidden = true;
+                    box.querySelector('.pain-saved').textContent = `Pain ${n}/10 noted in your diary`;
+                    box.querySelector('.pain-saved').hidden = false;
+                } catch (err) { console.error('Pain check failed:', err); }
+            };
+            row.appendChild(b);
+        }
+    });
 
     $('camera-retry').onclick = () => {
         $('camera-error').hidden = true;

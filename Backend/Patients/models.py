@@ -231,6 +231,9 @@ class DiaryEntry(models.Model):
     pain = models.PositiveSmallIntegerField()  # 0 (none) to 10 (worst imaginable)
     symptoms = models.JSONField(default=list, blank=True)  # keys from SYMPTOMS
     notes = models.TextField(max_length=1000, blank=True)
+    context = models.CharField(max_length=10, default='diary',
+                               choices=[('diary', 'Diary'), ('before', 'Before a workout'), ('after', 'After a workout')])
+    exercise = models.CharField(max_length=40, blank=True)  # exercise slug for before/after checks
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
