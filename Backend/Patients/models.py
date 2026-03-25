@@ -1,5 +1,6 @@
 # patient/models.py
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -246,3 +247,25 @@ class DiaryEntry(models.Model):
     def symptom_labels(self):
         names = dict(self.SYMPTOMS)
         return [names.get(s, s) for s in self.symptoms]
+
+
+class Vitals(models.Model):
+    """Readings a patient takes at home; any of them can be left out."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vitals')
+    systolic = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(60), MaxValueValidator(250)])
+    diastolic = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(30), MaxValueValidator(150)])
+    heart_rate = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(30), MaxValueValidator(220)])
+    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True,  # °F, as home thermometers in India read
+                                      validators=[MinValueValidator(90), MaxValueValidator(110)])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'vitals'
+
+    def __str__(self):
+        return f"{self.patient.name} · {self.created_at:%d %b %H:%M}"
+
+    @property
+    def blood_pressure(self):
+        return f"{self.systolic}/{self.diastolic}" if self.systolic and self.diastolic else None
