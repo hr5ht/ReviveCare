@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import threading
+from datetime import timedelta
 from types import SimpleNamespace
 
 from django.core.cache import cache
@@ -97,6 +98,13 @@ def patient_context(patient):
     lines.append(f"Last 7 days: {week['reps']} reps on {week['active_days']} days"
                  + (f", average form quality {week['quality']}%" if week['quality'] is not None else '')
                  + f". Current streak: {exercise_streak(patient)} days.")
+    diary = patient.diary.filter(created_at__gte=timezone.now() - timedelta(days=7))[:10]
+    if diary:
+        lines.append("Pain diary, last 7 days (newest first, pain 0-10):")
+        for e in diary:
+            extra = ', '.join(e.symptom_labels() + ([f'note: "{e.notes}"'] if e.notes else []))
+            lines.append(f"- {timezone.localtime(e.created_at):%a %d %b %H:%M}: pain {e.pain}"
+                         + (f" ({e.get_context_display().lower()})" if e.context != 'diary' else '') + (f"; {extra}" if extra else ''))
     goals = [f"{g['text']} ({'done' if g['achieved'] else str(g['percent']) + '%'})" for g in goal_cards(patient)]
     if goals:
         lines.append(f"Recovery goals: {'; '.join(goals)}")
