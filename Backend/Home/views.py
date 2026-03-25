@@ -18,7 +18,7 @@ from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Alert, DiaryEntry, Exercise, Patient, Workout
 
-from .forms import DiaryForm, PatientContactForm
+from .forms import DiaryForm, PatientContactForm, VitalsForm
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +271,22 @@ def patient_diary(request):
         return redirect('patient_diary')
     return render(request, 'diary.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                           'pain_scale': range(11), 'symptoms': DiaryEntry.SYMPTOMS, 'entries': patient.diary.all()[:30]})
+
+
+@patient_page
+def patient_vitals(request):
+    """Log blood pressure, heart rate and temperature taken at home."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    form = VitalsForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.instance.patient = patient
+        form.save()
+        messages.success(request, 'Readings saved.')
+        return redirect('patient_vitals')
+    return render(request, 'vitals.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
+                                           'readings': patient.vitals.all()[:30]})
 
 
 @require_POST
