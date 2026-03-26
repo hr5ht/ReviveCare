@@ -171,6 +171,23 @@ def pain_trend(patient):
             'change': round(this_week - last_week, 1) if this_week is not None and last_week is not None else None}
 
 
+def vitals_by_day(patient, days=30):
+    """Daily averages of each vital for the last `days` days (None where nothing was logged), labelled for the charts."""
+    since = timezone.localdate() - timedelta(days=days - 1)
+    by_day = {}
+    for v in patient.vitals.filter(created_at__gte=timezone.now() - timedelta(days=days + 1)):
+        by_day.setdefault(timezone.localdate(v.created_at), []).append(v)
+    def avg(readings, field, digits=0):
+        vals = [getattr(r, field) for r in readings if getattr(r, field) is not None]
+        return round(float(sum(vals)) / len(vals), digits) if vals else None
+    out = []
+    for d in (since + timedelta(days=i) for i in range(days)):
+        r = by_day.get(d, [])
+        out.append({'label': d.strftime('%d %b'), 'systolic': avg(r, 'systolic'), 'diastolic': avg(r, 'diastolic'),
+                    'heart_rate': avg(r, 'heart_rate'), 'temperature': avg(r, 'temperature', 1)})
+    return out
+
+
 PAIN_SEVERE = 8  # any single score this high alerts the doctor
 PAIN_RISE = 2  # ... as does the last 3 days averaging this much above the 4 days before
 

@@ -1,6 +1,11 @@
 {% load static %}
 <script src="{% static 'js/charts.js' %}">    const painEl = document.getElementById('pain-chart');
     if (painEl) Charts.responsive(painEl, () => Charts.lineChart(painEl, JSON.parse(document.getElementById('pain-data').textContent), { max: 10, label: 'Average pain by day, 0 to 10' }));
+    const vitals = document.getElementById('vitals-data') && JSON.parse(document.getElementById('vitals-data').textContent);
+    [['bp-chart', { unit: '', label: 'Blood pressure by day', series: [{ key: 'systolic', name: 'Systolic', color: 'var(--viz-series-1)' }, { key: 'diastolic', name: 'Diastolic', color: 'var(--viz-series-2)' }] }],
+     ['hr-chart', { unit: ' bpm', label: 'Heart rate by day', series: [{ key: 'heart_rate', name: '', color: 'var(--viz-series-1)' }] }],
+     ['temp-chart', { unit: '°F', min: 96, max: 104, step: 2, label: 'Temperature by day', series: [{ key: 'temperature', name: '', color: 'var(--viz-series-1)' }] }],
+    ].forEach(([id, opts]) => { const el = document.getElementById(id); if (el && vitals) Charts.responsive(el, () => Charts.lineChart(el, vitals, { ...opts, height: el.clientHeight })); });
 </script>
 <script>
     const repsEl = document.getElementById('reps-chart');
@@ -14,4 +19,9 @@
     if (romEl) Charts.responsive(romEl, () => Charts.lineChart(romEl, JSON.parse(document.getElementById('rom-data').textContent), { unit: '{{ rom_unit }}' }));
     const painEl = document.getElementById('pain-chart');
     if (painEl) Charts.responsive(painEl, () => Charts.lineChart(painEl, JSON.parse(document.getElementById('pain-data').textContent), { max: 10, label: 'Average pain by day, 0 to 10' }));
+    const vitals = document.getElementById('vitals-data') && JSON.parse(document.getElementById('vitals-data').textContent);
+    [['bp-chart', { unit: '', label: 'Blood pressure by day', series: [{ key: 'systolic', name: 'Systolic', color: 'var(--viz-series-1)' }, { key: 'diastolic', name: 'Diastolic', color: 'var(--viz-series-2)' }] }],
+     ['hr-chart', { unit: ' bpm', label: 'Heart rate by day', series: [{ key: 'heart_rate', name: '', color: 'var(--viz-series-1)' }] }],
+     ['temp-chart', { unit: '°F', min: 96, max: 104, step: 2, label: 'Temperature by day', series: [{ key: 'temperature', name: '', color: 'var(--viz-series-1)' }] }],
+    ].forEach(([id, opts]) => { const el = document.getElementById(id); if (el && vitals) Charts.responsive(el, () => Charts.lineChart(el, vitals, { ...opts, height: el.clientHeight })); });
 </script>

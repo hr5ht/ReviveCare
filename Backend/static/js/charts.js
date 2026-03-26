@@ -51,14 +51,14 @@
 
     // Plot frame shared by the charts: y grid + ticks, x labels thinned to avoid collisions
     function frame(container, labels, scale, height) {
-        const yMax = scale.max;
+        const yMax = scale.max, yMin = scale.min || 0;
         const width = container.clientWidth;
         const m = { top: 18, right: 8, bottom: 26, left: 34 };
         const svg = el('svg', { width, height, viewBox: `0 0 ${width} ${height}`, role: 'img' });
         const plotW = width - m.left - m.right, plotH = height - m.top - m.bottom;
-        const y = (v) => m.top + plotH - (v / yMax) * plotH;
-        for (let v = 0; v <= yMax + 1e-9; v += scale.step) {
-            const i = v;
+        const y = (v) => m.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+        for (let v = yMin; v <= yMax + 1e-9; v += scale.step) {
+            const i = v - yMin;
             el('line', { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: i ? 'var(--viz-grid)' : 'var(--viz-axis)', 'stroke-width': 1 }, svg);
             text(svg, m.left - 6, y(v) + 4, compact(v), { 'text-anchor': 'end', 'font-size': 11, fill: 'var(--viz-muted)', style: 'font-variant-numeric: tabular-nums' });
         }
@@ -68,7 +68,9 @@
         labels.forEach((label, i) => {
             // every k-th label, plus the last one only if it won't collide with the previous shown label
             if (i % every && !(i === last && last % every >= every * 0.75)) return;
-            text(svg, m.left + band * (i + 0.5), height - 8, label, { 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--viz-muted)' });
+            // the last label hugs the right edge so it isn't clipped
+            const end = i === last && i > 0;
+            text(svg, m.left + band * (i + (end ? 1 : 0.5)), height - 8, label, { 'text-anchor': end ? 'end' : 'middle', 'font-size': 11, fill: 'var(--viz-muted)' });
         });
         return { svg, width, m, plotH, band, y };
     }
@@ -97,36 +99,42 @@
         container.prepend(svg);
     }
 
-    // Single-series line over a fixed set of x slots; days without a value are skipped. data: [{label, value|null}]
-    function lineChart(container, data, { unit = '', height = 220, max = null, label = 'Range of motion by day' } = {}) {
+    // Line chart over a fixed set of x slots; days without a value are skipped, not drawn as zero.
+    // data: [{label, value|null}], or with series [{key, name, color}]: [{label, [key]: value|null, ...}]
+    function lineChart(container, data, { unit = '', height = 220, max = null, min = 0, step = null, label = 'Range of motion by day', series = null } = {}) {
         container.replaceChildren();
         container.style.position = 'relative';
-        const values = data.map((d) => d.value).filter((v) => v !== null);
-        const { svg, m, band, y, width } = frame(container, data.map((d) => d.label), niceScale(max ?? Math.max(0, ...values)), height);
+        series = series || [{ key: 'value', name: '', color: 'var(--viz-series-1)' }];
+        const has = (d) => series.some((s) => d[s.key] !== null && d[s.key] !== undefined);
+        const values = data.flatMap((d) => series.map((s) => d[s.key])).filter((v) => v !== null && v !== undefined);
+        // min > 0 is for measures without a meaningful zero (body temperature); pass max and step with it
+        const scale = min ? { min, max, step } : niceScale(max ?? Math.max(0, ...values));
+        const { svg, m, band, y, width } = frame(container, data.map((d) => d.label), scale, height);
         const tip = tooltip(container);
         const x = (i) => m.left + band * (i + 0.5);
-        // One line through the days that have a value (rest days are skipped, not drawn as zero)
-        let path = '';
-        data.forEach((d, i) => { if (d.value !== null) path += `${path ? 'L' : 'M'}${x(i)},${y(d.value)} `; });
-        el('path', { d: path, fill: 'none', stroke: 'var(--viz-series-1)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
-        const lastIdx = data.map((d) => d.value !== null).lastIndexOf(true);
-        data.forEach((d, i) => {
-            if (d.value === null) return;
-            el('circle', { cx: x(i), cy: y(d.value), r: 4, fill: 'var(--viz-series-1)', stroke: 'var(--viz-surface)', 'stroke-width': 2 }, svg);
+        series.forEach((s) => {
+            const pts = data.map((d, i) => [i, d[s.key]]).filter(([, v]) => v !== null && v !== undefined);
+            el('path', { d: pts.map(([i, v], k) => `${k ? 'L' : 'M'}${x(i)},${y(v)}`).join(' '), fill: 'none', stroke: s.color, 'stroke-width': 2,
+                         'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+            pts.forEach(([i, v]) => el('circle', { cx: x(i), cy: y(v), r: 4, fill: s.color, stroke: 'var(--viz-surface)', 'stroke-width': 2 }, svg));
+            // direct label on the latest point of each series
+            if (pts.length) {
+                const [i, v] = pts[pts.length - 1];
+                text(svg, Math.min(x(i), width - 20), y(v) - 10, `${compact(v)}${unit}`, { 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: 'var(--viz-ink-2)' });
+            }
         });
-        if (lastIdx >= 0) text(svg, Math.min(x(lastIdx), width - 20), y(data[lastIdx].value) - 10, `${compact(data[lastIdx].value)}${unit}`,
-                               { 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: 'var(--viz-ink-2)' });
         // Crosshair: snaps to the nearest x slot that has a value
-        const cross = el('line', { y1: m.top, y2: y(0), stroke: 'var(--viz-axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
-        const overlay = el('rect', { x: m.left, y: m.top, width: band * data.length, height: y(0) - m.top, fill: 'transparent', tabindex: 0,
+        const cross = el('line', { y1: m.top, y2: y(scale.min || 0), stroke: 'var(--viz-axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+        const overlay = el('rect', { x: m.left, y: m.top, width: band * data.length, height: y(scale.min || 0) - m.top, fill: 'transparent', tabindex: 0,
                                      'aria-label': `${label}; use arrow keys to step through values` }, svg);
-        const points = data.map((d, i) => [i, d]).filter(([, d]) => d.value !== null);
+        const points = data.map((d, i) => [i, d]).filter(([, d]) => has(d));
         let focus = points.length - 1;
         const showAt = (k) => {
             if (!points.length) return;
             const [i, d] = points[k];
+            const shown = series.filter((s) => d[s.key] !== null && d[s.key] !== undefined);
             cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
-            tip.show(x(i), y(d.value), `${d.value}${unit}`, d.label);
+            tip.show(x(i), y(Math.max(...shown.map((s) => d[s.key]))), shown.map((s) => `${s.name ? s.name + ' ' : ''}${d[s.key]}${unit}`).join(' · '), d.label);
         };
         overlay.addEventListener('pointermove', (e) => {
             const px = e.clientX - svg.getBoundingClientRect().left;
