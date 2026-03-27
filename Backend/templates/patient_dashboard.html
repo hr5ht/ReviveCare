@@ -96,6 +96,34 @@
                     </div>
                 </div>
 
+                {% if doses %}
+                <!-- Today's medicines -->
+                <div id="medicines" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-slate-900">Today's Medicines</h3>
+                        <span class="text-sm text-slate-500">{{ doses_taken }} of {{ doses|length }} taken</span>
+                    </div>
+                    <div class="space-y-3">
+                        {% for d in doses %}
+                        <form method="post" action="/patient/medications/take/">
+                            {% csrf_token %}
+                            <input type="hidden" name="medication" value="{{ d.med.id }}"><input type="hidden" name="time" value="{{ d.time }}">
+                            <button aria-pressed="{{ d.taken|yesno:'true,false' }}" class="w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all {% if d.taken %}bg-emerald-50 border-emerald-200{% elif d.late %}bg-amber-50/60 border-amber-200 hover:border-emerald-300{% else %}bg-white border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40{% endif %}">
+                                <span class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 {% if d.taken %}bg-emerald-500{% else %}bg-slate-200{% endif %}">{% if d.taken %}<i data-lucide="check" class="w-4 h-4 text-white"></i>{% endif %}</span>
+                                <span class="flex-1 min-w-0">
+                                    <span class="block font-medium {% if d.taken %}text-slate-500 line-through{% else %}text-slate-900{% endif %}">{{ d.med.name }}{% if d.med.dose %} <span class="font-normal text-slate-500">{{ d.med.dose }}</span>{% endif %}</span>
+                                    {% if d.med.instructions %}<span class="block text-xs text-slate-500">{{ d.med.instructions }}</span>{% endif %}
+                                </span>
+                                <span class="flex items-center gap-1 text-sm tabular-nums {% if d.late %}text-amber-700 font-semibold{% else %}text-slate-500{% endif %}">
+                                    <i data-lucide="{% if d.late %}alarm-clock{% else %}clock{% endif %}" class="w-4 h-4"></i>{{ d.time }}{% if d.late %} · due{% endif %}
+                                </span>
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Achievements -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-6">

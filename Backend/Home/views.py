@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
-from Patients.models import Alert, DiaryEntry, Exercise, Patient, Workout
+from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Patient, Workout
 
 from .forms import DiaryForm, PatientContactForm, VitalsForm
 
@@ -151,6 +151,32 @@ def achievements(patient, tasks):
     ]
 
 
+def todays_doses(patient):
+    """Every dose scheduled today, in time order, with whether it was ticked off and whether it's overdue."""
+    today, now = timezone.localdate(), timezone.localtime().strftime('%H:%M')
+    meds = list(patient.medications.filter(is_active=True))
+    taken = set(DoseTaken.objects.filter(medication__in=meds, date=today).values_list('medication_id', 'time'))
+    doses = [{'med': m, 'time': t, 'taken': (m.id, t) in taken} for m in meds for t in m.due_on(today)]
+    for d in doses:
+        d['late'] = not d['taken'] and d['time'] < now
+    return sorted(doses, key=lambda d: d['time'])
+
+
+@require_POST
+def take_dose(request):
+    """Tick (or untick) one of today's doses."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    med = patient.medications.filter(id=request.POST.get('medication'), is_active=True).first()
+    slot = request.POST.get('time', '')
+    if med and slot in med.due_on(timezone.localdate()):
+        dose, created = DoseTaken.objects.get_or_create(medication=med, date=timezone.localdate(), time=slot)
+        if not created:
+            dose.delete()
+    return redirect('/patient/dashboard/#medicines')
+
+
 def pain_by_day(patient, days=14):
     """Average logged pain (0-10, one decimal) for each of the last `days` days, oldest first; None where nothing was logged."""
     today = timezone.localdate()
@@ -255,11 +281,14 @@ def patient_dashboard(request):
     tasks = todays_tasks(request)
     badges = achievements(patient, tasks)
     goals = goal_cards(patient)
+    doses = todays_doses(patient)
     return render(request, 'patient_dashboard.html', {
         'goals': goals,
         'patient': patient,
         'week': weekly_summary(patient),
         'pain': pain_trend(patient),
+        'doses': doses,
+        'doses_taken': sum(d['taken'] for d in doses),
         'badges': badges,
         'badges_earned': sum(b['earned'] for b in badges),
         'initials': _initials(patient.name or 'Patient'),
