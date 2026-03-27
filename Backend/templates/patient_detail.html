@@ -60,7 +60,7 @@
                 {{ quality_chart|json_script:"quality-data" }}
                 {% endif %}
                 {% if latest_vitals %}
-                <section class="viz-root bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <section id="vitals" class="viz-root bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                     <div class="flex items-baseline justify-between gap-3 mb-1"><h2 class="font-semibold text-slate-900">Vitals</h2><span class="text-xs text-slate-500">Daily averages, last {{ days }} days</span></div>
                     <p class="text-sm text-slate-600 mb-4">Latest {{ latest_vitals.created_at|date:"d M, H:i" }}:
                         {% if latest_vitals.blood_pressure %}BP {{ latest_vitals.blood_pressure }}{% endif %}

@@ -9,8 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from Home.views import _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, pain_by_day, vitals_by_day
-from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Workout
+from Home.views import VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, pain_by_day, vitals_by_day
+from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
@@ -50,6 +50,20 @@ def at_risk(rows, limit=5):
     return sorted((r for r in rows if r['idle_days'] > 3), key=lambda r: r['idle_days'], reverse=True)[:limit]
 
 
+def recent_vitals(doctor, limit=5):
+    """Each patient's latest reading from the last 7 days, out-of-range ones first."""
+    latest = {}
+    for v in Vitals.objects.filter(patient__in=Patient.for_doctor(doctor).filter(is_active=True),
+                                   created_at__gte=timezone.now() - timedelta(days=7)).select_related('patient'):
+        latest.setdefault(v.patient_id, v)  # newest first, so the first one seen is the latest
+    rows = []
+    for v in latest.values():
+        bad = {f for f, _, _, low, high in VITAL_LIMITS if getattr(v, f) is not None and not low <= getattr(v, f) <= high}
+        rows.append({'reading': v, 'bad_bp': bool(bad & {'systolic', 'diastolic'}), 'bad_hr': 'heart_rate' in bad,
+                     'bad_temp': 'temperature' in bad, 'flagged': bool(bad)})
+    return sorted(rows, key=lambda r: (not r['flagged'], -r['reading'].created_at.timestamp()))[:limit]
+
+
 def dashboard_stats(doctor, rows):
     today = timezone.localdate()
     recent = Workout.objects.filter(patient__in=Patient.for_doctor(doctor), total_reps__gt=0)
@@ -78,6 +92,7 @@ def doctor_dashboard(request):
     return render(request, 'doctor_dashboard.html', {
         'stats': dashboard_stats(request.user, everyone),
         'at_risk': at_risk(everyone),
+        'recent_vitals': recent_vitals(request.user),
         'patients': page,
         'patient_count': len(patients),
         'page_query': urlencode({k: v for k, v in (('q', q), ('status', status)) if v}),
