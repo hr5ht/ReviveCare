@@ -12,7 +12,7 @@ from django.utils import timezone
 from Home.views import VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, pain_by_day, vitals_by_day
 from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
 
-from .forms import DoctorProfileForm, PatientForm, RecoveryGoalForm
+from .forms import DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
 
 
@@ -218,6 +218,26 @@ def patient_goals(request, patient_id):
 
 
 @login_required
+def patient_medications(request, patient_id):
+    """Prescribe medicines with a daily schedule, or stop them."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    if request.method == 'POST' and 'stop' in request.POST:
+        patient.medications.filter(id=request.POST['stop']).update(is_active=False, end_date=timezone.localdate())
+        messages.success(request, 'Medication stopped.')
+        return redirect('patient_medications', patient_id=patient.id)
+    form = MedicationForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.instance.patient, form.instance.prescribed_by = patient, request.user
+        form.save()
+        messages.success(request, f"{form.instance.name} added.")
+        return redirect('patient_medications', patient_id=patient.id)
+    return render(request, 'doctor_patient_medications.html', {
+        'patient': patient, 'form': form,
+        'current': patient.medications.filter(is_active=True), 'stopped': patient.medications.filter(is_active=False)[:10],
+    })
+
+
+@login_required
 def patient_detail(request, patient_id):
     """Everything a doctor needs about one patient on a single page."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
@@ -240,6 +260,7 @@ def patient_detail(request, patient_id):
         ],
         'plan': patient.plan.filter(is_active=True).select_related('exercise'),
         'goals': goal_cards(patient),
+        'medications': patient.medications.filter(is_active=True),
         'pain_chart': [{'label': d['date'].strftime('%d %b'), 'value': d['pain']} for d in pain_by_day(patient, 30)],
         'diary': patient.diary.all()[:5],
         'vitals_chart': vitals_by_day(patient, 30),

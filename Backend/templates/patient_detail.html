@@ -178,6 +178,14 @@
                 </section>
 
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4"><h2 class="font-semibold text-slate-900">Medications</h2><a href="/doctor/patients/{{ patient.id }}/medications/" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Edit</a></div>
+                    <ul class="space-y-2 text-sm">
+                        {% for m in medications %}<li><span class="text-slate-800 font-medium">{{ m.name }}</span>{% if m.dose %} <span class="text-slate-500">{{ m.dose }}</span>{% endif %}<span class="block text-xs text-slate-500 tabular-nums">{{ m.times|join:", " }}{% if m.instructions %} · {{ m.instructions }}{% endif %}{% if m.end_date %} · until {{ m.end_date|date:"d M" }}{% endif %}</span></li>
+                        {% empty %}<li class="text-slate-500">No medications.</li>{% endfor %}
+                    </ul>
+                </section>
+
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4"><h2 class="font-semibold text-slate-900">Goals</h2><a href="/doctor/patients/{{ patient.id }}/goals/" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Edit</a></div>
                     <ul class="space-y-3">
                         {% for g in goals %}

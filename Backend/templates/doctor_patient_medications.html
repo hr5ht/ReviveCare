@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Medications · {{ patient.name }} · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        <button onclick="location.href='/doctor/patients/{{ patient.id }}/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to {{ patient.name }}</span>
+        </button>
+        <h1 class="text-3xl font-bold text-slate-900">Medications</h1>
+        <p class="text-slate-600 mb-6">{{ patient.name }}{% if patient.condition %} · {{ patient.condition }}{% endif %}. The patient ticks off each dose on their dashboard.</p>
+
+        {% for message in messages %}
+        <div class="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+            <i data-lucide="circle-check" class="w-5 h-5 text-emerald-600"></i>
+            <p class="text-sm text-emerald-700">{{ message }}</p>
+        </div>
+        {% endfor %}
+
+        <form method="post" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+            {% csrf_token %}
+            <h2 class="font-semibold text-slate-900 mb-4">Add a medication</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1.5">{{ field.label }}{% if field.field.required %}<span class="text-rose-500 ml-1">*</span>{% endif %}</label>
+                    <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" value="{{ field.value|default_if_none:''|stringformat:'s' }}"
+                        type="{% if 'date' in field.name %}date{% else %}text{% endif %}"
+                        {% if field.name == 'name' %}placeholder="e.g. Paracetamol"{% elif field.name == 'dose' %}placeholder="e.g. 500 mg, 1 tablet"{% elif field.name == 'times' %}placeholder="08:00, 20:00"{% elif field.name == 'instructions' %}placeholder="e.g. after food"{% endif %}
+                        class="w-full px-3 py-2.5 bg-white border {% if field.errors %}border-rose-300{% else %}border-slate-200{% endif %} rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                    {% if field.help_text %}<p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>{% endif %}
+                    {% for error in field.errors %}<p class="mt-1 text-sm text-rose-600">{{ error }}</p>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button type="submit" class="inline-flex items-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Add Medication
+                </button>
+            </div>
+        </form>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-slate-100"><h2 class="font-semibold text-slate-900">Current</h2></div>
+            <ul class="divide-y divide-slate-100">
+                {% for m in current %}
+                <li class="px-6 py-4 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0"><i data-lucide="pill" class="w-5 h-5"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-slate-900">{{ m.name }}{% if m.dose %} <span class="font-normal text-slate-500">{{ m.dose }}</span>{% endif %}</p>
+                        <p class="text-sm text-slate-500 tabular-nums">{{ m.times|join:", " }}{% if m.instructions %} · {{ m.instructions }}{% endif %} · from {{ m.start_date|date:"d M" }}{% if m.end_date %} to {{ m.end_date|date:"d M Y" }}{% endif %}</p>
+                    </div>
+                    <form method="post" onsubmit="return confirm('Stop {{ m.name|escapejs }} from today?')">{% csrf_token %}<button name="stop" value="{{ m.id }}" class="px-3 py-1.5 text-sm font-medium text-rose-700 border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors">Stop</button></form>
+                </li>
+                {% empty %}
+                <li class="px-6 py-8 text-center text-slate-500">No medications yet. Add one above.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% if stopped %}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100"><h2 class="font-semibold text-slate-900">Stopped</h2></div>
+            <ul class="divide-y divide-slate-100 text-sm">
+                {% for m in stopped %}<li class="px-6 py-3 text-slate-600">{{ m }} · {{ m.start_date|date:"d M" }} to {{ m.end_date|date:"d M Y"|default:"—" }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
