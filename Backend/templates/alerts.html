@@ -10,7 +10,7 @@
             <span class="font-medium">Back to Dashboard</span>
         </button>
         <h1 class="text-3xl font-bold text-slate-900">Alerts</h1>
-        <p class="text-slate-600 mb-6">Chat messages flagged as possibly serious, and severe or rising pain from the diary</p>
+        <p class="text-slate-600 mb-6">Serious chat messages, severe or rising pain, and vitals outside safe limits</p>
 
         <section class="space-y-4 mb-10">
             {% for a in unread %}
@@ -22,7 +22,7 @@
                     </div>
                     <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Seriousness {{ a.seriousness|floatformat:2 }}</span>
                 </div>
-                <p class="text-slate-800 whitespace-pre-line mb-2"><span class="text-xs font-semibold uppercase text-slate-500 block mb-0.5">{% if a.response %}Patient said{% else %}From the pain diary{% endif %}</span>{{ a.message }}</p>
+                <p class="text-slate-800 whitespace-pre-line mb-2"><span class="text-xs font-semibold uppercase text-slate-500 block mb-0.5">{% if a.response %}Patient said{% elif a.message|slice:":6" == "Vitals" %}From home readings{% else %}From the pain diary{% endif %}</span>{{ a.message }}</p>
                 {% if a.response %}<p class="text-sm text-slate-600 whitespace-pre-line mb-4"><span class="text-xs font-semibold uppercase text-slate-500 block mb-0.5">Assistant replied</span>{{ a.response }}</p>{% endif %}
                 <div class="flex flex-wrap gap-2">
                     <form method="post">

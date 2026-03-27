@@ -188,6 +188,29 @@ def vitals_by_day(patient, days=30):
     return out
 
 
+# (field, label, unit, too low, too high): readings outside these alert the doctor
+VITAL_LIMITS = [
+    ('systolic', 'Systolic blood pressure', '', 90, 180),
+    ('diastolic', 'Diastolic blood pressure', '', 50, 120),
+    ('heart_rate', 'Heart rate', ' bpm', 45, 120),
+    ('temperature', 'Temperature', ' °F', 95, 100.4),  # 100.4 °F is the usual post-operative fever cut-off
+]
+
+
+def flag_vitals(patient, reading):
+    """Raise an Alert when a reading is outside safe limits (at most one vitals alert a day)."""
+    problems = []
+    for field, label, unit, low, high in VITAL_LIMITS:
+        value = getattr(reading, field)
+        if value is not None and not low <= value <= high:
+            problems.append(f"{label} {value}{unit} ({'below' if value < low else 'above'} {low if value < low else high}{unit})")
+    if not problems or Alert.objects.filter(patient=patient, message__startswith='Vitals',
+                                            created_at__gte=timezone.now() - timedelta(days=1)).exists():
+        return None
+    return Alert.objects.create(patient=patient, message='Vitals out of range: ' + '; '.join(problems) + '.',
+                                seriousness=min(1.0, 0.8 + 0.1 * len(problems)))
+
+
 PAIN_SEVERE = 8  # any single score this high alerts the doctor
 PAIN_RISE = 2  # ... as does the last 3 days averaging this much above the 4 days before
 
@@ -299,7 +322,7 @@ def patient_vitals(request):
     form = VitalsForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.instance.patient = patient
-        form.save()
+        flag_vitals(patient, form.save())
         messages.success(request, 'Readings saved.')
         return redirect('patient_vitals')
     return render(request, 'vitals.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,

@@ -441,3 +441,25 @@ class PainAlertTests(TestCase):
     def test_severe_pain_alerts(self):
         self.log(9)
         self.assertIn('Pain severe', self.patient.alerts.get().message)
+
+
+class VitalsAlertTests(TestCase):
+    def setUp(self):
+        self.patient = Patient.objects.create(name='V', email='v@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = self.patient.id
+        session.save()
+
+    def post(self, **readings):
+        return self.client.post('/patient/vitals/', {'systolic': '', 'diastolic': '', 'heart_rate': '', 'temperature': '', **readings})
+
+    def test_normal_readings_do_not_alert(self):
+        self.post(systolic=128, diastolic=82, heart_rate=76, temperature='98.6')
+        self.assertFalse(self.patient.alerts.exists())
+
+    def test_fever_and_fast_heart_rate_alert_once_a_day(self):
+        self.post(heart_rate=130, temperature='101.2')
+        self.post(temperature='101.5')
+        alert = self.patient.alerts.get()
+        self.assertIn('Temperature 101.2 °F (above 100.4 °F)', alert.message)
+        self.assertIn('Heart rate 130 bpm', alert.message)
