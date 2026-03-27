@@ -162,6 +162,18 @@ def todays_doses(patient):
     return sorted(doses, key=lambda d: d['time'])
 
 
+def medication_adherence(med, days=14):
+    """Share of doses taken over the last `days` days; today's doses count only once their time has passed. None if none were due yet."""
+    today, now = timezone.localdate(), timezone.localtime().strftime('%H:%M')
+    since = today - timedelta(days=days - 1)
+    due = sum(len([t for t in med.due_on(day) if day < today or t <= now])
+              for day in (since + timedelta(days=i) for i in range(days)))
+    if not due:
+        return None
+    taken = med.doses_taken.filter(date__gte=since).filter(models.Q(date__lt=today) | models.Q(time__lte=now)).count()
+    return round(100 * min(taken, due) / due)
+
+
 @require_POST
 def take_dose(request):
     """Tick (or untick) one of today's doses."""

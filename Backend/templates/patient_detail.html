@@ -180,7 +180,10 @@
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                     <div class="flex items-center justify-between mb-4"><h2 class="font-semibold text-slate-900">Medications</h2><a href="/doctor/patients/{{ patient.id }}/medications/" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Edit</a></div>
                     <ul class="space-y-2 text-sm">
-                        {% for m in medications %}<li><span class="text-slate-800 font-medium">{{ m.name }}</span>{% if m.dose %} <span class="text-slate-500">{{ m.dose }}</span>{% endif %}<span class="block text-xs text-slate-500 tabular-nums">{{ m.times|join:", " }}{% if m.instructions %} · {{ m.instructions }}{% endif %}{% if m.end_date %} · until {{ m.end_date|date:"d M" }}{% endif %}</span></li>
+                        {% for m, adherence in medications %}<li>
+                            <span class="flex justify-between gap-2"><span><span class="text-slate-800 font-medium">{{ m.name }}</span>{% if m.dose %} <span class="text-slate-500">{{ m.dose }}</span>{% endif %}</span>
+                                {% if adherence is not None %}<span class="text-xs font-semibold tabular-nums {% if adherence >= 80 %}text-emerald-700{% elif adherence >= 50 %}text-amber-700{% else %}text-rose-700{% endif %}" title="Doses taken in the last 14 days">{{ adherence }}% taken</span>{% endif %}</span>
+                            <span class="block text-xs text-slate-500 tabular-nums">{{ m.times|join:", " }}{% if m.instructions %} · {{ m.instructions }}{% endif %}{% if m.end_date %} · until {{ m.end_date|date:"d M" }}{% endif %}</span></li>
                         {% empty %}<li class="text-slate-500">No medications.</li>{% endfor %}
                     </ul>
                 </section>
