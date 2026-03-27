@@ -269,3 +269,40 @@ class Vitals(models.Model):
     @property
     def blood_pressure(self):
         return f"{self.systolic}/{self.diastolic}" if self.systolic and self.diastolic else None
+
+
+class Medication(models.Model):
+    """A medicine the doctor prescribed, taken at fixed times each day between start and end dates."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='medications')
+    name = models.CharField(max_length=100)
+    dose = models.CharField(max_length=60, blank=True)  # e.g. "500 mg, 1 tablet"
+    times = models.JSONField(default=list)  # daily times as "HH:MM", e.g. ["08:00", "20:00"]
+    instructions = models.CharField(max_length=200, blank=True)  # e.g. "after food"
+    start_date = models.DateField(default=timezone.localdate)
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    prescribed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} {self.dose}".strip()
+
+    def due_on(self, day):
+        """Scheduled times on `day` (empty if the course hasn't started, has ended or was stopped)."""
+        if not self.is_active or day < self.start_date or (self.end_date and day > self.end_date):
+            return []
+        return sorted(self.times)
+
+
+class DoseTaken(models.Model):
+    """The patient ticked off one scheduled dose."""
+    medication = models.ForeignKey(Medication, on_delete=models.CASCADE, related_name='doses_taken')
+    date = models.DateField()
+    time = models.CharField(max_length=5)  # the scheduled "HH:MM" slot this covers
+    taken_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['medication', 'date', 'time'], name='one_check_per_dose')]

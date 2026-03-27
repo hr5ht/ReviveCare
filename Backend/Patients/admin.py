@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Alert, ChatMessage, DiaryEntry, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
+from .models import Alert, ChatMessage, DiaryEntry, DoseTaken, Exercise, ExercisePlan, Medication, Patient, RecoveryGoal, Vitals, Workout
 
 
 @admin.register(Patient)
@@ -78,3 +78,13 @@ class DiaryEntryAdmin(admin.ModelAdmin):
 class VitalsAdmin(admin.ModelAdmin):
     list_display = ('patient', 'blood_pressure', 'heart_rate', 'temperature', 'created_at')
     search_fields = ('patient__name',)
+
+
+@admin.register(Medication)
+class MedicationAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'name', 'dose', 'times', 'start_date', 'end_date', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('patient__name', 'name')
+
+
+admin.site.register(DoseTaken)
