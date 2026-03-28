@@ -463,3 +463,23 @@ class VitalsAlertTests(TestCase):
         alert = self.patient.alerts.get()
         self.assertIn('Temperature 101.2 °F (above 100.4 °F)', alert.message)
         self.assertIn('Heart rate 130 bpm', alert.message)
+
+
+class MedicationReminderTests(TestCase):
+    def test_reminds_only_untaken_doses_in_the_window(self):
+        from datetime import timedelta
+        from django.core import mail
+        from django.core.management import call_command
+        from django.utils import timezone
+        from .models import DoseTaken, Medication
+        soon = (timezone.localtime() + timedelta(minutes=10)).strftime('%H:%M')
+        later = (timezone.localtime() + timedelta(hours=3)).strftime('%H:%M')
+        p = Patient.objects.create(name='M', email='m@example.com', info='x', password='x')
+        due = Medication.objects.create(patient=p, name='Paracetamol', times=[soon, later])
+        done = Medication.objects.create(patient=p, name='Aspirin', times=[soon])
+        DoseTaken.objects.create(medication=done, date=timezone.localdate(), time=soon)
+        call_command('send_medication_reminders', stdout=open('/dev/null', 'w'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(f'{soon}  Paracetamol', mail.outbox[0].body)
+        self.assertNotIn('Aspirin', mail.outbox[0].body)
+        self.assertNotIn(later, mail.outbox[0].body)
