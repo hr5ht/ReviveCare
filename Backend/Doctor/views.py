@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from Home.views import VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, medication_adherence, pain_by_day, vitals_by_day
-from Patients.models import Alert, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
+from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
@@ -217,6 +217,25 @@ def patient_goals(request, patient_id):
     return render(request, 'doctor_patient_goals.html', {'patient': patient, 'form': form, 'goals': patient.goals.all()})
 
 
+MISSED_GRACE = timedelta(hours=2)  # a dose counts as missed once it's this late
+
+
+def missed_doses(patient, days=3):
+    """Doses from the last `days` days that are over MISSED_GRACE late and weren't ticked off, newest first."""
+    now = timezone.localtime()
+    meds = list(patient.medications.filter(is_active=True))
+    taken = set(DoseTaken.objects.filter(medication__in=meds, date__gte=now.date() - timedelta(days=days - 1))
+                .values_list('medication_id', 'date', 'time'))
+    missed = []
+    for day in (now.date() - timedelta(days=i) for i in range(days)):
+        for m in meds:
+            for t in m.due_on(day):
+                due = timezone.make_aware(datetime.combine(day, datetime.strptime(t, '%H:%M').time()))
+                if due + MISSED_GRACE < now and (m.id, day, t) not in taken:
+                    missed.append({'med': m, 'when': due})
+    return sorted(missed, key=lambda d: d['when'], reverse=True)
+
+
 @login_required
 def patient_medications(request, patient_id):
     """Prescribe medicines with a daily schedule, or stop them."""
@@ -261,6 +280,7 @@ def patient_detail(request, patient_id):
         'plan': patient.plan.filter(is_active=True).select_related('exercise'),
         'goals': goal_cards(patient),
         'medications': [(m, medication_adherence(m)) for m in patient.medications.filter(is_active=True)],
+        'missed_doses': missed_doses(patient),
         'pain_chart': [{'label': d['date'].strftime('%d %b'), 'value': d['pain']} for d in pain_by_day(patient, 30)],
         'diary': patient.diary.all()[:5],
         'vitals_chart': vitals_by_day(patient, 30),

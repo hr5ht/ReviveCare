@@ -186,6 +186,15 @@
                             <span class="block text-xs text-slate-500 tabular-nums">{{ m.times|join:", " }}{% if m.instructions %} · {{ m.instructions }}{% endif %}{% if m.end_date %} · until {{ m.end_date|date:"d M" }}{% endif %}</span></li>
                         {% empty %}<li class="text-slate-500">No medications.</li>{% endfor %}
                     </ul>
+                    {% if missed_doses %}
+                    <div class="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200">
+                        <p class="text-sm font-semibold text-rose-800 flex items-center gap-1.5 mb-1"><i data-lucide="triangle-alert" class="w-4 h-4"></i> {{ missed_doses|length }} missed dose{{ missed_doses|length|pluralize }} in 3 days</p>
+                        <ul class="text-xs text-rose-700 space-y-0.5 tabular-nums">
+                            {% for d in missed_doses|slice:":6" %}<li>{{ d.when|date:"D d M, H:i" }} · {{ d.med.name }}</li>{% endfor %}
+                            {% if missed_doses|length > 6 %}<li>and {{ missed_doses|length|add:"-6" }} more</li>{% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
                 </section>
 
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
