@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from Home.views import VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, medication_adherence, pain_by_day, vitals_by_day
-from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Patient, RecoveryGoal, Vitals, Workout
+from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
@@ -167,6 +167,32 @@ def alerts(request):
         'unread': mine.filter(acknowledged_at=None),
         'read': mine.exclude(acknowledged_at=None).select_related('acknowledged_by')[:30],
     })
+
+
+@login_required
+def inbox(request, patient_id=None):
+    """Patient message threads, latest first; with a patient, that thread plus a reply box."""
+    mine = Patient.for_doctor(request.user)
+    latest = {}
+    for m in Message.objects.filter(patient__in=mine).select_related('patient').order_by('-created_at', '-id'):
+        latest.setdefault(m.patient_id, m)
+    unread = dict(Message.objects.filter(patient__in=mine, from_patient=True, read_at=None).values('patient')
+                  .annotate(n=Count('id')).values_list('patient', 'n'))
+    threads = [{'patient': m.patient, 'last': m, 'unread': unread.get(m.patient_id, 0)} for m in latest.values()]
+    active = None
+    if patient_id:
+        active = get_object_or_404(mine, id=patient_id)
+        if request.method == 'POST':
+            body = request.POST.get('body', '').strip()[:2000]
+            if body:
+                Message.objects.create(patient=active, from_patient=False, sender=request.user, body=body)
+            return redirect(f"{reverse('inbox_thread', args=[active.id])}#latest")
+        active.messages.filter(from_patient=True, read_at=None).update(read_at=timezone.now())
+        for t in threads:
+            if t['patient'].id == active.id:
+                t['unread'] = 0
+    return render(request, 'doctor_inbox.html', {'threads': threads, 'active': active,
+                                                 'thread': active.messages.select_related('sender') if active else []})
 
 
 def _bounded(value, low, high):
