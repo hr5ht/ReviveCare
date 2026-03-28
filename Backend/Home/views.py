@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
-from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Patient, Workout
+from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Patient, Workout
 
 from .forms import DiaryForm, PatientContactForm, VitalsForm
 
@@ -368,6 +368,22 @@ def patient_vitals(request):
         return redirect('patient_vitals')
     return render(request, 'vitals.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                            'readings': patient.vitals.all()[:30]})
+
+
+@patient_page
+def patient_messages(request):
+    """The patient's thread with their doctor."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    if request.method == 'POST':
+        body = request.POST.get('body', '').strip()[:2000]
+        if body:
+            Message.objects.create(patient=patient, from_patient=True, body=body)
+        return redirect('/patient/messages/#latest')
+    patient.messages.filter(from_patient=False, read_at=None).update(read_at=timezone.now())
+    return render(request, 'messages.html', {'patient': patient, 'initials': _initials(patient.name),
+                                             'thread': patient.messages.select_related('sender')})
 
 
 @require_POST

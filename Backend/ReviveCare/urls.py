@@ -53,6 +53,7 @@ urlpatterns = [
     path('patient/history/', pages.workout_history, name='workout_history'),
     path('patient/diary/', pages.patient_diary, name='patient_diary'),
     path('patient/vitals/', pages.patient_vitals, name='patient_vitals'),
+    path('patient/messages/', pages.patient_messages, name='patient_messages'),
     path('patient/pain-check/', pages.pain_check, name='pain_check'),
     path('patient/medications/take/', pages.take_dose, name='take_dose'),
     path('patient/forgot-password/', pages.patient_forgot_password, name='patient_forgot_password'),
