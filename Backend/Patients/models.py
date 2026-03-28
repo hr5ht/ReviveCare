@@ -306,3 +306,20 @@ class DoseTaken(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['medication', 'date', 'time'], name='one_check_per_dose')]
+
+
+class Message(models.Model):
+    """A message in the one thread between a patient and their care team."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='messages')
+    from_patient = models.BooleanField()  # False: written by a doctor (see sender)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    body = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)  # when the other side opened it
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [models.Index(fields=['patient', 'created_at'])]
+
+    def __str__(self):
+        return f"{self.patient.name} · {'patient' if self.from_patient else 'doctor'} · {self.created_at:%d %b %H:%M}"
