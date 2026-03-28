@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from Doctor.models import DoctorProfile
-from Home.views import conversation, days_in_recovery, exercise_streak, goal_cards, weekly_summary
+from Home.views import conversation, days_in_recovery, exercise_streak, goal_cards, medication_adherence, weekly_summary
 
 from .models import Alert, ChatMessage, Patient
 
@@ -98,6 +98,11 @@ def patient_context(patient):
     lines.append(f"Last 7 days: {week['reps']} reps on {week['active_days']} days"
                  + (f", average form quality {week['quality']}%" if week['quality'] is not None else '')
                  + f". Current streak: {exercise_streak(patient)} days.")
+    meds = [m for m in patient.medications.filter(is_active=True) if m.due_on(timezone.localdate())]
+    if meds:
+        lines.append("Current medications (prescribed by the doctor; never suggest changing them):")
+        lines += [f"- {m}: {', '.join(m.times)}" + (f", {m.instructions}" if m.instructions else '')
+                  + (f" (adherence last 14 days: {a}%)" if (a := medication_adherence(m)) is not None else '') for m in meds]
     diary = patient.diary.filter(created_at__gte=timezone.now() - timedelta(days=7))[:10]
     if diary:
         lines.append("Pain diary, last 7 days (newest first, pain 0-10):")
