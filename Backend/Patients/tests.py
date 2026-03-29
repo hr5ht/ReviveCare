@@ -483,3 +483,25 @@ class MedicationReminderTests(TestCase):
         self.assertIn(f'{soon}  Paracetamol', mail.outbox[0].body)
         self.assertNotIn('Aspirin', mail.outbox[0].body)
         self.assertNotIn(later, mail.outbox[0].body)
+
+
+class MessageEmailTests(TestCase):
+    def test_first_unread_message_emails_the_other_side(self):
+        from unittest import mock
+        from django.contrib.auth.models import User
+        from django.core import mail
+        doctor = User.objects.create_user('doc', email='doc@example.com', password='Doc-pass-123', first_name='Meera')
+        p = Patient.objects.create(name='Asha', email='asha@example.com', info='x', password='x', doctor=doctor)
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        inline = lambda target, **kw: mock.Mock(start=target)
+        with mock.patch('Home.views.threading.Thread', inline):
+            self.client.post('/patient/messages/', {'body': 'Stairs hurt'})
+            self.client.post('/patient/messages/', {'body': 'Also my knee clicks'})  # still unread: no second email
+            self.assertEqual([m.to for m in mail.outbox], [['doc@example.com']])
+            self.assertIn('Stairs hurt', mail.outbox[0].body)
+            self.client.force_login(doctor)
+            self.client.post(f'/doctor/inbox/{p.id}/', {'body': 'Keep icing'})
+        self.assertEqual(mail.outbox[-1].to, ['asha@example.com'])
+        self.assertIn('Dr. Meera sent you a message', mail.outbox[-1].body)

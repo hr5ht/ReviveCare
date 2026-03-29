@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from datetime import timedelta
 from functools import wraps
 
@@ -370,6 +371,33 @@ def patient_vitals(request):
                                            'readings': patient.vitals.all()[:30]})
 
 
+def email_later(subject, body, to):
+    """Send an email without making the request wait; failures are only logged."""
+    def send():
+        try:
+            send_mail(subject, body, None, [to])
+        except Exception:
+            logger.exception('Email to %s failed', to)
+    # ponytail: plain thread, same caveat as the alert emails; move to a task queue if mails go missing on serverless
+    threading.Thread(target=send, daemon=True).start()
+
+
+def notify_new_message(message, site):
+    """Email the other side, but only for the first unread message so a back-and-forth doesn't flood their inbox."""
+    unread = message.patient.messages.filter(from_patient=message.from_patient, read_at=None).exclude(id=message.id)
+    if unread.exists():
+        return
+    patient = message.patient
+    if message.from_patient:
+        if patient.doctor and patient.doctor.email:
+            email_later(f"New message from {patient.name} · ReViveCare",
+                        f"{patient.name} wrote:\n\n{message.body}\n\nReply: {site}/doctor/inbox/{patient.id}/\n", patient.doctor.email)
+    else:
+        sender = f"Dr. {message.sender.get_full_name() or message.sender.username}" if message.sender else 'Your care team'
+        email_later("New message from your doctor · ReViveCare",
+                    f"Hi {patient.name},\n\n{sender} sent you a message:\n\n{message.body}\n\nReply: {site}/patient/messages/\n", patient.email)
+
+
 @patient_page
 def patient_messages(request):
     """The patient's thread with their doctor."""
@@ -379,7 +407,7 @@ def patient_messages(request):
     if request.method == 'POST':
         body = request.POST.get('body', '').strip()[:2000]
         if body:
-            Message.objects.create(patient=patient, from_patient=True, body=body)
+            notify_new_message(Message.objects.create(patient=patient, from_patient=True, body=body), request.build_absolute_uri('/')[:-1])
         return redirect('/patient/messages/#latest')
     patient.messages.filter(from_patient=False, read_at=None).update(read_at=timezone.now())
     return render(request, 'messages.html', {'patient': patient, 'initials': _initials(patient.name),

@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from Home.views import VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards, medication_adherence, pain_by_day, vitals_by_day
+from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards,
+                        medication_adherence, notify_new_message, pain_by_day, vitals_by_day)
 from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
@@ -185,7 +186,8 @@ def inbox(request, patient_id=None):
         if request.method == 'POST':
             body = request.POST.get('body', '').strip()[:2000]
             if body:
-                Message.objects.create(patient=active, from_patient=False, sender=request.user, body=body)
+                notify_new_message(Message.objects.create(patient=active, from_patient=False, sender=request.user, body=body),
+                                   request.build_absolute_uri('/')[:-1])
             return redirect(f"{reverse('inbox_thread', args=[active.id])}#latest")
         active.messages.filter(from_patient=True, read_at=None).update(read_at=timezone.now())
         for t in threads:
