@@ -1,4 +1,6 @@
 # patient/models.py
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -323,3 +325,28 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.patient.name} · {'patient' if self.from_patient else 'doctor'} · {self.created_at:%d %b %H:%M}"
+
+
+class Appointment(models.Model):
+    """A visit or call booked by the doctor."""
+    STATUSES = [('scheduled', 'Scheduled'), ('completed', 'Completed'), ('cancelled', 'Cancelled')]
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='appointments')
+    doctor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='appointments')
+    starts_at = models.DateTimeField()
+    duration_minutes = models.PositiveSmallIntegerField(default=30)
+    reason = models.CharField(max_length=150, blank=True)  # e.g. "2-week follow-up"
+    location = models.CharField(max_length=150, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES, default='scheduled')
+    reschedule_request = models.CharField(max_length=300, blank=True)  # patient's note asking for another time
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['starts_at']
+        indexes = [models.Index(fields=['doctor', 'starts_at'])]
+
+    def __str__(self):
+        return f"{self.patient.name} · {timezone.localtime(self.starts_at):%d %b %H:%M}"
+
+    @property
+    def ends_at(self):
+        return self.starts_at + timedelta(minutes=self.duration_minutes)
