@@ -13,7 +13,7 @@ from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery,
                         medication_adherence, notify_new_message, pain_by_day, vitals_by_day)
 from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
-from .forms import DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
+from .forms import AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
 
 
@@ -285,7 +285,26 @@ def patient_medications(request, patient_id):
 
 
 @login_required
-def patient_detail(request, patient_id):
+def patient_appointments(request, patient_id):
+    """Book an appointment for a patient (POST from the patient page), or cancel one."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    if request.method != 'POST':
+        return redirect('patient_detail', patient_id=patient.id)
+    if 'cancel' in request.POST:
+        patient.appointments.filter(id=request.POST['cancel'], status='scheduled').update(status='cancelled')
+        messages.success(request, 'Appointment cancelled.')
+        return redirect(f"{reverse('patient_detail', args=[patient.id])}#appointments")
+    form = AppointmentForm(request.POST, doctor=request.user)
+    if form.is_valid():
+        form.instance.patient, form.instance.doctor = patient, request.user
+        form.save()
+        messages.success(request, f"Appointment booked for {timezone.localtime(form.instance.starts_at):%a %d %b, %H:%M}.")
+        return redirect(f"{reverse('patient_detail', args=[patient.id])}#appointments")
+    return patient_detail(request, patient_id, appointment_form=form)
+
+
+@login_required
+def patient_detail(request, patient_id, appointment_form=None):
     """Everything a doctor needs about one patient on a single page."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
     today = timezone.localdate()
@@ -309,6 +328,8 @@ def patient_detail(request, patient_id):
         'goals': goal_cards(patient),
         'medications': [(m, medication_adherence(m)) for m in patient.medications.filter(is_active=True)],
         'missed_doses': missed_doses(patient),
+        'appointment_form': appointment_form or AppointmentForm(doctor=request.user),
+        'appointments': patient.appointments.filter(status='scheduled', starts_at__gte=timezone.now() - timedelta(hours=1)),
         'pain_chart': [{'label': d['date'].strftime('%d %b'), 'value': d['pain']} for d in pain_by_day(patient, 30)],
         'diary': patient.diary.all()[:5],
         'vitals_chart': vitals_by_day(patient, 30),

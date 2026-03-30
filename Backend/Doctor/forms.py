@@ -3,7 +3,7 @@ import datetime
 from django import forms
 from django.utils import timezone
 
-from Patients.models import Exercise, Medication, Patient, RecoveryGoal
+from Patients.models import Appointment, Exercise, Medication, Patient, RecoveryGoal
 
 
 class DoctorProfileForm(forms.Form):
@@ -69,4 +69,33 @@ class MedicationForm(forms.ModelForm):
         data = super().clean()
         if data.get('end_date') and data.get('start_date') and data['end_date'] < data['start_date']:
             self.add_error('end_date', 'The end date is before the start date.')
+        return data
+
+
+class AppointmentForm(forms.ModelForm):
+    starts_at = forms.DateTimeField(label='Date and time', input_formats=['%Y-%m-%dT%H:%M'])
+    duration_minutes = forms.TypedChoiceField(label='Length', coerce=int, initial=30,
+                                              choices=[(15, '15 min'), (30, '30 min'), (45, '45 min'), (60, '1 hour')])
+
+    class Meta:
+        model = Appointment
+        fields = ['starts_at', 'duration_minutes', 'reason', 'location']
+        labels = {'reason': 'Reason', 'location': 'Where'}
+
+    def __init__(self, *args, doctor=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.doctor = doctor
+
+    def clean(self):
+        data = super().clean()
+        start, minutes = data.get('starts_at'), data.get('duration_minutes')
+        if start and start < timezone.now():
+            self.add_error('starts_at', 'Pick a time in the future.')
+        elif start and minutes and self.doctor:
+            end = start + datetime.timedelta(minutes=minutes)
+            clash = Appointment.objects.filter(doctor=self.doctor, status='scheduled', starts_at__lt=end,
+                                               starts_at__gt=start - datetime.timedelta(hours=2)).select_related('patient')
+            clash = next((a for a in clash if a.ends_at > start), None)
+            if clash:
+                self.add_error('starts_at', f"You already have {clash.patient.name} at {timezone.localtime(clash.starts_at):%H:%M}.")
         return data
