@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards,
                         medication_adherence, notify_new_message, pain_by_day, vitals_by_day)
-from Patients.models import Alert, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
+from Patients.models import Alert, Appointment, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
 from .models import ClinicalNote, DoctorProfile
@@ -195,6 +195,26 @@ def inbox(request, patient_id=None):
                 t['unread'] = 0
     return render(request, 'doctor_inbox.html', {'threads': threads, 'active': active,
                                                  'thread': active.messages.select_related('sender') if active else []})
+
+
+@login_required
+def calendar(request):
+    """A week of the doctor's appointments, Monday to Sunday; ?week=YYYY-MM-DD picks the week containing that day."""
+    try:
+        day = datetime.strptime(request.GET.get('week', ''), '%Y-%m-%d').date()
+    except ValueError:
+        day = timezone.localdate()
+    monday = day - timedelta(days=day.weekday())
+    start = timezone.make_aware(datetime.combine(monday, datetime.min.time()))
+    booked = Appointment.objects.filter(doctor=request.user, starts_at__gte=start, starts_at__lt=start + timedelta(days=7)) \
+        .exclude(status='cancelled').select_related('patient')
+    days = [{'date': monday + timedelta(days=i), 'appointments': []} for i in range(7)]
+    for a in booked:
+        days[(timezone.localdate(a.starts_at) - monday).days]['appointments'].append(a)
+    return render(request, 'calendar.html', {
+        'days': days, 'today': timezone.localdate(), 'count': len(booked),
+        'prev': monday - timedelta(days=7), 'next': monday + timedelta(days=7), 'monday': monday, 'sunday': monday + timedelta(days=6),
+    })
 
 
 def _bounded(value, low, high):

@@ -11,6 +11,9 @@
 
             <!-- Doctor Profile -->
             <div class="flex items-center gap-4">
+                <a href="/doctor/calendar/" title="Calendar" aria-label="Calendar" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-white"></i>
+                </a>
                 <a href="/doctor/inbox/" title="Messages" aria-label="Messages{% if unread_messages %}, {{ unread_messages }} unread{% endif %}" class="relative p-2 hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="mail" class="w-5 h-5 text-white"></i>
                     {% if unread_messages %}<span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-rose-500 text-white text-xs font-bold rounded-full ring-2 ring-emerald-500 flex items-center justify-center tabular-nums">{% if unread_messages > 99 %}99+{% else %}{{ unread_messages }}{% endif %}</span>{% endif %}

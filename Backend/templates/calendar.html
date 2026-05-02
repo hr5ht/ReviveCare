@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Calendar · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Calendar</h1>
+                <p class="text-slate-600">{{ monday|date:"d M" }} – {{ sunday|date:"d M Y" }} · {{ count }} appointment{{ count|pluralize }}</p>
+            </div>
+            <nav class="flex items-center gap-2" aria-label="Weeks">
+                <a href="?week={{ prev|date:'Y-m-d' }}" class="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50" aria-label="Previous week"><i data-lucide="chevron-left" class="w-5 h-5"></i></a>
+                <a href="/doctor/calendar/" class="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-sm font-medium">This week</a>
+                <a href="?week={{ next|date:'Y-m-d' }}" class="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50" aria-label="Next week"><i data-lucide="chevron-right" class="w-5 h-5"></i></a>
+            </nav>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
+            {% for d in days %}
+            <section class="bg-white rounded-2xl border {% if d.date == today %}border-emerald-400 ring-2 ring-emerald-500/20{% else %}border-slate-200{% endif %} shadow-sm p-3 min-h-40">
+                <h2 class="text-sm font-semibold {% if d.date == today %}text-emerald-700{% else %}text-slate-900{% endif %} mb-2">{{ d.date|date:"D" }} <span class="font-normal text-slate-500">{{ d.date|date:"d M" }}</span></h2>
+                <ul class="space-y-2">
+                    {% for a in d.appointments %}
+                    <li><a href="/doctor/patients/{{ a.patient_id }}/#appointments" class="block rounded-lg px-2.5 py-2 text-xs {% if a.status == 'completed' %}bg-slate-50 text-slate-500{% else %}bg-emerald-50 text-emerald-900 hover:bg-emerald-100{% endif %}">
+                        <span class="block font-semibold tabular-nums">{{ a.starts_at|time:"H:i" }}–{{ a.ends_at|time:"H:i" }}</span>
+                        <span class="block font-medium truncate">{{ a.patient.name }}</span>
+                        {% if a.reason %}<span class="block truncate opacity-75">{{ a.reason }}</span>{% endif %}
+                        {% if a.reschedule_request %}<span class="block mt-1 font-semibold text-amber-700">Reschedule asked</span>{% endif %}
+                    </a></li>
+                    {% empty %}
+                    <li class="text-xs text-slate-400">—</li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

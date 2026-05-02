@@ -37,6 +37,7 @@ urlpatterns = [
     path('doctor/password-reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     path('doctor/add-patient/', doctor.add_patient, name='add_patient'),
     path('doctor/alerts/', doctor.alerts, name='alerts'),
+    path('doctor/calendar/', doctor.calendar, name='calendar'),
     path('doctor/inbox/', doctor.inbox, name='inbox'),
     path('doctor/inbox/<int:patient_id>/', doctor.inbox, name='inbox_thread'),
     path('doctor/profile/', doctor.doctor_profile, name='doctor_profile'),
