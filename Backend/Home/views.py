@@ -302,6 +302,7 @@ def patient_dashboard(request):
         'pain': pain_trend(patient),
         'doses': doses,
         'doses_taken': sum(d['taken'] for d in doses),
+        'next_appointment': patient.appointments.filter(status='scheduled', starts_at__gte=timezone.now()).select_related('doctor').first(),
         'badges': badges,
         'badges_earned': sum(b['earned'] for b in badges),
         'initials': _initials(patient.name or 'Patient'),

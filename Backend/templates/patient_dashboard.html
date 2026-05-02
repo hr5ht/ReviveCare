@@ -264,15 +264,27 @@
                         </div>
                         <div class="flex-1">
                             <h4 class="font-semibold mb-1">Next Appointment</h4>
-                            <p class="text-emerald-50 text-sm">Follow-up checkup with Dr. Anderson</p>
+                            {% if next_appointment %}
+                            <p class="text-emerald-50 text-sm">{{ next_appointment.reason|default:"Appointment" }}{% if next_appointment.doctor %} with Dr. {{ next_appointment.doctor.get_full_name|default:next_appointment.doctor.username }}{% endif %}</p>
+                            {% else %}
+                            <p class="text-emerald-50 text-sm">Nothing booked yet. Your doctor will schedule your next visit.</p>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="pt-4 border-t border-white/20">
-                        <div class="flex items-center justify-between text-sm">
+                    {% if next_appointment %}
+                    <div class="pt-4 border-t border-white/20 space-y-2 text-sm">
+                        <div class="flex items-center justify-between gap-4">
                             <span class="text-emerald-50">Date &amp; Time</span>
-                            <span class="font-semibold">Feb 15, 2024 at 10:00 AM</span>
+                            <span class="font-semibold tabular-nums">{{ next_appointment.starts_at|date:"D d M, H:i" }}</span>
                         </div>
+                        {% if next_appointment.location %}
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="text-emerald-50">Where</span>
+                            <span class="font-semibold text-right">{{ next_appointment.location }}</span>
+                        </div>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
 
                 <!-- Health Tip -->

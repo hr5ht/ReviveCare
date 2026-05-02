@@ -505,3 +505,25 @@ class MessageEmailTests(TestCase):
             self.client.post(f'/doctor/inbox/{p.id}/', {'body': 'Keep icing'})
         self.assertEqual(mail.outbox[-1].to, ['asha@example.com'])
         self.assertIn('Dr. Meera sent you a message', mail.outbox[-1].body)
+
+
+class NextAppointmentTests(TestCase):
+    def test_dashboard_shows_next_upcoming_appointment(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import Appointment
+        p = Patient.objects.create(name='N', email='n@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        now = timezone.now()
+        self.assertContains(self.client.get('/patient/dashboard/'), 'Nothing booked yet')
+        Appointment.objects.create(patient=p, starts_at=now - timedelta(days=1), reason='Past visit')
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(days=1), reason='Cancelled visit', status='cancelled')
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(days=3), reason='Later visit')
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(days=2), reason='Knee follow-up', location='Room 4')
+        r = self.client.get('/patient/dashboard/')
+        self.assertContains(r, 'Knee follow-up')
+        self.assertContains(r, 'Room 4')
+        for other in ('Past visit', 'Cancelled visit', 'Later visit', 'Nothing booked yet'):
+            self.assertNotContains(r, other)
