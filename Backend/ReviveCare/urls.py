@@ -60,6 +60,7 @@ urlpatterns = [
     path('patient/messages/', pages.patient_messages, name='patient_messages'),
     path('patient/pain-check/', pages.pain_check, name='pain_check'),
     path('patient/medications/take/', pages.take_dose, name='take_dose'),
+    path('patient/appointments/<int:appointment_id>/reschedule/', pages.request_reschedule, name='request_reschedule'),
     path('patient/forgot-password/', pages.patient_forgot_password, name='patient_forgot_password'),
     path('patient/reset-password/<str:token>/', pages.patient_reset_password, name='patient_reset_password'),
     path('patient/exercises/', pages.exercises, name='exercises'),

@@ -527,3 +527,34 @@ class NextAppointmentTests(TestCase):
         self.assertContains(r, 'Room 4')
         for other in ('Past visit', 'Cancelled visit', 'Later visit', 'Nothing booked yet'):
             self.assertNotContains(r, other)
+
+
+class RescheduleRequestTests(TestCase):
+    def test_patient_asks_to_move_next_appointment(self):
+        from datetime import timedelta
+        from unittest import mock
+        from django.contrib.auth.models import User
+        from django.core import mail
+        from django.utils import timezone
+        from .models import Appointment
+        doctor = User.objects.create_user('doc', email='doc@example.com', password='Doc-pass-123')
+        p = Patient.objects.create(name='R', email='r@example.com', info='x', password='x', doctor=doctor)
+        other = Patient.objects.create(name='O', email='o@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        appt = Appointment.objects.create(patient=p, doctor=doctor, starts_at=timezone.now() + timedelta(days=2))
+        theirs = Appointment.objects.create(patient=other, starts_at=timezone.now() + timedelta(days=2))
+        self.assertContains(self.client.get('/patient/dashboard/'), 'Ask to reschedule')
+        inline = lambda target, **kw: mock.Mock(start=target)
+        with mock.patch('Home.views.threading.Thread', inline):
+            self.client.post(f'/patient/appointments/{appt.id}/reschedule/', {'note': 'Weekday after 4 pm'})
+            self.client.post(f'/patient/appointments/{theirs.id}/reschedule/', {'note': 'not mine'})
+        appt.refresh_from_db(); theirs.refresh_from_db()
+        self.assertEqual(appt.reschedule_request, 'Weekday after 4 pm')
+        self.assertEqual(theirs.reschedule_request, '')
+        self.assertIn('Weekday after 4 pm', p.messages.get().body)
+        self.assertEqual(mail.outbox[0].to, ['doc@example.com'])
+        r = self.client.get('/patient/dashboard/')
+        self.assertContains(r, 'You asked to reschedule')
+        self.assertNotContains(r, 'Ask to reschedule')

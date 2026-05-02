@@ -190,6 +190,22 @@ def take_dose(request):
     return redirect('/patient/dashboard/#medicines')
 
 
+@require_POST
+def request_reschedule(request, appointment_id):
+    """Patient can't make their next appointment: note it on the appointment and message the doctor."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    appointment = patient.appointments.filter(id=appointment_id, status='scheduled', starts_at__gte=timezone.now()).first()
+    note = request.POST.get('note', '').strip()[:300]
+    if appointment and note:
+        appointment.reschedule_request = note
+        appointment.save(update_fields=['reschedule_request'])
+        body = f"Can we move my appointment on {timezone.localtime(appointment.starts_at):%a %d %b, %H:%M}? {note}"
+        notify_new_message(Message.objects.create(patient=patient, from_patient=True, body=body), request.build_absolute_uri('/')[:-1])
+    return redirect('/patient/dashboard/#appointment')
+
+
 def pain_by_day(patient, days=14):
     """Average logged pain (0-10, one decimal) for each of the last `days` days, oldest first; None where nothing was logged."""
     today = timezone.localdate()
