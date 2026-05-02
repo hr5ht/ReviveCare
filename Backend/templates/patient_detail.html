@@ -177,6 +177,7 @@
                         <li class="flex items-start justify-between gap-3">
                             <span><span class="block font-medium text-slate-900">{{ a.starts_at|date:"D d M, H:i" }} <span class="font-normal text-slate-500">· {{ a.duration_minutes }} min</span></span>
                                 <span class="block text-xs text-slate-500">{{ a.reason|default:"Appointment" }}{% if a.location %} · {{ a.location }}{% endif %}</span>
+                                {% if a.meeting_url %}<a href="{{ a.meeting_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 mt-1 text-xs font-medium text-emerald-700 hover:underline"><i data-lucide="video" class="w-3.5 h-3.5"></i> Video call link</a>{% endif %}
                                 {% if a.reschedule_request %}<span class="block mt-1 text-xs text-amber-800 bg-amber-50 rounded px-2 py-1">Asked to reschedule: {{ a.reschedule_request }}</span>{% endif %}</span>
                             <form method="post" action="/doctor/patients/{{ patient.id }}/appointments/" onsubmit="return confirm('Cancel this appointment?')">{% csrf_token %}<button name="cancel" value="{{ a.id }}" class="text-xs font-medium text-rose-700 hover:underline">Cancel</button></form>
                         </li>
@@ -195,7 +196,7 @@
                                 </select>
                                 {% else %}
                                 <input id="{{ field.id_for_label }}" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}"
-                                    type="{% if field.name == 'starts_at' %}datetime-local{% else %}text{% endif %}" {% if field.name == 'location' %}placeholder="Clinic room 2, or leave blank"{% elif field.name == 'reason' %}placeholder="e.g. 2-week follow-up"{% endif %}
+                                    type="{% if field.name == 'starts_at' %}datetime-local{% elif field.name == 'meeting_url' %}url{% else %}text{% endif %}" {% if field.name == 'location' %}placeholder="Clinic room 2, or leave blank"{% elif field.name == 'meeting_url' %}placeholder="https://meet.google.com/... for a video visit"{% elif field.name == 'reason' %}placeholder="e.g. 2-week follow-up"{% endif %}
                                     class="w-full px-3 py-2 bg-white border {% if field.errors %}border-rose-300{% else %}border-slate-200{% endif %} rounded-lg text-sm placeholder:text-slate-400">
                                 {% endif %}
                                 {% for error in field.errors %}<p class="mt-1 text-xs text-rose-600">{{ error }}</p>{% endfor %}

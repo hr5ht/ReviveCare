@@ -558,3 +558,25 @@ class RescheduleRequestTests(TestCase):
         r = self.client.get('/patient/dashboard/')
         self.assertContains(r, 'You asked to reschedule')
         self.assertNotContains(r, 'Ask to reschedule')
+
+
+class MeetingLinkTests(TestCase):
+    def test_doctor_adds_video_link_patient_sees_join_button(self):
+        from datetime import timedelta
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        p = Patient.objects.create(name='T', email='t@example.com', info='x', password='x', doctor=doctor)
+        self.client.force_login(doctor)
+        when = timezone.localtime(timezone.now() + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M')
+        url = f'/doctor/patients/{p.id}/appointments/'
+        self.client.post(url, {'starts_at': when, 'duration_minutes': 30, 'meeting_url': 'javascript:alert(1)'})
+        self.assertFalse(p.appointments.exists())
+        self.client.post(url, {'starts_at': when, 'duration_minutes': 30, 'meeting_url': 'https://meet.example.com/abc'})
+        self.assertEqual(p.appointments.get().meeting_url, 'https://meet.example.com/abc')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        r = self.client.get('/patient/dashboard/')
+        self.assertContains(r, 'Join video call')
+        self.assertContains(r, 'href="https://meet.example.com/abc"')

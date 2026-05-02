@@ -336,6 +336,7 @@ class Appointment(models.Model):
     duration_minutes = models.PositiveSmallIntegerField(default=30)
     reason = models.CharField(max_length=150, blank=True)  # e.g. "2-week follow-up"
     location = models.CharField(max_length=150, blank=True)
+    meeting_url = models.URLField(blank=True)  # telehealth link (Meet, Zoom, Jitsi...)
     status = models.CharField(max_length=10, choices=STATUSES, default='scheduled')
     reschedule_request = models.CharField(max_length=300, blank=True)  # patient's note asking for another time
     created_at = models.DateTimeField(auto_now_add=True)

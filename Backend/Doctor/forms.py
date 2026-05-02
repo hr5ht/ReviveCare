@@ -79,8 +79,8 @@ class AppointmentForm(forms.ModelForm):
 
     class Meta:
         model = Appointment
-        fields = ['starts_at', 'duration_minutes', 'reason', 'location']
-        labels = {'reason': 'Reason', 'location': 'Where'}
+        fields = ['starts_at', 'duration_minutes', 'reason', 'location', 'meeting_url']
+        labels = {'reason': 'Reason', 'location': 'Where', 'meeting_url': 'Video call link'}
 
     def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
