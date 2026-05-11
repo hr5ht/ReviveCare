@@ -58,6 +58,7 @@ urlpatterns = [
     path('patient/diary/', pages.patient_diary, name='patient_diary'),
     path('patient/vitals/', pages.patient_vitals, name='patient_vitals'),
     path('patient/messages/', pages.patient_messages, name='patient_messages'),
+    path('patient/notifications/', pages.patient_notifications, name='patient_notifications'),
     path('patient/pain-check/', pages.pain_check, name='pain_check'),
     path('patient/medications/take/', pages.take_dose, name='take_dose'),
     path('patient/appointments/<int:appointment_id>/calendar.ics', pages.appointment_ics, name='appointment_ics'),

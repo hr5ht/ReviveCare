@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
-from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Patient, Workout
+from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Notification, Patient, Workout
 
 from .forms import DiaryForm, PatientContactForm, VitalsForm
 
@@ -418,6 +418,15 @@ def patient_vitals(request):
         return redirect('patient_vitals')
     return render(request, 'vitals.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                            'readings': patient.vitals.all()[:30]})
+
+
+@patient_page
+def patient_notifications(request):
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    return render(request, 'notifications.html', {'patient': patient, 'initials': _initials(patient.name),
+                                                  'notifications': patient.notifications.all()[:50]})
 
 
 def email_later(subject, body, to):

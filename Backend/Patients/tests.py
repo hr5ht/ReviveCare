@@ -618,3 +618,21 @@ class AppointmentReminderTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('Knee review', mail.outbox[0].body)
         self.assertIn('Where: Room 2', mail.outbox[0].body)
+
+
+class NotificationBellTests(TestCase):
+    def test_bell_counts_only_own_unread(self):
+        from django.utils import timezone
+        from .models import Notification
+        p = Patient.objects.create(name='B', email='b@example.com', info='x', password='x')
+        other = Patient.objects.create(name='O', email='o@example.com', info='x', password='x')
+        Notification.objects.create(patient=p, title='New plan')
+        Notification.objects.create(patient=p, title='Seen', read_at=timezone.now())
+        Notification.objects.create(patient=other, title='Not yours')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        self.assertContains(self.client.get('/patient/dashboard/'), 'aria-label="Notifications, 1 unread"')
+        r = self.client.get('/patient/notifications/')
+        self.assertContains(r, 'New plan')
+        self.assertNotContains(r, 'Not yours')

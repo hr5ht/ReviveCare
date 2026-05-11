@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Notifications · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/patient_header.html" %}
+
+    <div class="max-w-3xl mx-auto px-6 py-8">
+        <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to Dashboard</span>
+        </button>
+        <h1 class="text-3xl font-bold text-slate-900 mb-6">Notifications</h1>
+
+        <ul class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+            {% for n in notifications %}
+            <li class="px-5 py-4 flex gap-3 {% if not n.read_at %}bg-emerald-50/50{% endif %}">
+                <span class="mt-1.5 w-2 h-2 rounded-full flex-shrink-0 {% if n.read_at %}bg-transparent{% else %}bg-emerald-500{% endif %}"></span>
+                <div class="min-w-0 flex-1">
+                    <p class="font-semibold text-slate-900">{% if n.link %}<a href="{{ n.link }}" class="hover:underline">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}{% if not n.read_at %}<span class="sr-only"> (unread)</span>{% endif %}</p>
+                    {% if n.body %}<p class="text-sm text-slate-600">{{ n.body }}</p>{% endif %}
+                    <p class="text-xs text-slate-400 mt-1">{{ n.created_at|date:"D d M, H:i" }}</p>
+                </div>
+            </li>
+            {% empty %}
+            <li class="px-5 py-10 text-center text-slate-500">You're all caught up.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
