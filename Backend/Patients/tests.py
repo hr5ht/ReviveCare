@@ -600,3 +600,21 @@ class AppointmentCalendarFileTests(TestCase):
         for line in ('DTSTART:20260601T043000Z', 'DTEND:20260601T051500Z', 'SUMMARY:Knee check\\, week 6', 'URL:https://meet.example.com/x'):
             self.assertIn(line + '\r\n', body)
         self.assertEqual(self.client.get(f'/patient/appointments/{theirs.id}/calendar.ics').status_code, 404)
+
+
+class AppointmentReminderTests(TestCase):
+    def test_reminds_appointments_a_day_out_once(self):
+        from datetime import timedelta
+        from django.core import mail
+        from django.core.management import call_command
+        from django.utils import timezone
+        from .models import Appointment
+        p = Patient.objects.create(name='Asha', email='a@example.com', info='x', password='x')
+        now = timezone.now()
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(hours=24, minutes=30), reason='Knee review', location='Room 2')
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(hours=26), reason='Too far')
+        Appointment.objects.create(patient=p, starts_at=now + timedelta(hours=24, minutes=10), reason='Cancelled one', status='cancelled')
+        call_command('send_appointment_reminders', stdout=open('/dev/null', 'w'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('Knee review', mail.outbox[0].body)
+        self.assertIn('Where: Room 2', mail.outbox[0].body)
