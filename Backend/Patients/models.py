@@ -351,3 +351,20 @@ class Appointment(models.Model):
     @property
     def ends_at(self):
         return self.starts_at + timedelta(minutes=self.duration_minutes)
+
+
+class Notification(models.Model):
+    """An in-app notice for a patient: a new plan, a booked appointment, a doctor's reply..."""
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=120)
+    body = models.CharField(max_length=300, blank=True)
+    link = models.CharField(max_length=200, blank=True)  # site path to open, e.g. "/patient/dashboard/#appointment"
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['patient', 'read_at'])]
+
+    def __str__(self):
+        return f"{self.patient.name} · {self.title}"
