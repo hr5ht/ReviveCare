@@ -580,3 +580,23 @@ class MeetingLinkTests(TestCase):
         r = self.client.get('/patient/dashboard/')
         self.assertContains(r, 'Join video call')
         self.assertContains(r, 'href="https://meet.example.com/abc"')
+
+
+class AppointmentCalendarFileTests(TestCase):
+    def test_ics_download_is_scoped_to_the_patient(self):
+        from datetime import datetime, timezone as tz
+        from .models import Appointment
+        p = Patient.objects.create(name='C', email='c@example.com', info='x', password='x')
+        other = Patient.objects.create(name='D', email='d@example.com', info='x', password='x')
+        a = Appointment.objects.create(patient=p, starts_at=datetime(2026, 6, 1, 4, 30, tzinfo=tz.utc), duration_minutes=45,
+                                       reason='Knee check, week 6', meeting_url='https://meet.example.com/x')
+        theirs = Appointment.objects.create(patient=other, starts_at=a.starts_at)
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        r = self.client.get(f'/patient/appointments/{a.id}/calendar.ics')
+        self.assertEqual(r['Content-Type'], 'text/calendar; charset=utf-8')
+        body = r.content.decode()
+        for line in ('DTSTART:20260601T043000Z', 'DTEND:20260601T051500Z', 'SUMMARY:Knee check\\, week 6', 'URL:https://meet.example.com/x'):
+            self.assertIn(line + '\r\n', body)
+        self.assertEqual(self.client.get(f'/patient/appointments/{theirs.id}/calendar.ics').status_code, 404)

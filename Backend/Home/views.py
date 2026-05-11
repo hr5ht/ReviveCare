@@ -1,7 +1,7 @@
 import json
 import logging
 import threading
-from datetime import timedelta
+from datetime import timedelta, timezone as dt_timezone
 from functools import wraps
 
 from django.contrib import messages
@@ -11,7 +11,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -204,6 +204,38 @@ def request_reschedule(request, appointment_id):
         body = f"Can we move my appointment on {timezone.localtime(appointment.starts_at):%a %d %b, %H:%M}? {note}"
         notify_new_message(Message.objects.create(patient=patient, from_patient=True, body=body), request.build_absolute_uri('/')[:-1])
     return redirect('/patient/dashboard/#appointment')
+
+
+def _ics_text(value):
+    return value.replace('\\', '\\\\').replace(';', '\\;').replace(',', '\\,').replace('\n', '\\n')
+
+
+def appointment_ics(request, appointment_id):
+    """One appointment as an .ics file the patient can add to any calendar app."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    a = patient.appointments.filter(id=appointment_id).select_related('doctor').first()
+    if not a:
+        raise Http404
+    stamp = lambda dt: dt.astimezone(dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    doctor = f" with Dr. {a.doctor.get_full_name() or a.doctor.username}" if a.doctor else ''
+    lines = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ReViveCare//Appointments//EN', 'BEGIN:VEVENT',
+        f'UID:appointment-{a.id}@revivecare', f'DTSTAMP:{stamp(timezone.now())}',
+        f'DTSTART:{stamp(a.starts_at)}', f'DTEND:{stamp(a.ends_at)}',
+        f'SUMMARY:{_ics_text((a.reason or "Appointment") + doctor)}',
+    ]
+    if a.location or a.meeting_url:
+        lines.append(f'LOCATION:{_ics_text(a.location or a.meeting_url)}')
+    if a.meeting_url:
+        lines.append(f'URL:{a.meeting_url}')
+    if a.status == 'cancelled':
+        lines.append('STATUS:CANCELLED')
+    lines += ['END:VEVENT', 'END:VCALENDAR']
+    response = HttpResponse('\r\n'.join(lines) + '\r\n', content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="appointment-{a.id}.ics"'
+    return response
 
 
 def pain_by_day(patient, days=14):
