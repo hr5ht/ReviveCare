@@ -724,3 +724,21 @@ class PatientReportTests(TestCase):
         self.assertContains(r, '<td class="py-1.5 text-right">12</td>', html=False)
         self.client.force_login(stranger)
         self.assertEqual(self.client.get(f'/doctor/patients/{p.id}/report/').status_code, 404)
+
+
+class WorkoutCsvTests(TestCase):
+    def test_csv_export(self):
+        import csv, io
+        from django.contrib.auth.models import User
+        from .models import Workout
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        p = Patient.objects.create(name='Asha Rao', email='csv@example.com', info='x', password='x', doctor=doctor)
+        Workout.objects.create(patient=p, exercise='squat', total_reps=10, good_reps=10, completed=True)
+        self.client.force_login(doctor)
+        r = self.client.get(f'/doctor/patients/{p.id}/workouts.csv')
+        self.assertEqual(r['Content-Disposition'], 'attachment; filename="asha-rao-workouts.csv"')
+        rows = list(csv.reader(io.StringIO(r.content.decode())))
+        self.assertEqual(rows[0][:3], ['date', 'exercise', 'reps'])
+        self.assertEqual(rows[1][2:], ['10', '10', '0', '10', '0', '70.0', '0', 'yes'])
+        self.client.force_login(User.objects.create_user('x', password='Doc-pass-123'))
+        self.assertEqual(self.client.get(f'/doctor/patients/{p.id}/workouts.csv').status_code, 404)

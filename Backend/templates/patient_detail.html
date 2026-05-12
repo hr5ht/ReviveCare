@@ -104,7 +104,7 @@
                     {% endif %}
                 </section>
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100"><h2 class="font-semibold text-slate-900">Recent sessions</h2></div>
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between"><h2 class="font-semibold text-slate-900">Recent sessions</h2>{% if sessions %}<a href="/doctor/patients/{{ patient.id }}/workouts.csv" download class="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"><i data-lucide="download" class="w-4 h-4"></i> CSV</a>{% endif %}</div>
                     {% if sessions %}
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 text-slate-500 text-left"><tr><th class="px-6 py-3 font-medium">Date</th><th class="px-6 py-3 font-medium">Exercise</th><th class="px-6 py-3 font-medium text-right">Reps</th><th class="px-6 py-3 font-medium text-right">Quality</th><th class="px-6 py-3 font-medium">Status</th></tr></thead>

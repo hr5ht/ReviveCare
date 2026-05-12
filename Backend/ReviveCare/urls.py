@@ -47,6 +47,7 @@ urlpatterns = [
     path('doctor/patients/<int:patient_id>/notes/', doctor.add_note, name='add_note'),
     path('doctor/patients/<int:patient_id>/plan/', doctor.patient_plan, name='patient_plan'),
     path('doctor/patients/<int:patient_id>/report/', doctor.patient_report, name='patient_report'),
+    path('doctor/patients/<int:patient_id>/workouts.csv', doctor.export_workouts, name='export_workouts'),
     path('doctor/patients/<int:patient_id>/appointments/', doctor.patient_appointments, name='patient_appointments'),
     path('doctor/patients/<int:patient_id>/medications/', doctor.patient_medications, name='patient_medications'),
     path('doctor/patients/<int:patient_id>/goals/', doctor.patient_goals, name='patient_goals'),

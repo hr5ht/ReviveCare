@@ -1,9 +1,11 @@
+import csv
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.db.models import Count, Max, Min, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -341,6 +343,22 @@ def patient_appointments(request, patient_id):
         messages.success(request, f"Appointment booked for {timezone.localtime(form.instance.starts_at):%a %d %b, %H:%M}.")
         return redirect(f"{reverse('patient_detail', args=[patient.id])}#appointments")
     return patient_detail(request, patient_id, appointment_form=form)
+
+
+@login_required
+def export_workouts(request, patient_id):
+    """Every workout of one patient as a CSV file."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    names = dict(Exercise.objects.values_list('slug', 'name'))
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    slug = ''.join(c if c.isalnum() else '-' for c in patient.name.lower())
+    response['Content-Disposition'] = f'attachment; filename="{slug}-workouts.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['date', 'exercise', 'reps', 'target', 'excellent', 'good', 'partial', 'quality %', 'duration (s)', 'completed'])
+    for w in Workout.objects.filter(patient=patient).order_by('date', 'created_at'):
+        writer.writerow([w.date, names.get(w.exercise, w.exercise), w.total_reps, w.target_reps, w.excellent_reps,
+                         w.good_reps, w.partial_reps, w.quality_score, w.duration_seconds, 'yes' if w.completed else 'no'])
+    return response
 
 
 @login_required
