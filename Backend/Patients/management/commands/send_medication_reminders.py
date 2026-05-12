@@ -20,7 +20,7 @@ class Command(BaseCommand):
         today = now.date()
         taken = set(DoseTaken.objects.filter(date=today).values_list('medication_id', 'time'))
         due = {}  # patient -> [(time, medication)]
-        meds = Medication.objects.filter(is_active=True, patient__is_active=True).select_related('patient')
+        meds = Medication.objects.filter(is_active=True, patient__is_active=True, patient__email_reminders=True).select_related('patient')
         for med in meds:
             for t in med.due_on(today):
                 if in_window(t) and (med.id, t) not in taken:

@@ -657,3 +657,31 @@ class NotificationReadTests(TestCase):
         self.client.post('/patient/notifications/read/')
         self.assertFalse(p.notifications.filter(read_at=None).exists())
         self.assertFalse(Notification.objects.get(id=theirs.id).read_at)
+
+
+class EmailPreferenceTests(TestCase):
+    def test_turning_off_reminders_and_updates(self):
+        from datetime import timedelta
+        from unittest import mock
+        from django.contrib.auth.models import User
+        from django.core import mail
+        from django.core.management import call_command
+        from django.utils import timezone
+        from .models import Appointment
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        p = Patient.objects.create(name='E', email='e@example.com', info='x', password='x', doctor=doctor)
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        self.client.post('/patient/profile/', {'email_prefs': '1', 'email_updates': 'on'})
+        p.refresh_from_db()
+        self.assertEqual((p.email_reminders, p.email_updates), (False, True))
+        Appointment.objects.create(patient=p, starts_at=timezone.now() + timedelta(hours=24, minutes=5))
+        call_command('send_appointment_reminders', stdout=open('/dev/null', 'w'))
+        self.assertEqual(mail.outbox, [])
+        p.email_updates = False
+        p.save()
+        self.client.force_login(doctor)
+        with mock.patch('Home.views.threading.Thread', lambda target, **kw: mock.Mock(start=target)):
+            self.client.post(f'/doctor/inbox/{p.id}/', {'body': 'Hello'})
+        self.assertEqual(mail.outbox, [])

@@ -17,7 +17,8 @@ class Command(BaseCommand):
     def handle(self, hours, minutes, **options):
         # Each run covers the next slice of time, so every appointment falls in exactly one run's window.
         start = timezone.now() + timedelta(hours=hours)
-        due = Appointment.objects.filter(status='scheduled', patient__is_active=True, starts_at__gte=start,
+        due = Appointment.objects.filter(status='scheduled', patient__is_active=True, patient__email_reminders=True,
+                                         starts_at__gte=start,
                                          starts_at__lt=start + timedelta(minutes=minutes)).select_related('patient', 'doctor')
         sent = 0
         for a in due:

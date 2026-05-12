@@ -376,6 +376,12 @@ def patient_profile(request):
     if not patient:
         return redirect('patient_login')
     fields = ['phone', 'emergency_contact_name', 'emergency_contact_phone']
+    if request.method == 'POST' and 'email_prefs' in request.POST:
+        patient.email_reminders = 'email_reminders' in request.POST
+        patient.email_updates = 'email_updates' in request.POST
+        patient.save(update_fields=['email_reminders', 'email_updates'])
+        messages.success(request, 'Email preferences saved.')
+        return redirect('patient_profile')
     if request.method == 'POST':
         form = PatientContactForm(request.POST)
         if form.is_valid():
@@ -386,7 +392,10 @@ def patient_profile(request):
             return redirect('patient_profile')
     else:
         form = PatientContactForm(initial={f: getattr(patient, f) for f in fields})
-    return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form})
+    return render(request, 'patient_profile.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form, 'email_prefs': [
+        ('email_reminders', 'Reminders', 'Medicine doses and upcoming appointments', patient.email_reminders),
+        ('email_updates', 'Updates from your doctor', 'New exercise plans, appointments and messages', patient.email_updates),
+    ]})
 
 
 @patient_page
@@ -474,7 +483,7 @@ def notify_new_message(message, site):
         if patient.doctor and patient.doctor.email:
             email_later(f"New message from {patient.name} · ReViveCare",
                         f"{patient.name} wrote:\n\n{message.body}\n\nReply: {site}/doctor/inbox/{patient.id}/\n", patient.doctor.email)
-    else:
+    elif patient.email_updates:
         sender = f"Dr. {message.sender.get_full_name() or message.sender.username}" if message.sender else 'Your care team'
         email_later("New message from your doctor · ReViveCare",
                     f"Hi {patient.name},\n\n{sender} sent you a message:\n\n{message.body}\n\nReply: {site}/patient/messages/\n", patient.email)

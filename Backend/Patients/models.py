@@ -25,6 +25,8 @@ class Patient(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     chat_since = models.DateTimeField(null=True, blank=True)  # start of the current chatbot conversation
+    email_reminders = models.BooleanField(default=True)  # medicine and appointment reminders
+    email_updates = models.BooleanField(default=True)  # new plans, appointments and doctor messages
 
     def __str__(self):
         return self.name

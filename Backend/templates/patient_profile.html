@@ -48,6 +48,22 @@
             </form>
         </div>
 
+        <form method="post" class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            {% csrf_token %}
+            <input type="hidden" name="email_prefs" value="1">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><i data-lucide="mail" class="w-5 h-5 text-emerald-600"></i> Email me about</h2>
+            <p class="text-sm text-slate-500 mb-4">Sent to {{ patient.email }}. You'll still see everything in the app.</p>
+            <div class="space-y-3 mb-5">
+                {% for name, label, hint, on in email_prefs %}
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="{{ name }}" {% if on %}checked{% endif %} class="mt-1 w-4 h-4 accent-emerald-600">
+                    <span><span class="block text-sm font-medium text-slate-900">{{ label }}</span><span class="block text-xs text-slate-500">{{ hint }}</span></span>
+                </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-xl transition-colors"><i data-lucide="save" class="w-4 h-4"></i> Save Preferences</button>
+        </form>
+
         <div class="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6 flex items-start gap-3">
             <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
             <p class="text-sm text-slate-700">Medical details are managed by your doctor. Ask them if something here looks wrong.</p>
