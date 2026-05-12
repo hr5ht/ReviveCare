@@ -9,14 +9,21 @@
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
             <span class="font-medium">Back to Dashboard</span>
         </button>
-        <h1 class="text-3xl font-bold text-slate-900 mb-6">Notifications</h1>
+        <div class="flex items-center justify-between gap-4 mb-6">
+            <h1 class="text-3xl font-bold text-slate-900">Notifications</h1>
+            {% if unread_notifications %}
+            <form method="post" action="/patient/notifications/read/">{% csrf_token %}
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-xl transition-colors"><i data-lucide="check-check" class="w-4 h-4"></i> Mark all as read</button>
+            </form>
+            {% endif %}
+        </div>
 
         <ul class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
             {% for n in notifications %}
             <li class="px-5 py-4 flex gap-3 {% if not n.read_at %}bg-emerald-50/50{% endif %}">
                 <span class="mt-1.5 w-2 h-2 rounded-full flex-shrink-0 {% if n.read_at %}bg-transparent{% else %}bg-emerald-500{% endif %}"></span>
                 <div class="min-w-0 flex-1">
-                    <p class="font-semibold text-slate-900">{% if n.link %}<a href="{{ n.link }}" class="hover:underline">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}{% if not n.read_at %}<span class="sr-only"> (unread)</span>{% endif %}</p>
+                    <p class="font-semibold text-slate-900">{% if n.link %}<a href="/patient/notifications/{{ n.id }}/" class="hover:underline">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}{% if not n.read_at %}<span class="sr-only"> (unread)</span>{% endif %}</p>
                     {% if n.body %}<p class="text-sm text-slate-600">{{ n.body }}</p>{% endif %}
                     <p class="text-xs text-slate-400 mt-1">{{ n.created_at|date:"D d M, H:i" }}</p>
                 </div>

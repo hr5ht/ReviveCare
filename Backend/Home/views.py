@@ -429,6 +429,30 @@ def patient_notifications(request):
                                                   'notifications': patient.notifications.all()[:50]})
 
 
+def open_notification(request, notification_id):
+    """Mark one notification read and go where it points."""
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    n = patient.notifications.filter(id=notification_id).first()
+    if not n:
+        return redirect('patient_notifications')
+    if not n.read_at:
+        n.read_at = timezone.now()
+        n.save(update_fields=['read_at'])
+    # only follow site paths, never another host
+    return redirect(n.link if n.link.startswith('/') and not n.link.startswith('//') else 'patient_notifications')
+
+
+@require_POST
+def read_all_notifications(request):
+    patient = _logged_in_patient(request)
+    if not patient:
+        return redirect('patient_login')
+    patient.notifications.filter(read_at=None).update(read_at=timezone.now())
+    return redirect('patient_notifications')
+
+
 def email_later(subject, body, to):
     """Send an email without making the request wait; failures are only logged."""
     def send():

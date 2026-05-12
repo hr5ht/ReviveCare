@@ -636,3 +636,24 @@ class NotificationBellTests(TestCase):
         r = self.client.get('/patient/notifications/')
         self.assertContains(r, 'New plan')
         self.assertNotContains(r, 'Not yours')
+
+
+class NotificationReadTests(TestCase):
+    def test_opening_and_mark_all(self):
+        from .models import Notification
+        p = Patient.objects.create(name='R', email='r@example.com', info='x', password='x')
+        other = Patient.objects.create(name='O', email='o@example.com', info='x', password='x')
+        a = Notification.objects.create(patient=p, title='Plan', link='/patient/exercises/')
+        evil = Notification.objects.create(patient=p, title='Odd', link='//evil.example.com/')
+        theirs = Notification.objects.create(patient=other, title='Not yours')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        self.assertRedirects(self.client.get(f'/patient/notifications/{a.id}/'), '/patient/exercises/', fetch_redirect_response=False)
+        a.refresh_from_db()
+        self.assertIsNotNone(a.read_at)
+        self.assertRedirects(self.client.get(f'/patient/notifications/{evil.id}/'), '/patient/notifications/', fetch_redirect_response=False)
+        Notification.objects.create(patient=p, title='Another')
+        self.client.post('/patient/notifications/read/')
+        self.assertFalse(p.notifications.filter(read_at=None).exists())
+        self.assertFalse(Notification.objects.get(id=theirs.id).read_at)
