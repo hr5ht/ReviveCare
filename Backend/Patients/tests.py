@@ -685,3 +685,26 @@ class EmailPreferenceTests(TestCase):
         with mock.patch('Home.views.threading.Thread', lambda target, **kw: mock.Mock(start=target)):
             self.client.post(f'/doctor/inbox/{p.id}/', {'body': 'Hello'})
         self.assertEqual(mail.outbox, [])
+
+
+class PatientNotifyTests(TestCase):
+    def test_plan_and_appointment_changes_notify_the_patient(self):
+        from datetime import timedelta
+        from unittest import mock
+        from django.contrib.auth.models import User
+        from django.core import mail
+        from django.utils import timezone
+        from .models import Exercise
+        doctor = User.objects.create_user('doc', password='Doc-pass-123', first_name='Meera')
+        p = Patient.objects.create(name='N', email='n@example.com', info='x', password='x', doctor=doctor)
+        ex = Exercise.objects.filter(is_active=True).first()
+        self.client.force_login(doctor)
+        when = timezone.localtime(timezone.now() + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M')
+        with mock.patch('Home.views.threading.Thread', lambda target, **kw: mock.Mock(start=target)):
+            self.client.post(f'/doctor/patients/{p.id}/plan/', {'exercise': [ex.id], f'reps_{ex.id}': 10, f'sets_{ex.id}': 3})
+            self.client.post(f'/doctor/patients/{p.id}/appointments/', {'starts_at': when, 'duration_minutes': 30, 'reason': 'Review'})
+            self.client.post(f'/doctor/patients/{p.id}/appointments/', {'cancel': p.appointments.get().id})
+        titles = list(p.notifications.order_by('id').values_list('title', flat=True))
+        self.assertEqual(titles, ['Your exercise plan was updated', 'Appointment booked', 'Appointment cancelled'])
+        self.assertIn(f'Dr. Meera set your plan: {ex.name}.', p.notifications.order_by('id').first().body)
+        self.assertEqual(len(mail.outbox), 3)

@@ -473,6 +473,13 @@ def email_later(subject, body, to):
     threading.Thread(target=send, daemon=True).start()
 
 
+def notify_patient(patient, title, body, link, site):
+    """In-app notification, plus an email if the patient wants updates."""
+    Notification.objects.create(patient=patient, title=title, body=body, link=link)
+    if patient.email_updates:
+        email_later(f"{title} · ReViveCare", f"Hi {patient.name},\n\n{body}\n\nOpen ReViveCare: {site}{link}\n", patient.email)
+
+
 def notify_new_message(message, site):
     """Email the other side, but only for the first unread message so a back-and-forth doesn't flood their inbox."""
     unread = message.patient.messages.filter(from_patient=message.from_patient, read_at=None).exclude(id=message.id)

@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery, exercise_streak, goal_cards,
-                        medication_adherence, notify_new_message, pain_by_day, vitals_by_day)
+                        medication_adherence, notify_new_message, notify_patient, pain_by_day, vitals_by_day)
 from Patients.models import Alert, Appointment, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
@@ -20,6 +20,10 @@ from .models import ClinicalNote, DoctorProfile
 STATUSES = ['active', 'inactive', 'new']
 PER_PAGE = 10
 ADHERENCE_DAYS = 14
+
+
+def _doctor(user):
+    return f"Dr. {user.get_full_name() or user.username}"
 
 
 def patient_rows(patients):
@@ -242,6 +246,10 @@ def patient_plan(request, patient_id):
                 })
             else:
                 ExercisePlan.objects.filter(patient=patient, exercise=exercise).update(is_active=False)
+        names = list(patient.plan.filter(is_active=True).values_list('exercise__name', flat=True))
+        notify_patient(patient, 'Your exercise plan was updated',
+                       f"{_doctor(request.user)} set your plan: {', '.join(names) or 'no exercises for now'}.",
+                       '/patient/dashboard/', request.build_absolute_uri('/')[:-1])
         messages.success(request, f"Exercise plan saved for {patient.name}.")
         return redirect('patient_plan', patient_id=patient.id)
     assigned = {p.exercise_id: p for p in patient.plan.filter(is_active=True)}
@@ -310,14 +318,26 @@ def patient_appointments(request, patient_id):
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
     if request.method != 'POST':
         return redirect('patient_detail', patient_id=patient.id)
+    site = request.build_absolute_uri('/')[:-1]
     if 'cancel' in request.POST:
-        patient.appointments.filter(id=request.POST['cancel'], status='scheduled').update(status='cancelled')
+        appointment = patient.appointments.filter(id=request.POST['cancel'], status='scheduled').first()
+        if appointment:
+            appointment.status = 'cancelled'
+            appointment.save(update_fields=['status'])
+            notify_patient(patient, 'Appointment cancelled',
+                           f"{_doctor(request.user)} cancelled your appointment on {timezone.localtime(appointment.starts_at):%a %d %b, %H:%M}.",
+                           '/patient/dashboard/#appointment', site)
         messages.success(request, 'Appointment cancelled.')
         return redirect(f"{reverse('patient_detail', args=[patient.id])}#appointments")
     form = AppointmentForm(request.POST, doctor=request.user)
     if form.is_valid():
         form.instance.patient, form.instance.doctor = patient, request.user
         form.save()
+        a = form.instance
+        notify_patient(patient, 'Appointment booked',
+                       f"{_doctor(request.user)} booked {a.reason or 'an appointment'} for {timezone.localtime(a.starts_at):%a %d %b, %H:%M}"
+                       + (f" at {a.location}" if a.location else '') + ('. It is a video call.' if a.meeting_url else '.'),
+                       '/patient/dashboard/#appointment', site)
         messages.success(request, f"Appointment booked for {timezone.localtime(form.instance.starts_at):%a %d %b, %H:%M}.")
         return redirect(f"{reverse('patient_detail', args=[patient.id])}#appointments")
     return patient_detail(request, patient_id, appointment_form=form)
