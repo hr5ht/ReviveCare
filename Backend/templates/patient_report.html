@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Progress report · {{ patient.name }} · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-slate-100 print:bg-white py-8 print:py-0">
+    <div class="max-w-3xl mx-auto px-6 mb-4 flex items-center justify-between print:hidden">
+        <a href="/doctor/patients/{{ patient.id }}/" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i><span class="font-medium">Back to {{ patient.name }}</span>
+        </a>
+        <button onclick="print()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"><i data-lucide="printer" class="w-4 h-4"></i> Print / save PDF</button>
+    </div>
+
+    <article class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm print:shadow-none print:rounded-none p-10 print:p-0 text-sm text-slate-800">
+        <header class="flex items-start justify-between gap-6 pb-6 mb-6 border-b border-slate-200">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">ReViveCare · Progress report</p>
+                <h1 class="text-2xl font-bold text-slate-900 mt-1">{{ patient.name }}</h1>
+                <p class="text-slate-600">{{ patient.condition|default:"No condition recorded" }}{% if patient.surgery_date %} · surgery {{ patient.surgery_date|date:"d M Y" }}{% endif %}</p>
+            </div>
+            <dl class="text-right text-xs text-slate-500 space-y-0.5">
+                <div>Period <span class="text-slate-800 font-medium">{{ since|date:"d M" }} – {{ today|date:"d M Y" }}</span></div>
+                <div>Prepared by <span class="text-slate-800 font-medium">{{ doctor }}</span></div>
+                <div>{{ patient.email }}</div>
+            </dl>
+        </header>
+
+        <section class="grid grid-cols-4 gap-3 mb-8">
+            {% for label, value in stats %}
+            <div class="rounded-xl border border-slate-200 p-3">
+                <p class="text-xs text-slate-500">{{ label }}</p>
+                <p class="text-xl font-bold text-slate-900 tabular-nums">{{ value }}</p>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="mb-8 break-inside-avoid">
+            <h2 class="font-semibold text-slate-900 mb-2">Exercise (last 30 days)</h2>
+            <table class="w-full">
+                <thead class="text-left text-xs text-slate-500 border-b border-slate-200"><tr><th class="py-1.5 font-medium">Exercise</th><th class="py-1.5 font-medium text-right">Sessions</th><th class="py-1.5 font-medium text-right">Reps</th><th class="py-1.5 font-medium text-right">Avg quality</th></tr></thead>
+                <tbody class="divide-y divide-slate-100 tabular-nums">
+                    {% for e in exercises %}<tr><td class="py-1.5">{{ e.name }}</td><td class="py-1.5 text-right">{{ e.sessions }}</td><td class="py-1.5 text-right">{{ e.reps }}</td><td class="py-1.5 text-right">{{ e.quality }}%</td></tr>
+                    {% empty %}<tr><td colspan="4" class="py-3 text-slate-500">No workouts in this period.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+            <p class="mt-2 text-xs text-slate-500">Current plan: {% for p in plan %}{{ p.exercise.name }} {{ p.total_sets }}×{{ p.reps }}{% if not forloop.last %}, {% endif %}{% empty %}none assigned{% endfor %}</p>
+        </section>
+
+        <div class="grid grid-cols-2 gap-8 mb-8">
+            <section class="break-inside-avoid">
+                <h2 class="font-semibold text-slate-900 mb-2">Pain (weekly average, 0–10)</h2>
+                <table class="w-full tabular-nums">
+                    {% for w in pain_weeks %}<tr class="border-b border-slate-100"><td class="py-1.5 text-slate-600">{{ w.start|date:"d M" }} – {{ w.end|date:"d M" }}</td><td class="py-1.5 text-right font-medium">{{ w.avg|default:"—" }}</td></tr>{% endfor %}
+                </table>
+            </section>
+            <section class="break-inside-avoid">
+                <h2 class="font-semibold text-slate-900 mb-2">Goals</h2>
+                <ul class="space-y-1.5">
+                    {% for g in goals %}<li class="flex justify-between gap-3"><span>{{ g.text }}</span><span class="tabular-nums font-medium {% if g.achieved %}text-emerald-700{% endif %}">{% if g.achieved %}Achieved{% else %}{{ g.percent }}%{% endif %}</span></li>
+                    {% empty %}<li class="text-slate-500">No goals set.</li>{% endfor %}
+                </ul>
+            </section>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 mb-8">
+            <section class="break-inside-avoid">
+                <h2 class="font-semibold text-slate-900 mb-2">Medications (doses taken)</h2>
+                <ul class="space-y-1.5">
+                    {% for m, adherence in medications %}<li class="flex justify-between gap-3"><span>{{ m }}</span><span class="tabular-nums font-medium">{% if adherence is not None %}{{ adherence }}%{% else %}—{% endif %}</span></li>
+                    {% empty %}<li class="text-slate-500">None.</li>{% endfor %}
+                </ul>
+            </section>
+            <section class="break-inside-avoid">
+                <h2 class="font-semibold text-slate-900 mb-2">Recent vitals</h2>
+                <table class="w-full tabular-nums">
+                    {% for v in vitals %}<tr class="border-b border-slate-100"><td class="py-1 text-slate-600">{{ v.created_at|date:"d M" }}</td><td class="py-1 text-right">{{ v.blood_pressure|default:"" }}</td><td class="py-1 text-right">{% if v.heart_rate %}{{ v.heart_rate }} bpm{% endif %}</td><td class="py-1 text-right">{% if v.temperature %}{{ v.temperature }} °F{% endif %}</td></tr>
+                    {% empty %}<tr><td class="py-1 text-slate-500">No readings.</td></tr>{% endfor %}
+                </table>
+            </section>
+        </div>
+
+        {% if notes %}
+        <section class="break-inside-avoid">
+            <h2 class="font-semibold text-slate-900 mb-2">Clinical notes</h2>
+            <ul class="space-y-2">
+                {% for note in notes %}<li><p class="text-xs text-slate-500">{{ note.created_at|date:"d M Y" }}{% if note.author %} · Dr. {{ note.author.get_full_name|default:note.author.username }}{% endif %}</p><p class="whitespace-pre-line">{{ note.text }}</p></li>{% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+
+        <footer class="mt-10 pt-4 border-t border-slate-200 text-xs text-slate-400">Generated {% now "d M Y, H:i" %} from patient-reported data in ReViveCare. Workout quality is estimated from camera tracking.</footer>
+    </article>
+</div>
+{% endblock %}

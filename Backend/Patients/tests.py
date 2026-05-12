@@ -708,3 +708,19 @@ class PatientNotifyTests(TestCase):
         self.assertEqual(titles, ['Your exercise plan was updated', 'Appointment booked', 'Appointment cancelled'])
         self.assertIn(f'Dr. Meera set your plan: {ex.name}.', p.notifications.order_by('id').first().body)
         self.assertEqual(len(mail.outbox), 3)
+
+
+class PatientReportTests(TestCase):
+    def test_report_only_for_own_patients(self):
+        from django.contrib.auth.models import User
+        from .models import Workout
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        stranger = User.objects.create_user('other', password='Doc-pass-123')
+        p = Patient.objects.create(name='Rep', email='rep@example.com', info='x', password='x', doctor=doctor)
+        Workout.objects.create(patient=p, exercise='squat', total_reps=12, excellent_reps=12)
+        self.client.force_login(doctor)
+        r = self.client.get(f'/doctor/patients/{p.id}/report/')
+        self.assertContains(r, 'Progress report')
+        self.assertContains(r, '<td class="py-1.5 text-right">12</td>', html=False)
+        self.client.force_login(stranger)
+        self.assertEqual(self.client.get(f'/doctor/patients/{p.id}/report/').status_code, 404)

@@ -344,6 +344,45 @@ def patient_appointments(request, patient_id):
 
 
 @login_required
+def patient_report(request, patient_id):
+    """A one-page summary of the last 30 days to print or save as PDF."""
+    patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    today = timezone.localdate()
+    since = today - timedelta(days=29)
+    names = dict(Exercise.objects.values_list('slug', 'name'))
+    by_exercise = {}
+    for w in Workout.objects.filter(patient=patient, total_reps__gt=0, date__gte=since):
+        row = by_exercise.setdefault(w.exercise, {'name': names.get(w.exercise, w.exercise), 'sessions': 0, 'reps': 0, 'scores': []})
+        row['sessions'] += 1
+        row['reps'] += w.total_reps
+        row['scores'].append(w.quality_score)
+    exercises = sorted(({**r, 'quality': round(sum(r['scores']) / len(r['scores']))} for r in by_exercise.values()),
+                       key=lambda r: -r['sessions'])
+    pain = pain_by_day(patient, 28)
+    pain_weeks = []
+    for i in range(0, 28, 7):
+        scores = [d['pain'] for d in pain[i:i + 7] if d['pain'] is not None]
+        pain_weeks.append({'start': pain[i]['date'], 'end': pain[i + 6]['date'],
+                           'avg': round(sum(scores) / len(scores), 1) if scores else None})
+    return render(request, 'patient_report.html', {
+        'patient': patient, 'today': today, 'since': since, 'doctor': _doctor(request.user),
+        'stats': [
+            ('Days in recovery', days_in_recovery(patient)),
+            ('Sessions', sum(r['sessions'] for r in exercises)),
+            ('Total reps', sum(r['reps'] for r in exercises)),
+            ('Current streak', f"{exercise_streak(patient)} days"),
+        ],
+        'exercises': exercises,
+        'plan': patient.plan.filter(is_active=True).select_related('exercise'),
+        'goals': goal_cards(patient),
+        'pain_weeks': pain_weeks,
+        'vitals': patient.vitals.filter(created_at__date__gte=since)[:10],
+        'medications': [(m, medication_adherence(m, 30)) for m in patient.medications.filter(is_active=True)],
+        'notes': patient.notes.select_related('author')[:5],
+    })
+
+
+@login_required
 def patient_detail(request, patient_id, appointment_form=None):
     """Everything a doctor needs about one patient on a single page."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
