@@ -2,6 +2,8 @@ from django import forms
 
 from Patients.models import DiaryEntry, Vitals
 
+from .models import DemoRequest
+
 PHONE = dict(regex=r'^\+?[0-9 ()-]{7,20}$', max_length=20, required=False,
              error_messages={'invalid': 'Enter a valid phone number.'})
 
@@ -34,3 +36,11 @@ class VitalsForm(forms.ModelForm):
         if data.get('systolic') and data.get('diastolic') and data['diastolic'] >= data['systolic']:
             raise forms.ValidationError('The top blood pressure number should be bigger than the bottom one.')
         return data
+
+
+class DemoRequestForm(forms.ModelForm):
+    phone = forms.RegexField(**PHONE)
+
+    class Meta:
+        model = DemoRequest
+        fields = ['name', 'email', 'organization', 'phone', 'message']

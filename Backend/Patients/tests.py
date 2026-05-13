@@ -780,3 +780,26 @@ class DoctorDigestTests(TestCase):
         self.assertIn('Open alerts:         1', body)
         self.assertIn('Idle Ivan: 10 days', body)
         self.assertIn('Appointments ahead:  1', body)
+
+
+class DemoRequestTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_saves_request_and_emails_team(self):
+        from unittest import mock
+        from django.core import mail
+        from Home.models import DemoRequest
+        with mock.patch('Home.views.threading.Thread', lambda target, **kw: mock.Mock(start=target)):
+            r = self.client.post('/demo-request/', {'name': 'Dr. Rao', 'email': 'rao@clinic.example', 'organization': 'City Ortho'})
+        self.assertEqual(r.json(), {'success': True})
+        self.assertEqual(DemoRequest.objects.get().organization, 'City Ortho')
+        self.assertIn('City Ortho', mail.outbox[0].subject)
+        bad = self.client.post('/demo-request/', {'name': 'X', 'email': 'nope'})
+        self.assertEqual(bad.status_code, 400)
+        self.assertIn('email', bad.json()['errors'])
+
+    def test_rate_limited(self):
+        for _ in range(5):
+            self.client.post('/demo-request/', {})
+        self.assertEqual(self.client.post('/demo-request/', {}).status_code, 429)

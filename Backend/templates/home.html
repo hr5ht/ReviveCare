@@ -217,22 +217,39 @@
             </div>
             {% endfor %}
         </div>
-        <button type="submit" class="mt-6 w-full inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+        <p id="demo-error" role="alert" hidden class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700"></p>
+        <button type="submit" class="mt-6 w-full disabled:opacity-60 inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
             <i data-lucide="send" class="w-5 h-5"></i> Request a demo
         </button>
     </form>
+    <div id="demo-thanks" hidden class="p-8 text-center" role="status">
+        <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i data-lucide="circle-check" class="w-7 h-7"></i></div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Thanks! We'll be in touch.</h2>
+        <p class="text-slate-600 mb-6">Someone from our team will email you within one working day.</p>
+        <button type="button" onclick="this.closest('dialog').close()" class="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold">Close</button>
+    </div>
 </dialog>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // ponytail: opens the visitor's mail app; switch to a server-side form once requests need tracking
-    document.getElementById('demo-form').addEventListener('submit', e => {
+    document.getElementById('demo-form').addEventListener('submit', async e => {
         e.preventDefault();
-        const f = new FormData(e.target);
-        const body = [...f].filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n');
-        location.href = `mailto:{{ team_email }}?subject=${encodeURIComponent('Demo request from ' + f.get('name'))}&body=${encodeURIComponent(body)}`;
-        e.target.closest('dialog').close();
+        const form = e.target, error = document.getElementById('demo-error'), button = form.querySelector('[type=submit]');
+        error.hidden = true;
+        button.disabled = true;
+        try {
+            const res = await fetch('/demo-request/', { method: 'POST', body: new FormData(form), headers: { 'X-CSRFToken': '{{ csrf_token }}' } });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json.error || Object.values(json.errors || {})[0] || 'Something went wrong. Please try again.');
+            form.hidden = true;
+            document.getElementById('demo-thanks').hidden = false;
+        } catch (err) {
+            error.textContent = err.message;
+            error.hidden = false;
+        } finally {
+            button.disabled = false;
+        }
     });
 </script>
 {% endblock %}

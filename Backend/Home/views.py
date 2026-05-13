@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core import signing
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
@@ -20,7 +21,7 @@ from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Notification, Patient, Workout
 
-from .forms import DiaryForm, PatientContactForm, VitalsForm
+from .forms import DemoRequestForm, DiaryForm, PatientContactForm, VitalsForm
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,6 @@ def _initials(name):
 
 def home(request):
     return render(request, 'home.html', {
-        'team_email': settings.EMAIL_HOST_USER,
         'demo_fields': [('name', 'Your name', 'text', True), ('email', 'Work email', 'email', True),
                         ('organization', 'Hospital or clinic', 'text', True), ('phone', 'Phone', 'tel', False),
                         ('message', 'What would you like to see?', 'textarea', False)],
@@ -64,6 +64,27 @@ def home(request):
             'Integrated telehealth consultations',
         ],
     })
+
+
+DEMO_REQUESTS_PER_HOUR = 5
+
+
+@require_POST
+def demo_request(request):
+    """Landing page "Schedule a Demo": save the request and email the team."""
+    # ponytail: per-instance memory cache, like the login limit; use a shared cache if spam gets through
+    key = f"demo-requests:{request.META.get('HTTP_X_REAL_IP') or request.META.get('REMOTE_ADDR', '')}"
+    cache.add(key, 0, 3600)
+    if cache.incr(key) > DEMO_REQUESTS_PER_HOUR:
+        return JsonResponse({'error': 'Too many requests. Please try again later.'}, status=429)
+    form = DemoRequestForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({'errors': {f: e[0] for f, e in form.errors.items()}}, status=400)
+    demo = form.save()
+    details = '\n'.join(f"{form.fields[f].label}: {getattr(demo, f)}" for f in form.Meta.fields if getattr(demo, f))
+    email_later(f"Demo request from {demo.name} ({demo.organization})", f"{details}\n\nReceived {timezone.localtime(demo.created_at):%d %b %Y %H:%M}\n",
+                settings.EMAIL_HOST_USER)
+    return JsonResponse({'success': True})
 
 
 def patient_login(request):
