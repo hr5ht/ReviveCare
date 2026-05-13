@@ -4,6 +4,7 @@ import threading
 from datetime import timedelta, timezone as dt_timezone
 from functools import wraps
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
@@ -44,6 +45,10 @@ def _initials(name):
 
 def home(request):
     return render(request, 'home.html', {
+        'team_email': settings.EMAIL_HOST_USER,
+        'demo_fields': [('name', 'Your name', 'text', True), ('email', 'Work email', 'email', True),
+                        ('organization', 'Hospital or clinic', 'text', True), ('phone', 'Phone', 'tel', False),
+                        ('message', 'What would you like to see?', 'textarea', False)],
         'features': [
             {'icon': 'clock', 'title': 'Real-Time Monitoring', 'description': 'Track patient recovery progress with continuous health data monitoring and automated alerts.'},
             {'icon': 'heart', 'title': 'Personalized Care Plans', 'description': "Customized recovery protocols tailored to each patient's specific medical needs and conditions."},
