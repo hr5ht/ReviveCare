@@ -742,3 +742,19 @@ class WorkoutCsvTests(TestCase):
         self.assertEqual(rows[1][2:], ['10', '10', '0', '10', '0', '70.0', '0', 'yes'])
         self.client.force_login(User.objects.create_user('x', password='Doc-pass-123'))
         self.assertEqual(self.client.get(f'/doctor/patients/{p.id}/workouts.csv').status_code, 404)
+
+
+class WeeklyProgressEmailTests(TestCase):
+    def test_weekly_email_summarises_the_week(self):
+        from django.core import mail
+        from django.core.management import call_command
+        from .models import Workout
+        active = Patient.objects.create(name='Active', email='a@example.com', info='x', password='x')
+        Patient.objects.create(name='Idle', email='i@example.com', info='x', password='x')
+        Patient.objects.create(name='Opted out', email='o@example.com', info='x', password='x', email_updates=False)
+        Workout.objects.create(patient=active, exercise='squat', total_reps=20, excellent_reps=20)
+        call_command('send_weekly_progress', stdout=open('/dev/null', 'w'))
+        bodies = {m.to[0]: m.body for m in mail.outbox}
+        self.assertEqual(set(bodies), {'a@example.com', 'i@example.com'})
+        self.assertIn('Reps:          20', bodies['a@example.com'])
+        self.assertIn("didn't log any workouts", bodies['i@example.com'])

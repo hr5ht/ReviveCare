@@ -173,6 +173,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_SENDER', 'actualharshit@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '').replace(' ', '')  # Gmail shows app passwords with spaces
 DEFAULT_FROM_EMAIL = f'ReViveCare <{EMAIL_HOST_USER}>'
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')  # for links in emails sent outside a request
 EMAIL_TIMEOUT = 10
 if not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
