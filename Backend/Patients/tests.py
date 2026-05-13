@@ -758,3 +758,25 @@ class WeeklyProgressEmailTests(TestCase):
         self.assertEqual(set(bodies), {'a@example.com', 'i@example.com'})
         self.assertIn('Reps:          20', bodies['a@example.com'])
         self.assertIn("didn't log any workouts", bodies['i@example.com'])
+
+
+class DoctorDigestTests(TestCase):
+    def test_digest_goes_to_doctors_with_patients(self):
+        from datetime import timedelta
+        from django.contrib.auth.models import User
+        from django.core import mail
+        from django.core.management import call_command
+        from django.utils import timezone
+        from .models import Alert, Appointment
+        doctor = User.objects.create_user('doc', email='doc@example.com', password='Doc-pass-123', first_name='Meera')
+        User.objects.create_user('lonely', email='lonely@example.com', password='Doc-pass-123')
+        p = Patient.objects.create(name='Idle Ivan', email='ivan@example.com', info='x', password='x', doctor=doctor)
+        Patient.objects.filter(id=p.id).update(created_at=timezone.now() - timedelta(days=10))
+        Alert.objects.create(patient=p, message='Pain severe', seriousness=0.9)
+        Appointment.objects.create(patient=p, doctor=doctor, starts_at=timezone.now() + timedelta(days=2))
+        call_command('send_doctor_digest', stdout=open('/dev/null', 'w'))
+        self.assertEqual([m.to for m in mail.outbox], [['doc@example.com']])
+        body = mail.outbox[0].body
+        self.assertIn('Open alerts:         1', body)
+        self.assertIn('Idle Ivan: 10 days', body)
+        self.assertIn('Appointments ahead:  1', body)
