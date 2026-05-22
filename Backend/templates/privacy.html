@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-white">
+    <header class="border-b border-slate-200">
+        <div class="max-w-3xl mx-auto px-6 py-4">
+            <a href="/" class="inline-flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <span class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm"><i data-lucide="heart" class="w-6 h-6 text-white" fill="white"></i></span>
+                <span class="text-xl font-bold text-slate-800">ReViveCare</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 py-12 text-slate-700 leading-relaxed [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-slate-900 [&_h2]:mt-10 [&_h2]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_li]:mb-1.5">
+        <h1 class="text-4xl font-bold text-slate-900 mb-2">Privacy Policy</h1>
+        <p class="text-sm text-slate-500">Last updated 22 May 2026</p>
+
+        <p>ReViveCare helps patients recover at home after leaving hospital, and lets their doctor follow that recovery. This page explains what we collect, why, who else handles it, and what you can ask us to do with it.</p>
+
+        <h2>What we collect</h2>
+        <ul>
+            <li><strong>Account details</strong> your doctor enters when adding you: name, email, condition, surgery or discharge date and notes about your care. You can add a phone number and an emergency contact yourself.</li>
+            <li><strong>Exercise sessions</strong>: the exercise, rep counts, form quality scores, joint angles and duration.</li>
+            <li><strong>What you log</strong>: pain diary entries, symptoms, blood pressure, heart rate, temperature and which medicine doses you ticked off.</li>
+            <li><strong>Messages</strong> you exchange with your care team, and your conversations with the recovery assistant.</li>
+            <li><strong>Doctor accounts</strong>: name, email, specialty, phone and the clinical notes doctors write.</li>
+            <li><strong>Demo requests</strong> from this website: name, work email, organisation, phone and message.</li>
+        </ul>
+
+        <h2>Your camera stays on your device</h2>
+        <p>During a workout, pose tracking runs in your browser. Video from your camera is never uploaded or stored. Only the numbers it produces (rep counts, angles and quality scores) are sent to our server.</p>
+
+        <h2>How we use it</h2>
+        <ul>
+            <li>To show you and your doctor how your recovery is going.</li>
+            <li>To alert your doctor when something looks wrong, such as severe or rising pain, out-of-range vitals or a worrying chat message.</li>
+            <li>To send reminders and updates by email. You can turn these off on your profile page.</li>
+            <li>To give the recovery assistant enough context (your plan, recent progress, diary and medicines) to answer helpfully.</li>
+        </ul>
+        <p>We don't sell your data and we don't use it for advertising.</p>
+
+        <h2>Who else handles it</h2>
+        <ul>
+            <li><strong>Your doctor</strong> sees everything in your record. Other doctors on ReViveCare do not.</li>
+            <li><strong>Groq</strong> processes recovery assistant messages, together with the context above, to generate replies.</li>
+            <li><strong>Vercel</strong> hosts the application and <strong>Neon</strong> hosts the database.</li>
+            <li><strong>Google (Gmail)</strong> delivers our emails. <strong>Twilio</strong> sends text alerts to doctors, when a clinic has turned that on.</li>
+        </ul>
+
+        <h2>Cookies</h2>
+        <p>We use two cookies, both required: one keeps you signed in (it expires after two hours without activity) and one protects forms against cross-site request forgery. There are no analytics or advertising cookies.</p>
+
+        <h2>How long we keep it</h2>
+        <p>Your record is kept while your doctor has you as a patient. When a doctor deactivates your account, you can no longer sign in, but the record is kept as part of your medical history unless you ask us to delete it.</p>
+
+        <h2>Your choices</h2>
+        <ul>
+            <li>See your own data in the app: your progress, diary, vitals, messages and profile.</li>
+            <li>Correct your contact details on your profile. Ask your doctor to correct medical details.</li>
+            <li>Ask for a copy of your data, or for it to be deleted, by emailing us.</li>
+        </ul>
+
+        <h2>Security</h2>
+        <p>Connections are encrypted with HTTPS, passwords are stored hashed, sign-in attempts are rate limited and accounts lock after repeated wrong passwords. No system is perfectly secure. If we learn of a breach affecting your data, we will tell you.</p>
+
+        <h2>Contact</h2>
+        <p>Questions or requests: <a href="mailto:support@revivecare.com" class="text-emerald-700 font-medium hover:underline">support@revivecare.com</a>. If we change this policy, we'll update the date above.</p>
+    </main>
+
+    {% include "partials/footer.html" %}
+</div>
+{% endblock %}

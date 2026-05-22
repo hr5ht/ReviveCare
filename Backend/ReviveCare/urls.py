@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from Doctor import views as doctor
 from Home import views as pages
 from Patients.views import *
@@ -52,6 +52,7 @@ urlpatterns = [
     path('doctor/patients/<int:patient_id>/medications/', doctor.patient_medications, name='patient_medications'),
     path('doctor/patients/<int:patient_id>/goals/', doctor.patient_goals, name='patient_goals'),
     path('demo-request/', pages.demo_request, name='demo_request'),
+    path('privacy/', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
     path('patient/', RedirectView.as_view(url='/patient/login/')),
     path('patient/login/', pages.patient_login, name='patient_login'),
     path('patient/dashboard/', pages.patient_dashboard, name='patient_dashboard_page'),
