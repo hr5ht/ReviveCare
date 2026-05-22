@@ -53,6 +53,7 @@ urlpatterns = [
     path('doctor/patients/<int:patient_id>/goals/', doctor.patient_goals, name='patient_goals'),
     path('demo-request/', pages.demo_request, name='demo_request'),
     path('privacy/', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
+    path('terms/', TemplateView.as_view(template_name='terms.html'), name='terms'),
     path('patient/', RedirectView.as_view(url='/patient/login/')),
     path('patient/login/', pages.patient_login, name='patient_login'),
     path('patient/dashboard/', pages.patient_dashboard, name='patient_dashboard_page'),
