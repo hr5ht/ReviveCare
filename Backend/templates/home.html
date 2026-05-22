@@ -87,7 +87,7 @@
     </section>
 
     <!-- Why ReViveCare Section -->
-    <section class="py-20 lg:py-32 bg-white">
+    <section id="features" class="py-20 lg:py-32 bg-white">
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-16 lg:mb-20">
                 <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-5">
@@ -233,6 +233,11 @@
 
 {% block scripts %}
 <script>
+    const demoDialog = document.getElementById('demo-dialog');
+    const openDemoFromHash = () => location.hash === '#demo' && !demoDialog.open && demoDialog.showModal();
+    openDemoFromHash();
+    addEventListener('hashchange', openDemoFromHash);
+    demoDialog.addEventListener('close', () => location.hash === '#demo' && history.replaceState(null, '', location.pathname));
     document.getElementById('demo-form').addEventListener('submit', async e => {
         e.preventDefault();
         const form = e.target, error = document.getElementById('demo-error'), button = form.querySelector('[type=submit]');

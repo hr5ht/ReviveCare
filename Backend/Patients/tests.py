@@ -803,3 +803,15 @@ class DemoRequestTests(TestCase):
         for _ in range(5):
             self.client.post('/demo-request/', {})
         self.assertEqual(self.client.post('/demo-request/', {}).status_code, 429)
+
+
+class FooterLinkTests(TestCase):
+    def test_footer_links_resolve(self):
+        import re
+        html = self.client.get('/').content.decode()
+        footer = html[html.index('<footer'):html.index('</footer>')]
+        paths = {p.split('#')[0] or '/' for p in re.findall(r'href="(/[^"]*)"', footer)}
+        self.assertIn('/privacy/', paths)
+        self.assertNotIn('href="#"', footer)
+        for path in paths:
+            self.assertEqual(self.client.get(path).status_code, 200, path)
