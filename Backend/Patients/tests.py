@@ -815,3 +815,14 @@ class FooterLinkTests(TestCase):
         self.assertNotIn('href="#"', footer)
         for path in paths:
             self.assertEqual(self.client.get(path).status_code, 200, path)
+
+
+class HindiTests(TestCase):
+    def test_patient_pages_follow_browser_language(self):
+        p = Patient.objects.create(name='Asha', email='hi@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        r = self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='hi')
+        self.assertContains(r, 'फिर से स्वागत है, Asha')
+        self.assertContains(self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='en'), 'Welcome back, Asha')

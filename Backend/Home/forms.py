@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from Patients.models import DiaryEntry, Vitals
 
@@ -24,15 +25,15 @@ class VitalsForm(forms.ModelForm):
     class Meta:
         model = Vitals
         fields = ['systolic', 'diastolic', 'heart_rate', 'temperature']
-        labels = {'systolic': 'Blood pressure (top number)', 'diastolic': 'Blood pressure (bottom number)',
-                  'heart_rate': 'Heart rate (beats per minute)', 'temperature': 'Temperature (°F)'}
+        labels = {'systolic': _('Blood pressure (top number)'), 'diastolic': _('Blood pressure (bottom number)'),
+                  'heart_rate': _('Heart rate (beats per minute)'), 'temperature': _('Temperature (°F)')}
 
     def clean(self):
         data = super().clean()
         if not any(data.get(f) is not None for f in self.Meta.fields):
-            raise forms.ValidationError('Enter at least one reading.')
+            raise forms.ValidationError(_('Enter at least one reading.'))
         if (data.get('systolic') is None) != (data.get('diastolic') is None):
-            raise forms.ValidationError('Enter both blood pressure numbers, e.g. 120 and 80.')
+            raise forms.ValidationError(_('Enter both blood pressure numbers, e.g. 120 and 80.'))
         if data.get('systolic') and data.get('diastolic') and data['diastolic'] >= data['systolic']:
             raise forms.ValidationError('The top blood pressure number should be bigger than the bottom one.')
         return data

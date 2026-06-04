@@ -1,4 +1,5 @@
-<button type="button" onclick="toggleTheme()" title="Switch light / dark" aria-label="Switch between light and dark mode" class="{{ cls|default:'p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl' }} transition-colors">
+{% load i18n %}
+<button type="button" onclick="toggleTheme()" title="{% translate "Switch light / dark" %}" aria-label="{% translate "Switch between light and dark mode" %}" class="{{ cls|default:'p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl' }} transition-colors">
     <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
     <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
 </button>

@@ -1,3 +1,4 @@
+{% load i18n %}
 <!-- Patient header (needs `initials`) -->
 <div class="bg-white border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-6 py-4">
@@ -11,29 +12,29 @@
 
             <div class="flex items-center gap-3">
                 {% include "partials/theme_toggle.html" %}
-                <a href="/patient/notifications/" title="Notifications" aria-label="Notifications{% if unread_notifications %}, {{ unread_notifications }} unread{% endif %}" class="relative p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <a href="/patient/notifications/" title="{% translate "Notifications" %}" aria-label="{% translate "Notifications" %}{% if unread_notifications %}, {% blocktranslate with n=unread_notifications %}{{ n }} unread{% endblocktranslate %}{% endif %}" class="relative p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="bell" class="w-5 h-5"></i>
                     {% if unread_notifications %}<span class="absolute top-0.5 right-0.5 min-w-5 h-5 px-1 bg-rose-500 text-white text-xs font-bold rounded-full ring-2 ring-white flex items-center justify-center tabular-nums">{% if unread_notifications > 99 %}99+{% else %}{{ unread_notifications }}{% endif %}</span>{% endif %}
                 </a>
-                <a href="/patient/messages/" title="Messages to your doctor" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <a href="/patient/messages/" title="{% translate "Messages to your doctor" %}" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="mail" class="w-5 h-5"></i>
                 </a>
-                <a href="/patient/vitals/" title="Vitals" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <a href="/patient/vitals/" title="{% translate "Vitals" %}" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="heart-pulse" class="w-5 h-5"></i>
                 </a>
-                <a href="/patient/diary/" title="Pain diary" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <a href="/patient/diary/" title="{% translate "Pain diary" %}" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="notebook-pen" class="w-5 h-5"></i>
                 </a>
-                <a href="/patient/history/" title="My progress" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <a href="/patient/history/" title="{% translate "My progress" %}" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="chart-line" class="w-5 h-5"></i>
                 </a>
-                <button onclick="location.href='/patient/change-password/'" title="Change password" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+                <button onclick="location.href='/patient/change-password/'" title="{% translate "Change password" %}" class="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="key-round" class="w-5 h-5"></i>
                 </button>
-                <a href="/patient/profile/" title="My profile" class="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-emerald-100 hover:to-emerald-200 rounded-xl flex items-center justify-center text-slate-700 font-semibold transition-colors">
+                <a href="/patient/profile/" title="{% translate "My profile" %}" class="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 hover:from-emerald-100 hover:to-emerald-200 rounded-xl flex items-center justify-center text-slate-700 font-semibold transition-colors">
                     {{ initials }}
                 </a>
-                <button onclick="patientLogout()" title="Log out" class="p-2.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                <button onclick="patientLogout()" title="{% translate "Log out" %}" class="p-2.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
                 </button>
             </div>
