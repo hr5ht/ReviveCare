@@ -5,6 +5,11 @@
 /* dark: follows the theme the page picked (system setting or the header toggle), not just the media query */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* Keyboard focus is always visible; fields that draw their own focus ring opt out with focus:outline-none */
+@layer base {
+    :focus-visible { outline: 2px solid var(--color-emerald-600); outline-offset: 2px; }
+}
+
 /* Classes built at runtime that the scanner can't see, e.g. bg-{{ exercise.color }}-100 */
 @source inline("{bg,text}-{emerald,blue,purple,orange}-{100,700}");
 
