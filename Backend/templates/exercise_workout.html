@@ -71,7 +71,7 @@
                             <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-500/10">
                                 <i data-lucide="trophy" class="w-8 h-8 text-emerald-400"></i>
                             </div>
-                            <h2 class="text-3xl font-black text-white mb-1 uppercase tracking-tighter">Workout Complete</h2>
+                            <h2 id="sum-title" tabindex="-1" class="text-3xl font-black text-white mb-1 uppercase tracking-tighter focus:outline-none">Workout Complete</h2>
                             <p class="text-white/60 mb-6 font-medium">{{ exercise.name }}</p>
                             <div class="grid grid-cols-3 gap-3 mb-4">
                                 <div class="bg-white/5 border border-white/10 rounded-2xl p-3"><p class="text-white/40 text-[10px] font-black uppercase">Reps</p><p id="sum-reps" class="text-white text-2xl font-black"></p></div>
@@ -196,7 +196,7 @@
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">AI Coach Guidance</p>
-                                    <p id="feedback" class="text-base sm:text-xl font-black leading-tight tracking-tight uppercase">Position yourself in frame</p>
+                                    <p id="feedback" role="status" aria-live="polite" aria-atomic="true" class="text-base sm:text-xl font-black leading-tight tracking-tight uppercase">Position yourself in frame</p>
                                 </div>
                             </div>
                         </div>
@@ -460,6 +460,7 @@
         stopTracking();
         $('live').hidden = true;
         $('summary').hidden = false;
+        $('sum-title').focus();  // moves screen readers to the results
     }
     let summaryFallback = null;
 

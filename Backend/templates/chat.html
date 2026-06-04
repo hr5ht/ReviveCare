@@ -44,6 +44,8 @@
         <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-6 hover:shadow-md overflow-hidden flex flex-col p-0 mb-8" style="height: calc(100vh - 240px)">
             <!-- Messages area -->
             <div id="messages" class="flex-1 overflow-y-auto p-6 bg-gray-50"></div>
+            <!-- Replies stream in word by word; screen readers get each finished reply once, from here -->
+            <p id="chat-announce" class="sr-only" aria-live="polite" aria-atomic="true"></p>
 
             <!-- Quick replies -->
             <div class="px-6 pt-4 bg-white border-t border-gray-100">
@@ -128,6 +130,7 @@
     let language = 'english';
     let messageCount = 0;
     let typing = false;
+    const announce = (text) => { document.getElementById('chat-announce').textContent = `Assistant: ${text}`; };
 
     const history = JSON.parse(document.getElementById('chat-history').textContent);
     const clock = (d = new Date()) => d.toDateString() === new Date().toDateString()
@@ -288,7 +291,9 @@
             if (!res.headers.get('Content-Type')?.includes('ndjson')) {  // errors and the dev mock reply come back as plain JSON
                 const json = await res.json().catch(() => ({}));
                 setTyping(false);
-                const row = addMessage(json.success ? json.response : (json.error || T[language].error), true, json.success ? json.seriousness_score : undefined);
+                const reply = json.success ? json.response : (json.error || T[language].error);
+                announce(reply);
+                const row = addMessage(reply, true, json.success ? json.seriousness_score : undefined);
                 if (json.id) addFeedback(row, json.id);
                 return;
             }
@@ -304,9 +309,10 @@
                     const msg = JSON.parse(line);
                     if (!bubble) { setTyping(false); typing = true; bubble = addMessage('', true).querySelector('p'); }
                     if (msg.delta) bubble.textContent += msg.delta;
-                    if (msg.error) bubble.textContent = msg.error;
+                    if (msg.error) { bubble.textContent = msg.error; announce(msg.error); }
                     if (msg.done) {
                         bubble.textContent = msg.response;
+                        announce(msg.response);
                         bubble.insertAdjacentHTML('afterend', badgeHtml(msg.seriousness_score));
                         addFeedback(bubble.closest('#messages > div'), msg.id);
                     }
@@ -317,6 +323,7 @@
             console.error('Chatbot error:', err);
             if (bubble) bubble.textContent = T[language].error;
             else { setTyping(false); addMessage(T[language].error, true); }
+            announce(T[language].error);
         } finally {
             typing = false;
             updateSend();
