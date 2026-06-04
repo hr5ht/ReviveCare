@@ -11,6 +11,7 @@
             </button>
 
             <div class="flex items-center gap-3">
+                {% include "partials/language_switcher.html" %}
                 {% include "partials/theme_toggle.html" %}
                 <a href="/patient/notifications/" title="{% translate "Notifications" %}" aria-label="{% translate "Notifications" %}{% if unread_notifications %}, {% blocktranslate with n=unread_notifications %}{{ n }} unread{% endblocktranslate %}{% endif %}" class="relative p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
                     <i data-lucide="bell" class="w-5 h-5"></i>

@@ -826,3 +826,15 @@ class HindiTests(TestCase):
         r = self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='hi')
         self.assertContains(r, 'फिर से स्वागत है, Asha')
         self.assertContains(self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='en'), 'Welcome back, Asha')
+
+
+class LanguageSwitcherTests(TestCase):
+    def test_choice_overrides_browser_language(self):
+        p = Patient.objects.create(name='Asha', email='lang@example.com', info='x', password='x')
+        session = self.client.session
+        session['patient_id'] = p.id
+        session.save()
+        self.assertContains(self.client.get('/patient/dashboard/'), 'id="language-select"')
+        r = self.client.post('/i18n/setlang/', {'language': 'hi', 'next': '/patient/dashboard/'})
+        self.assertRedirects(r, '/patient/dashboard/', fetch_redirect_response=False)
+        self.assertContains(self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='en'), 'फिर से स्वागत है')
