@@ -8,13 +8,17 @@
   <title>{% block title %}ReviveCare{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <script>
-    // Follow the system light/dark setting; runs before the stylesheet so pages don't flash white.
-    (() => {
-      const dark = matchMedia('(prefers-color-scheme: dark)');
-      const apply = () => document.documentElement.dataset.theme = dark.matches ? 'dark' : 'light';
-      apply();
-      dark.addEventListener('change', apply);
-    })();
+    // Light/dark: the choice saved by the toggle, else the system setting. Runs before the stylesheet so pages don't flash.
+    const systemDark = matchMedia('(prefers-color-scheme: dark)');
+    const savedTheme = () => { try { return localStorage.getItem('theme'); } catch { return null; } };
+    const applyTheme = () => document.documentElement.dataset.theme = savedTheme() || (systemDark.matches ? 'dark' : 'light');
+    function toggleTheme() {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('theme', next); } catch {}
+      document.documentElement.dataset.theme = next;
+    }
+    applyTheme();
+    systemDark.addEventListener('change', applyTheme);
   </script>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'js/lucide.min.js' %}"></script>  <!-- lucide 0.563.0 -->
