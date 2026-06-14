@@ -7,22 +7,22 @@
     <div class="max-w-7xl mx-auto px-6 py-8">
         <!-- Welcome Section -->
         <div class="mb-8">
-            <h1 class="text-4xl font-bold text-slate-900 mb-2">Welcome back, {{ doctor_name }}</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Welcome back, {{ doctor_name }}</h1>
             <p class="text-lg text-slate-600">Manage your patients' recovery journey with ease</p>
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-8">
             {% for s in stats %}
-            <div class="group bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="w-12 h-12 {{ s.cls }} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div class="group bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div class="flex items-start justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 {{ s.cls }} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <i data-lucide="{{ s.icon }}" class="w-6 h-6"></i>
                     </div>
                 </div>
                 <div>
                     <p class="text-sm text-slate-500 mb-1">{{ s.label }}</p>
-                    <p class="text-3xl font-bold text-slate-800">{{ s.value }}</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-slate-800">{{ s.value }}</p>
                 </div>
             </div>
             {% endfor %}

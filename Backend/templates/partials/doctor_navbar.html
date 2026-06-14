@@ -6,13 +6,13 @@
                 <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                     <i data-lucide="heart" class="w-6 h-6 text-white" fill="white"></i>
                 </div>
-                <span class="text-2xl font-bold text-white tracking-tight">ReViveCare</span>
+                <span class="text-xl sm:text-2xl font-bold text-white tracking-tight">ReViveCare</span>
             </button>
 
             <!-- Doctor Profile -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1 sm:gap-4">
                 {% include "partials/theme_toggle.html" with cls="p-2 text-white hover:bg-white/10 rounded-lg" %}
-                <a href="/doctor/calendar/" title="Calendar" aria-label="Calendar" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <a href="/doctor/calendar/" title="Calendar" aria-label="Calendar" class="max-md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors">
                     <i data-lucide="calendar-days" class="w-5 h-5 text-white"></i>
                 </a>
                 <a href="/doctor/inbox/" title="Messages" aria-label="Messages{% if unread_messages %}, {{ unread_messages }} unread{% endif %}" class="relative p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -24,7 +24,7 @@
                     {% if unread_alerts %}<span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-rose-500 text-white text-xs font-bold rounded-full ring-2 ring-emerald-500 flex items-center justify-center tabular-nums">{% if unread_alerts > 99 %}99+{% else %}{{ unread_alerts }}{% endif %}</span>{% endif %}
                 </a>
 
-                <a href="/doctor/profile/" title="Profile settings" class="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 transition-colors">
+                <a href="/doctor/profile/" title="Profile settings" class="max-md:hidden flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 transition-colors">
                     <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 font-semibold">{{ doctor_initials }}</div>
                     <div class="text-left">
                         <p class="text-white font-semibold text-sm">{{ doctor_name }}</p>
@@ -32,12 +32,28 @@
                     </div>
                 </a>
 
-                <form method="post" action="/doctor/logout/">
+                <form method="post" action="/doctor/logout/" class="max-md:hidden">
                     {% csrf_token %}
                     <button type="submit" title="Log out" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
                         <i data-lucide="log-out" class="w-5 h-5 text-white"></i>
                     </button>
                 </form>
+
+                <!-- Small screens: calendar, profile and log out live in this menu -->
+                <details class="md:hidden relative">
+                    <summary class="list-none cursor-pointer p-2 text-white hover:bg-white/10 rounded-lg [&::-webkit-details-marker]:hidden" aria-label="Menu">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </summary>
+                    <div class="absolute right-0 top-full mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50 text-sm">
+                        <p class="px-4 py-2 border-b border-slate-100"><span class="block font-semibold text-slate-900">{{ doctor_name }}</span><span class="text-xs text-slate-500">{{ doctor_specialty }}</span></p>
+                        <a href="/doctor/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="users" class="w-4 h-4 text-slate-400"></i> Patients</a>
+                        <a href="/doctor/calendar/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i> Calendar</a>
+                        <a href="/doctor/profile/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i> Profile settings</a>
+                        <form method="post" action="/doctor/logout/" class="border-t border-slate-100">{% csrf_token %}
+                            <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-rose-600 hover:bg-rose-50"><i data-lucide="log-out" class="w-4 h-4"></i> Log out</button>
+                        </form>
+                    </div>
+                </details>
             </div>
         </div>
     </div>
