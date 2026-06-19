@@ -847,3 +847,21 @@ class ServiceWorkerTests(TestCase):
         self.assertEqual(r['Cache-Control'], 'no-cache')
         self.assertIn("'/offline/'", r.content.decode())
         self.assertContains(self.client.get('/offline/'), "You're offline")
+
+
+class SeedDemoTests(TestCase):
+    def test_seed_is_repeatable_and_guarded(self):
+        from django.core.management import CommandError, call_command
+        from django.test import override_settings
+        with self.assertRaises(CommandError):
+            call_command('seed_demo', stdout=open('/dev/null', 'w'))  # tests run with DEBUG off
+        with override_settings(DEBUG=True):
+            call_command('seed_demo', stdout=open('/dev/null', 'w'))
+            call_command('seed_demo', stdout=open('/dev/null', 'w'))
+        p = Patient.objects.get(email='demo@revivecare.com')
+        self.assertEqual(Patient.objects.filter(email='demo@revivecare.com').count(), 1)
+        self.assertTrue(p.workouts.exists() and p.diary.exists() and p.appointments.exists())
+        self.assertTrue(self.client.login(username='doctor', password='Doctor-demo-2026'))
+        self.assertContains(self.client.get(f'/doctor/patients/{p.id}/'), 'Demo Patient')
+        r = post_json(Client(), '/api/patient/login/', {'email': 'demo@revivecare.com', 'password': 'demo1234'})
+        self.assertEqual(r.status_code, 200)
