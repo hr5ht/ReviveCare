@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}ReviveCare{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+  <meta name="theme-color" content="#10b981">
   <script>
     // Light/dark: the choice saved by the toggle, else the system setting. Runs before the stylesheet so pages don't flash.
     const systemDark = matchMedia('(prefers-color-scheme: dark)');
