@@ -838,3 +838,12 @@ class LanguageSwitcherTests(TestCase):
         r = self.client.post('/i18n/setlang/', {'language': 'hi', 'next': '/patient/dashboard/'})
         self.assertRedirects(r, '/patient/dashboard/', fetch_redirect_response=False)
         self.assertContains(self.client.get('/patient/dashboard/', HTTP_ACCEPT_LANGUAGE='en'), 'फिर से स्वागत है')
+
+
+class ServiceWorkerTests(TestCase):
+    def test_worker_served_from_root(self):
+        r = self.client.get('/sw.js')
+        self.assertEqual(r['Content-Type'], 'application/javascript')
+        self.assertEqual(r['Cache-Control'], 'no-cache')
+        self.assertIn("'/offline/'", r.content.decode())
+        self.assertContains(self.client.get('/offline/'), "You're offline")

@@ -67,6 +67,13 @@ def home(request):
     })
 
 
+def service_worker(request):
+    """sw.js from the site root, so its scope covers every page (a worker under /static/ could only control /static/)."""
+    response = HttpResponse((settings.BASE_DIR / 'static' / 'sw.js').read_text(), content_type='application/javascript')
+    response['Cache-Control'] = 'no-cache'  # browsers re-check it on every visit, so updates roll out at once
+    return response
+
+
 DEMO_REQUESTS_PER_HOUR = 5
 
 

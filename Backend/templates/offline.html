@@ -1,0 +1,20 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline · ReviveCare</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}</script>
+</head>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+  <main class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md text-center">
+    <img src="{% static 'icons/icon-192.png' %}" alt="" width="64" height="64" class="mx-auto mb-4 rounded-2xl">
+    <h1 class="text-2xl font-bold text-slate-900 mb-2">You're offline</h1>
+    <p class="text-slate-600 mb-6">ReViveCare needs an internet connection to load your recovery data. Check your connection and try again.</p>
+    <button onclick="location.reload()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Try again</button>
+    <p class="mt-6 text-sm text-slate-500">In an emergency, call 112.</p>
+  </main>
+</body>
+</html>
