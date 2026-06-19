@@ -31,6 +31,14 @@
 <body>
   {% block body %}{% endblock %}
 
+  <!-- Shown by the browser's install event (Chrome, Edge, Android); hidden once installed or dismissed -->
+  <div id="install-banner" hidden role="region" aria-label="{% translate "Install app" %}" class="fixed bottom-4 inset-x-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 flex items-center gap-3">
+    <img src="{% static 'icons/icon-192.png' %}" alt="" width="40" height="40" class="rounded-xl flex-shrink-0">
+    <p class="flex-1 text-sm text-slate-700"><span class="block font-semibold text-slate-900">{% translate "Install ReViveCare" %}</span>{% translate "Open it from your home screen like an app." %}</p>
+    <button type="button" id="install-btn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">{% translate "Install" %}</button>
+    <button type="button" id="install-close" aria-label="{% translate "Not now" %}" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+
   <script>
     // JSON helper for the Django API (same origin, session cookie auth)
     async function api(url, method = 'GET', data = null) {
@@ -49,6 +57,26 @@
       location.href = '/patient/login/';
     }
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    (() => {
+      const banner = document.getElementById('install-banner');
+      let installEvent = null;
+      const dismissed = () => { try { return localStorage.getItem('install-dismissed'); } catch { return '1'; } };
+      addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();  // show our banner instead of the browser's mini-infobar
+        installEvent = e;
+        if (!dismissed()) banner.hidden = false;
+      });
+      document.getElementById('install-btn').onclick = async () => {
+        banner.hidden = true;
+        installEvent?.prompt();
+        installEvent = null;
+      };
+      document.getElementById('install-close').onclick = () => {
+        banner.hidden = true;
+        try { localStorage.setItem('install-dismissed', '1'); } catch {}
+      };
+      addEventListener('appinstalled', () => { banner.hidden = true; });
+    })();
     const icons = () => lucide.createIcons();
     icons();
   </script>

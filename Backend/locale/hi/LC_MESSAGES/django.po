@@ -4,8 +4,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ReViveCare\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-14 18:00+0530\n"
-"PO-Revision-Date: 2026-06-14 18:00+0530\n"
+"POT-Creation-Date: 2026-06-19 16:30+0530\n"
+"PO-Revision-Date: 2026-06-19 16:30+0530\n"
 "Last-Translator: ReViveCare\n"
 "Language-Team: Hindi\n"
 "Language: hi\n"
@@ -145,6 +145,21 @@ msgstr "व्यायाम से पहले"
 
 msgid "After a workout"
 msgstr "व्यायाम के बाद"
+
+msgid "Install app"
+msgstr "ऐप इंस्टॉल करें"
+
+msgid "Install ReViveCare"
+msgstr "ReViveCare इंस्टॉल करें"
+
+msgid "Open it from your home screen like an app."
+msgstr "इसे ऐप की तरह होम स्क्रीन से खोलें।"
+
+msgid "Install"
+msgstr "इंस्टॉल करें"
+
+msgid "Not now"
+msgstr "अभी नहीं"
 
 msgid "Pain Diary"
 msgstr "दर्द डायरी"
