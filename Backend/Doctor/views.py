@@ -16,7 +16,7 @@ from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery,
 from Patients.models import Alert, Appointment, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
 from .forms import AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
-from .models import ClinicalNote, DoctorProfile
+from .models import AuditLog, ClinicalNote, DoctorProfile
 
 
 STATUSES = ['active', 'inactive', 'new']
@@ -137,6 +137,7 @@ def edit_patient(request, patient_id):
     form = PatientForm(request.POST or None, instance=patient)
     if request.method == 'POST' and form.is_valid():
         form.save()
+        AuditLog.record(request, 'edited details', patient, ', '.join(form.changed_data))
         messages.success(request, 'Patient details saved.')
         return redirect('patient_detail', patient_id=patient.id)
     return render(request, 'edit_patient.html', {'patient': patient, 'form': form})
@@ -148,6 +149,7 @@ def add_note(request, patient_id):
     text = request.POST.get('text', '').strip()[:3000]
     if request.method == 'POST' and text:
         ClinicalNote.objects.create(patient=patient, author=request.user, text=text)
+        AuditLog.record(request, 'added note', patient)
         messages.success(request, 'Note added.')
     return redirect(f"{reverse('patient_detail', args=[patient.id])}#notes")
 
@@ -159,6 +161,7 @@ def set_patient_active(request, patient_id):
     if request.method == 'POST':
         patient.is_active = request.POST.get('active') == '1'
         patient.save(update_fields=['is_active', 'updated_at'])
+        AuditLog.record(request, 'reactivated' if patient.is_active else 'deactivated', patient)
         messages.success(request, f"{patient.name} {'reactivated' if patient.is_active else 'deactivated'}.")
     return redirect('patient_detail', patient_id=patient.id)
 
@@ -168,7 +171,11 @@ def alerts(request):
     """Serious chat messages from the doctor's patients; unread first."""
     mine = Alert.objects.filter(patient__in=Patient.for_doctor(request.user)).select_related('patient')
     if request.method == 'POST':
-        mine.filter(id=request.POST.get('alert'), acknowledged_at=None).update(acknowledged_at=timezone.now(), acknowledged_by=request.user)
+        alert = mine.filter(id=request.POST.get('alert'), acknowledged_at=None).first()
+        if alert:
+            alert.acknowledged_at, alert.acknowledged_by = timezone.now(), request.user
+            alert.save(update_fields=['acknowledged_at', 'acknowledged_by'])
+            AuditLog.record(request, 'acknowledged alert', alert.patient, alert.message[:120])
         return redirect('alerts')
     return render(request, 'alerts.html', {
         'unread': mine.filter(acknowledged_at=None),
@@ -194,6 +201,7 @@ def inbox(request, patient_id=None):
             if body:
                 notify_new_message(Message.objects.create(patient=active, from_patient=False, sender=request.user, body=body),
                                    request.build_absolute_uri('/')[:-1])
+                AuditLog.record(request, 'sent message', active)
             return redirect(f"{reverse('inbox_thread', args=[active.id])}#latest")
         active.messages.filter(from_patient=True, read_at=None).update(read_at=timezone.now())
         for t in threads:
@@ -252,6 +260,7 @@ def patient_plan(request, patient_id):
         notify_patient(patient, 'Your exercise plan was updated',
                        f"{_doctor(request.user)} set your plan: {', '.join(names) or 'no exercises for now'}.",
                        '/patient/dashboard/', request.build_absolute_uri('/')[:-1])
+        AuditLog.record(request, 'saved plan', patient, ', '.join(names))
         messages.success(request, f"Exercise plan saved for {patient.name}.")
         return redirect('patient_plan', patient_id=patient.id)
     assigned = {p.exercise_id: p for p in patient.plan.filter(is_active=True)}
@@ -265,11 +274,13 @@ def patient_goals(request, patient_id):
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
     if request.method == 'POST' and 'delete' in request.POST:
         patient.goals.filter(id=request.POST['delete']).delete()
+        AuditLog.record(request, 'removed goal', patient)
         messages.success(request, 'Goal removed.')
         return redirect('patient_goals', patient_id=patient.id)
     form = RecoveryGoalForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        RecoveryGoal.objects.create(patient=patient, created_by=request.user, **form.cleaned_data)
+        goal = RecoveryGoal.objects.create(patient=patient, created_by=request.user, **form.cleaned_data)
+        AuditLog.record(request, 'added goal', patient, goal.describe())
         messages.success(request, 'Goal added.')
         return redirect('patient_goals', patient_id=patient.id)
     return render(request, 'doctor_patient_goals.html', {'patient': patient, 'form': form, 'goals': patient.goals.all()})
@@ -300,12 +311,14 @@ def patient_medications(request, patient_id):
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
     if request.method == 'POST' and 'stop' in request.POST:
         patient.medications.filter(id=request.POST['stop']).update(is_active=False, end_date=timezone.localdate())
+        AuditLog.record(request, 'stopped medication', patient, request.POST['stop'])
         messages.success(request, 'Medication stopped.')
         return redirect('patient_medications', patient_id=patient.id)
     form = MedicationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         form.instance.patient, form.instance.prescribed_by = patient, request.user
         form.save()
+        AuditLog.record(request, 'added medication', patient, str(form.instance))
         messages.success(request, f"{form.instance.name} added.")
         return redirect('patient_medications', patient_id=patient.id)
     return render(request, 'doctor_patient_medications.html', {
@@ -326,6 +339,7 @@ def patient_appointments(request, patient_id):
         if appointment:
             appointment.status = 'cancelled'
             appointment.save(update_fields=['status'])
+            AuditLog.record(request, 'cancelled appointment', patient, str(appointment))
             notify_patient(patient, 'Appointment cancelled',
                            f"{_doctor(request.user)} cancelled your appointment on {timezone.localtime(appointment.starts_at):%a %d %b, %H:%M}.",
                            '/patient/dashboard/#appointment', site)
@@ -336,6 +350,7 @@ def patient_appointments(request, patient_id):
         form.instance.patient, form.instance.doctor = patient, request.user
         form.save()
         a = form.instance
+        AuditLog.record(request, 'booked appointment', patient, str(a))
         notify_patient(patient, 'Appointment booked',
                        f"{_doctor(request.user)} booked {a.reason or 'an appointment'} for {timezone.localtime(a.starts_at):%a %d %b, %H:%M}"
                        + (f" at {a.location}" if a.location else '') + ('. It is a video call.' if a.meeting_url else '.'),
@@ -349,6 +364,7 @@ def patient_appointments(request, patient_id):
 def export_workouts(request, patient_id):
     """Every workout of one patient as a CSV file."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    AuditLog.record(request, 'exported workouts', patient)
     names = dict(Exercise.objects.values_list('slug', 'name'))
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     slug = ''.join(c if c.isalnum() else '-' for c in patient.name.lower())
@@ -365,6 +381,7 @@ def export_workouts(request, patient_id):
 def patient_report(request, patient_id):
     """A one-page summary of the last 30 days to print or save as PDF."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    AuditLog.record(request, 'viewed report', patient)
     today = timezone.localdate()
     since = today - timedelta(days=29)
     names = dict(Exercise.objects.values_list('slug', 'name'))
@@ -404,6 +421,8 @@ def patient_report(request, patient_id):
 def patient_detail(request, patient_id, appointment_form=None):
     """Everything a doctor needs about one patient on a single page."""
     patient = get_object_or_404(Patient.for_doctor(request.user), id=patient_id)
+    if request.method == 'GET':
+        AuditLog.record(request, 'viewed record', patient)
     today = timezone.localdate()
     workouts = Workout.objects.filter(patient=patient, total_reps__gt=0)
     recent = workouts.filter(date__gt=today - timedelta(days=30))

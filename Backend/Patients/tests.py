@@ -865,3 +865,25 @@ class SeedDemoTests(TestCase):
         self.assertContains(self.client.get(f'/doctor/patients/{p.id}/'), 'Demo Patient')
         r = post_json(Client(), '/api/patient/login/', {'email': 'demo@revivecare.com', 'password': 'demo1234'})
         self.assertEqual(r.status_code, 200)
+
+
+class AuditLogTests(TestCase):
+    def test_doctor_actions_are_logged(self):
+        from datetime import timedelta
+        from unittest import mock
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        from Doctor.models import AuditLog
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        self.client.force_login(doctor)
+        with mock.patch('Home.views.threading.Thread', lambda target, **kw: mock.Mock(start=target)):
+            r = post_json(self.client, '/api/patients/add/', {'name': 'Audit Me', 'email': 'audit@example.com', 'info': 'x'})
+            p = Patient.objects.get(email='audit@example.com')
+            self.client.get(f'/doctor/patients/{p.id}/')
+            self.client.post(f'/doctor/patients/{p.id}/notes/', {'text': 'Doing well'})
+            when = timezone.localtime(timezone.now() + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M')
+            self.client.post(f'/doctor/patients/{p.id}/appointments/', {'starts_at': when, 'duration_minutes': 30})
+            self.client.get(f'/doctor/patients/{p.id}/workouts.csv')
+        actions = list(AuditLog.objects.filter(patient=p).order_by('id').values_list('action', flat=True))
+        self.assertEqual(actions, ['added patient', 'viewed record', 'added note', 'booked appointment', 'exported workouts'])
+        self.assertTrue(all(a.user == doctor and a.ip == '127.0.0.1' for a in AuditLog.objects.all()))

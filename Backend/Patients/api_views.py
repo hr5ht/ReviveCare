@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
+from Doctor.models import AuditLog
 from .goals import update_goals
 from .models import Patient, Workout
 from django.utils import timezone
@@ -306,6 +307,7 @@ def api_add_patient(request):
             surgery_date=surgery_date,
             **extra,
         )
+        AuditLog.record(request, 'added patient', patient)
         
         return JsonResponse({
             'success': True,
