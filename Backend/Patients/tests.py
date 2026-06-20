@@ -929,3 +929,53 @@ class CleanupCommandTests(TestCase):
         self.assertTrue(Session.objects.filter(session_key=live.session_key).exists())
         self.assertEqual(list(Notification.objects.values_list('title', flat=True)), ['old unread'])
         self.assertEqual(list(AuditLog.objects.values_list('action', flat=True)), ['recent'])
+
+
+class ExercisePlanTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from .models import Exercise
+        self.doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        self.patient = Patient.objects.create(name='Plan', email='plan@example.com', info='x', password='x', doctor=self.doctor)
+        self.a, self.b, self.c = Exercise.objects.filter(is_active=True)[:3]
+
+    def save_plan(self, *exercises, **targets):
+        data = {'exercise': [e.id for e in exercises], **targets}
+        self.client.force_login(self.doctor)
+        self.client.post(f'/doctor/patients/{self.patient.id}/plan/', data)
+        self.client.logout()
+
+    def as_patient(self):
+        session = self.client.session
+        session['patient_id'] = self.patient.id
+        session.save()
+
+    def test_targets_are_saved_and_out_of_range_falls_back_to_default(self):
+        self.save_plan(self.a, self.b, **{f'reps_{self.a.id}': 12, f'sets_{self.a.id}': 3, f'reps_{self.b.id}': 500, f'sets_{self.b.id}': 'x'})
+        a, b = self.patient.plan.get(exercise=self.a), self.patient.plan.get(exercise=self.b)
+        self.assertEqual((a.reps, a.total_sets), (12, 3))
+        self.assertEqual((b.target_reps, b.sets), (None, None))
+        self.assertEqual((b.reps, b.total_sets), (self.b.target_reps, self.b.sets))
+
+    def test_unticking_deactivates_and_ticking_again_restores(self):
+        self.save_plan(self.a, self.b)
+        self.save_plan(self.a)
+        self.assertEqual(list(self.patient.plan.filter(is_active=True).values_list('exercise', flat=True)), [self.a.id])
+        self.save_plan(self.a, self.b)
+        self.assertEqual(self.patient.plan.count(), 2)  # same rows, reactivated
+        self.assertEqual(self.patient.plan.filter(is_active=True).count(), 2)
+
+    def test_patient_sees_only_planned_exercises(self):
+        from django.utils import timezone
+        from .models import Workout
+        self.as_patient()
+        self.assertContains(self.client.get('/patient/exercises/'), self.c.name)  # no plan yet: whole library
+        self.save_plan(self.a, **{f'reps_{self.a.id}': 12, f'sets_{self.a.id}': 3})
+        self.as_patient()
+        r = self.client.get('/patient/exercises/')
+        self.assertContains(r, self.a.name)
+        self.assertNotContains(r, self.c.name)
+        self.assertRedirects(self.client.get(f'/patient/exercises/{self.c.slug}/'), '/patient/exercises/', fetch_redirect_response=False)
+        self.assertContains(self.client.get('/patient/dashboard/'), '3 × 12 reps')
+        Workout.objects.create(patient=self.patient, exercise=self.a.slug, date=timezone.localdate(), total_reps=36, completed=True)
+        self.assertContains(self.client.get('/patient/dashboard/'), '1 of 1 completed')
