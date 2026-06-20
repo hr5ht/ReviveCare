@@ -887,3 +887,18 @@ class AuditLogTests(TestCase):
         actions = list(AuditLog.objects.filter(patient=p).order_by('id').values_list('action', flat=True))
         self.assertEqual(actions, ['added patient', 'viewed record', 'added note', 'booked appointment', 'exported workouts'])
         self.assertTrue(all(a.user == doctor and a.ip == '127.0.0.1' for a in AuditLog.objects.all()))
+
+
+class AuditLogAdminTests(TestCase):
+    def test_admin_lists_but_cannot_edit(self):
+        from django.contrib.auth.models import User
+        from Doctor.models import AuditLog
+        admin = User.objects.create_superuser('root', 'root@example.com', 'Root-pass-123')
+        self.client.force_login(admin)
+        AuditLog.objects.create(user=admin, action='viewed record', detail='checked chart')
+        r = self.client.get('/admin/Doctor/auditlog/')
+        self.assertContains(r, 'checked chart')
+        self.assertEqual(self.client.get('/admin/Doctor/auditlog/add/').status_code, 403)
+        log = AuditLog.objects.get()
+        self.client.post(f'/admin/Doctor/auditlog/{log.id}/delete/', {'post': 'yes'})
+        self.assertTrue(AuditLog.objects.filter(id=log.id).exists())
