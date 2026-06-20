@@ -902,3 +902,30 @@ class AuditLogAdminTests(TestCase):
         log = AuditLog.objects.get()
         self.client.post(f'/admin/Doctor/auditlog/{log.id}/delete/', {'post': 'yes'})
         self.assertTrue(AuditLog.objects.filter(id=log.id).exists())
+
+
+class CleanupCommandTests(TestCase):
+    def test_removes_only_expired_and_old(self):
+        import io
+        from datetime import timedelta
+        from django.contrib.sessions.backends.db import SessionStore
+        from django.contrib.sessions.models import Session
+        from django.core.management import call_command
+        from django.utils import timezone
+        from Doctor.models import AuditLog
+        from .models import Notification
+        old = timezone.now() - timedelta(days=800)
+        live = SessionStore(); live.create()
+        Session.objects.create(session_key='expired', session_data='', expire_date=timezone.now() - timedelta(days=1))
+        p = Patient.objects.create(name='C', email='clean@example.com', info='x', password='x')
+        Notification.objects.create(patient=p, title='old read', read_at=old)
+        Notification.objects.create(patient=p, title='old unread')
+        Notification.objects.filter(title='old unread').update(created_at=old)
+        AuditLog.objects.filter(id=AuditLog.objects.create(action='old').id).update(created_at=old)
+        AuditLog.objects.create(action='recent')
+        out = io.StringIO()
+        call_command('cleanup', stdout=out)
+        self.assertIn('Deleted 1 expired session(s), 1 old notification(s), 1 old audit entry.', out.getvalue())
+        self.assertTrue(Session.objects.filter(session_key=live.session_key).exists())
+        self.assertEqual(list(Notification.objects.values_list('title', flat=True)), ['old unread'])
+        self.assertEqual(list(AuditLog.objects.values_list('action', flat=True)), ['recent'])
