@@ -1196,3 +1196,55 @@ class MedicationTests(TestCase):
         m.refresh_from_db()
         self.assertFalse(m.is_active)
         self.assertIsNotNone(m.end_date)
+
+
+class RateLimitTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def login(self, email, password, ip):
+        return post_json(Client(HTTP_X_REAL_IP=ip), '/api/patient/login/', {'email': email, 'password': password})
+
+    def test_login_limit_is_per_client_ip(self):
+        from Patients.api_views import LOGIN_FAILURE_LIMIT
+        Patient.objects.create(name='R', email='r@example.com', info='x', password=make_password('Right-pass-1'))
+        for _ in range(LOGIN_FAILURE_LIMIT):
+            self.login('nobody@example.com', 'wrong', '203.0.113.5')
+        self.assertEqual(self.login('r@example.com', 'Right-pass-1', '203.0.113.5').status_code, 429)
+        self.assertEqual(self.login('r@example.com', 'Right-pass-1', '198.51.100.7').status_code, 200)
+
+    def test_account_lock_expires(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        p = Patient.objects.create(name='L', email='l@example.com', info='x', password=make_password('Right-pass-1'),
+                                   locked_until=timezone.now() + timedelta(minutes=5))
+        self.assertEqual(self.login('l@example.com', 'Right-pass-1', '192.0.2.1').status_code, 423)
+        Patient.objects.filter(id=p.id).update(locked_until=timezone.now() - timedelta(seconds=1))
+        self.assertEqual(self.login('l@example.com', 'Right-pass-1', '192.0.2.1').status_code, 200)
+        p.refresh_from_db()
+        self.assertIsNone(p.locked_until)
+
+    def test_chat_limit_is_per_patient(self):
+        from types import SimpleNamespace
+        from unittest import mock
+        from Patients.views import CHAT_RATE_LIMIT
+        clients = []
+        for n in range(2):
+            Patient.objects.create(name=f'C{n}', email=f'c{n}@example.com', info='x', password=make_password('Right-pass-1'))
+            c = Client()
+            post_json(c, '/api/patient/login/', {'email': f'c{n}@example.com', 'password': 'Right-pass-1'})
+            clients.append(c)
+        reply = SimpleNamespace(content='{"patient_response": "ok", "seriousness_score": 0}')
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
+                mock.patch('Patients.views.initialize_model', return_value=mock.Mock(invoke=mock.Mock(return_value=reply))):
+            codes = [post_json(clients[0], '/patient/chatbot/send/', {'message': 'hi'}).status_code for _ in range(CHAT_RATE_LIMIT + 1)]
+            self.assertEqual(codes[:-1], [200] * CHAT_RATE_LIMIT)
+            self.assertEqual(codes[-1], 429)
+            self.assertEqual(post_json(clients[1], '/patient/chatbot/send/', {'message': 'hi'}).status_code, 200)
+
+    def test_demo_requests_limit_per_ip(self):
+        from Home.views import DEMO_REQUESTS_PER_HOUR
+        for _ in range(DEMO_REQUESTS_PER_HOUR):
+            Client(HTTP_X_REAL_IP='203.0.113.9').post('/demo-request/', {})
+        self.assertEqual(Client(HTTP_X_REAL_IP='203.0.113.9').post('/demo-request/', {}).status_code, 429)
+        self.assertEqual(Client(HTTP_X_REAL_IP='203.0.113.10').post('/demo-request/', {}).status_code, 400)  # allowed, just invalid
