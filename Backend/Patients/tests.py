@@ -979,3 +979,68 @@ class ExercisePlanTests(TestCase):
         self.assertContains(self.client.get('/patient/dashboard/'), '3 × 12 reps')
         Workout.objects.create(patient=self.patient, exercise=self.a.slug, date=timezone.localdate(), total_reps=36, completed=True)
         self.assertContains(self.client.get('/patient/dashboard/'), '1 of 1 completed')
+
+
+class AlertTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from Doctor.models import DoctorProfile
+        cache.clear()
+        self.doctor = User.objects.create_user('doc', email='doc@example.com', password='Doc-pass-123')
+        DoctorProfile.objects.create(user=self.doctor, phone='+919876500000')
+        self.patient = Patient.objects.create(name='A', email='a@example.com', info='Knee', password=make_password('Right-pass-1'),
+                                              doctor=self.doctor)
+        post_json(self.client, '/api/patient/login/', {'email': 'a@example.com', 'password': 'Right-pass-1'})
+
+    def chat(self, score, **env):
+        import os
+        from types import SimpleNamespace
+        from unittest import mock
+        reply = SimpleNamespace(content=f'{{"patient_response": "Call your doctor.", "seriousness_score": {score}}}')
+        twilio = mock.MagicMock()
+        with mock.patch('Patients.views.LANGCHAIN_AVAILABLE', True), \
+                mock.patch('Patients.views.initialize_model', return_value=mock.Mock(invoke=mock.Mock(return_value=reply))), \
+                mock.patch('Patients.views.threading.Thread', lambda target, args, **kw: mock.Mock(start=lambda: target(*args))), \
+                mock.patch.dict(os.environ, env), mock.patch('twilio.rest.Client', twilio):
+            post_json(self.client, '/patient/chatbot/send/', {'message': 'Wound is bleeding'})
+        return twilio
+
+    def test_threshold(self):
+        self.chat(0.75)
+        self.assertFalse(self.patient.alerts.exists())
+        self.chat(0.76)
+        alert = self.patient.alerts.get()
+        self.assertEqual((alert.message, alert.response), ('Wound is bleeding', 'Call your doctor.'))
+
+    def test_alert_goes_to_the_patients_doctor_by_email_and_sms(self):
+        from django.core import mail
+        twilio = self.chat(0.9, TWILIO_ACCOUNT_SID='AC1', TWILIO_AUTH_TOKEN='t', TWILIO_PHONE_NUMBER='+15550001111')
+        self.assertEqual(mail.outbox[0].to, ['doc@example.com'])
+        self.assertIn('Wound is bleeding', mail.outbox[0].body)
+        sms = twilio.return_value.messages.create.call_args.kwargs
+        self.assertEqual((sms['to'], sms['from_']), ('+919876500000', '+15550001111'))
+
+    def test_failed_email_keeps_the_alert(self):
+        from unittest import mock
+        with mock.patch('Patients.views.send_mail', side_effect=OSError('smtp down')), self.assertLogs('Patients.views', 'ERROR'):
+            self.chat(0.9)
+        self.assertTrue(self.patient.alerts.exists())
+
+    def test_doctor_acknowledges_only_own_alerts(self):
+        from django.contrib.auth.models import User
+        from .models import Alert
+        mine = Alert.objects.create(patient=self.patient, message='Pain severe', seriousness=0.9)
+        other_doc = User.objects.create_user('other', password='Doc-pass-123')
+        theirs = Alert.objects.create(patient=Patient.objects.create(name='T', email='t@example.com', info='x', password='x', doctor=other_doc),
+                                      message='Not yours', seriousness=0.9)
+        self.client.force_login(self.doctor)
+        r = self.client.get('/doctor/alerts/')
+        self.assertContains(r, 'Pain severe')
+        self.assertNotContains(r, 'Not yours')
+        self.assertContains(r, 'aria-label="Alerts, 1 unread"')
+        self.client.post('/doctor/alerts/', {'alert': theirs.id})
+        self.client.post('/doctor/alerts/', {'alert': mine.id})
+        mine.refresh_from_db(); theirs.refresh_from_db()
+        self.assertEqual(mine.acknowledged_by, self.doctor)
+        self.assertIsNone(theirs.acknowledged_at)
+        self.assertNotContains(self.client.get('/doctor/alerts/'), 'aria-label="Alerts, 1 unread"')
