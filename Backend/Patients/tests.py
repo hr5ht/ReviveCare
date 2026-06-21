@@ -1044,3 +1044,78 @@ class AlertTests(TestCase):
         self.assertEqual(mine.acknowledged_by, self.doctor)
         self.assertIsNone(theirs.acknowledged_at)
         self.assertNotContains(self.client.get('/doctor/alerts/'), 'aria-label="Alerts, 1 unread"')
+
+
+class AppointmentTests(TestCase):
+    def setUp(self):
+        from datetime import datetime, time, timedelta
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        self.doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        self.patient = Patient.objects.create(name='Ap', email='ap@example.com', info='x', password='x', doctor=self.doctor)
+        self.client.force_login(self.doctor)
+        # 10:00 local, a week ahead: well clear of "now" and of midnight
+        self.ten = timezone.make_aware(datetime.combine(timezone.localdate() + timedelta(days=7), time(10)))
+
+    def book(self, start, minutes=30, patient=None):
+        from django.utils import timezone
+        patient = patient or self.patient
+        return self.client.post(f'/doctor/patients/{patient.id}/appointments/',
+                                {'starts_at': timezone.localtime(start).strftime('%Y-%m-%dT%H:%M'), 'duration_minutes': minutes})
+
+    def test_past_times_are_rejected(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        r = self.book(timezone.now() - timedelta(hours=1))
+        self.assertContains(r, 'Pick a time in the future.')
+        self.assertFalse(self.patient.appointments.exists())
+
+    def test_overlaps_clash_but_back_to_back_is_fine(self):
+        from datetime import timedelta
+        self.book(self.ten, 60)
+        self.assertContains(self.book(self.ten + timedelta(minutes=30)), 'You already have Ap at 10:00.')
+        self.assertContains(self.book(self.ten - timedelta(minutes=15), 30), 'You already have Ap at 10:00.')
+        self.book(self.ten + timedelta(minutes=60))
+        self.book(self.ten - timedelta(minutes=30))
+        self.assertEqual(self.patient.appointments.count(), 3)
+
+    def test_cancelled_and_other_doctors_slots_are_free(self):
+        from django.contrib.auth.models import User
+        from .models import Appointment
+        other = User.objects.create_user('other', password='Doc-pass-123')
+        Appointment.objects.create(patient=self.patient, doctor=other, starts_at=self.ten)
+        Appointment.objects.create(patient=self.patient, doctor=self.doctor, starts_at=self.ten, status='cancelled')
+        self.book(self.ten)
+        self.assertEqual(self.patient.appointments.filter(doctor=self.doctor, status='scheduled').count(), 1)
+
+    def test_calendar_shows_the_chosen_week(self):
+        from datetime import timedelta
+        from django.contrib.auth.models import User
+        from .models import Appointment
+        Appointment.objects.create(patient=self.patient, doctor=self.doctor, starts_at=self.ten, reason='Week-ahead review')
+        Appointment.objects.create(patient=self.patient, doctor=self.doctor, starts_at=self.ten + timedelta(hours=2), reason='Dropped', status='cancelled')
+        Appointment.objects.create(patient=self.patient, doctor=User.objects.create_user('o', password='x'), starts_at=self.ten, reason='Not mine')
+        week = self.ten.date().isoformat()
+        r = self.client.get(f'/doctor/calendar/?week={week}')
+        self.assertContains(r, 'Week-ahead review')
+        self.assertNotContains(r, 'Dropped')
+        self.assertNotContains(r, 'Not mine')
+        self.assertEqual(r.context['count'], 1)
+        self.assertNotContains(self.client.get('/doctor/calendar/'), 'Week-ahead review')
+        self.assertEqual(self.client.get('/doctor/calendar/?week=garbage').status_code, 200)
+
+    def test_patient_cannot_reschedule_a_past_or_cancelled_visit(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import Appointment
+        past = Appointment.objects.create(patient=self.patient, doctor=self.doctor, starts_at=timezone.now() - timedelta(days=1))
+        gone = Appointment.objects.create(patient=self.patient, doctor=self.doctor, starts_at=self.ten, status='cancelled')
+        self.client.logout()
+        session = self.client.session
+        session['patient_id'] = self.patient.id
+        session.save()
+        for a in (past, gone):
+            self.client.post(f'/patient/appointments/{a.id}/reschedule/', {'note': 'later please'})
+            a.refresh_from_db()
+            self.assertEqual(a.reschedule_request, '')
+        self.assertFalse(self.patient.messages.exists())
