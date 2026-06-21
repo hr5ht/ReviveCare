@@ -1119,3 +1119,80 @@ class AppointmentTests(TestCase):
             a.refresh_from_db()
             self.assertEqual(a.reschedule_request, '')
         self.assertFalse(self.patient.messages.exists())
+
+
+class MedicationTests(TestCase):
+    def setUp(self):
+        from datetime import date, datetime
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+        self.doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        self.patient = Patient.objects.create(name='M', email='m@example.com', info='x', password='x', doctor=self.doctor)
+        self.today = date(2026, 6, 21)
+        self.noon = timezone.make_aware(datetime(2026, 6, 21, 12, 0))  # fixed clock: 08:00 is due, 20:00 is not yet
+
+    def clock(self):
+        from unittest import mock
+        return mock.patch('django.utils.timezone.now', return_value=self.noon)
+
+    def med(self, **kw):
+        from .models import Medication
+        return Medication.objects.create(patient=self.patient, name=kw.pop('name', 'Paracetamol'), times=kw.pop('times', ['08:00', '20:00']),
+                                         start_date=kw.pop('start_date', self.today), **kw)
+
+    def test_form_parses_times(self):
+        from Doctor.forms import MedicationForm
+        base = {'name': 'P', 'start_date': '2026-06-21'}
+        form = MedicationForm({**base, 'times': '20:00; 8:00, 08:00'})
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['times'], ['08:00', '20:00'])
+        self.assertEqual(MedicationForm({**base, 'times': '08:00, 25:00'}).errors['times'], ['"25:00" is not a time like 08:00.'])
+        self.assertIn('At most 6', str(MedicationForm({**base, 'times': ','.join(f'{h:02}:00' for h in range(7))}).errors))
+        self.assertIn('before the start', str(MedicationForm({**base, 'times': '08:00', 'end_date': '2026-06-01'}).errors))
+
+    def test_due_on_respects_course_dates_and_stopping(self):
+        from datetime import timedelta
+        m = self.med(end_date=self.today + timedelta(days=2))
+        self.assertEqual(m.due_on(self.today - timedelta(days=1)), [])
+        self.assertEqual(m.due_on(self.today), ['08:00', '20:00'])
+        self.assertEqual(m.due_on(self.today + timedelta(days=3)), [])
+        m.is_active = False
+        self.assertEqual(m.due_on(self.today), [])
+
+    def test_patient_ticks_and_unticks_a_dose(self):
+        from .models import DoseTaken
+        m = self.med()
+        session = self.client.session
+        session['patient_id'] = self.patient.id
+        session.save()
+        with self.clock():
+            self.client.post('/patient/medications/take/', {'medication': m.id, 'time': '08:00'})
+            self.client.post('/patient/medications/take/', {'medication': m.id, 'time': '13:00'})  # not a scheduled slot
+            self.assertEqual(list(DoseTaken.objects.values_list('time', flat=True)), ['08:00'])
+            self.assertContains(self.client.get('/patient/dashboard/'), '1 of 2 taken')
+            self.client.post('/patient/medications/take/', {'medication': m.id, 'time': '08:00'})
+        self.assertFalse(DoseTaken.objects.exists())
+
+    def test_adherence_and_missed_doses(self):
+        from datetime import timedelta
+        from Doctor.views import missed_doses
+        from Home.views import medication_adherence
+        from .models import DoseTaken
+        m = self.med(start_date=self.today - timedelta(days=1))
+        DoseTaken.objects.create(medication=m, date=self.today - timedelta(days=1), time='08:00')
+        with self.clock():
+            # due so far: yesterday 08:00 + 20:00, today 08:00 -> 1 of 3 taken
+            self.assertEqual(medication_adherence(m), 33)
+            missed = [(d['when'].date(), d['when'].strftime('%H:%M')) for d in missed_doses(self.patient)]
+        self.assertEqual(missed, [(self.today, '08:00'), (self.today - timedelta(days=1), '20:00')])
+
+    def test_doctor_adds_and_stops_a_medication(self):
+        self.client.force_login(self.doctor)
+        url = f'/doctor/patients/{self.patient.id}/medications/'
+        self.client.post(url, {'name': 'Aspirin', 'dose': '75 mg', 'times': '09:00', 'start_date': '2026-06-21'})
+        m = self.patient.medications.get()
+        self.assertEqual((m.times, m.prescribed_by), (['09:00'], self.doctor))
+        self.client.post(url, {'stop': m.id})
+        m.refresh_from_db()
+        self.assertFalse(m.is_active)
+        self.assertIsNotNone(m.end_date)
