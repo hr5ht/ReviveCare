@@ -60,6 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'ReviveCare.middleware.security_headers',
+    'ReviveCare.middleware.request_log',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -164,8 +165,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {'simple': {'format': '{levelname} {name}: {message}', 'style': '{'}},
-    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'simple'}},
+    'formatters': {
+        'simple': {'format': '{levelname} {name}: {message}', 'style': '{'},
+        'json': {'format': '{{"level": "{levelname}", "logger": "{name}", "request": {message}}}', 'style': '{'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'simple'},
+        'requests': {'class': 'logging.StreamHandler', 'formatter': 'json'},
+    },
+    'loggers': {
+        # one JSON line per request from ReviveCare.middleware.request_log; Django's own access warnings would repeat them
+        'revivecare.requests': {'handlers': ['requests'], 'level': 'INFO', 'propagate': False},
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+    },
     'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
 }
 

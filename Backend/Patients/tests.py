@@ -1248,3 +1248,20 @@ class RateLimitTests(TestCase):
             Client(HTTP_X_REAL_IP='203.0.113.9').post('/demo-request/', {})
         self.assertEqual(Client(HTTP_X_REAL_IP='203.0.113.9').post('/demo-request/', {}).status_code, 429)
         self.assertEqual(Client(HTTP_X_REAL_IP='203.0.113.10').post('/demo-request/', {}).status_code, 400)  # allowed, just invalid
+
+
+class RequestLogTests(TestCase):
+    def test_one_json_line_per_request_without_query_string(self):
+        from django.contrib.auth.models import User
+        doctor = User.objects.create_user('doc', password='Doc-pass-123')
+        self.client.force_login(doctor)
+        with self.assertLogs('revivecare.requests', 'INFO') as logs:
+            self.client.get('/doctor/?q=Asha+Rao', HTTP_X_VERCEL_ID='bom1::abc')
+            self.client.get('/static/css/app.css')
+            self.client.get('/no-such-page/')
+        self.assertEqual(len(logs.records), 2)
+        first, missing = (json.loads(r.getMessage()) for r in logs.records)
+        self.assertEqual({k: first[k] for k in ('method', 'path', 'status', 'request_id', 'doctor')},
+                         {'method': 'GET', 'path': '/doctor/', 'status': 200, 'request_id': 'bom1::abc', 'doctor': doctor.id})
+        self.assertNotIn('Asha', logs.output[0])
+        self.assertEqual((missing['status'], logs.records[1].levelname), (404, 'WARNING'))
