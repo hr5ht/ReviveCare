@@ -105,8 +105,12 @@ WSGI_APPLICATION = 'ReviveCare.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Preview deployments get their own Neon branch (PREVIEW_DATABASE_URL) so test data and unmerged migrations
+# never touch production. Without it a preview falls back to DATABASE_URL, i.e. the production database.
+PREVIEW = os.getenv('VERCEL_ENV') == 'preview' and bool(os.getenv('PREVIEW_DATABASE_URL'))
 DATABASES = {
     'default': dj_database_url.config(
+        env='PREVIEW_DATABASE_URL' if PREVIEW else 'DATABASE_URL',
         conn_max_age=600,
         conn_health_checks=True,
     )

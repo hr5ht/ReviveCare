@@ -72,6 +72,18 @@ vercel --prod
 
 Set these environment variables in the Vercel project: `DATABASE_URL` (Neon Postgres), `SECRET_KEY`, `GROQ_API_KEY`, `EMAIL_PASSWORD`, and optionally the `TWILIO_*` values. Leave `DEBUG` and `COOKIE_SECURE` unset in production.
 
+Production builds run `python manage.py migrate` before going live (`Backend/build.py`, hooked up in `Backend/pyproject.toml`).
+
+#### Preview deployments on a Neon branch
+
+Give previews their own database so test data and unmerged migrations never reach production:
+
+1. In the Neon console, create a branch from `main` (for example `preview`) and copy its connection string.
+2. In Vercel → Settings → Environment Variables, add `PREVIEW_DATABASE_URL` with that string, scoped to **Preview** only.
+3. Redeploy a preview. Its build migrates the branch, and the app reads and writes only the branch.
+
+Without `PREVIEW_DATABASE_URL`, previews use `DATABASE_URL` (production) and skip migrations, so code that needs a new migration will fail there instead of changing the production schema. To refresh the branch with current production data, reset it from its parent in the Neon console.
+
 ## Usage
 
 1.  Start the Django server.
