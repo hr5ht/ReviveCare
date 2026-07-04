@@ -333,9 +333,46 @@ def api_add_patient(request):
 # HEALTH CHECK
 # ============================================================================
 
+HEALTH_CACHE_SECONDS = 300  # outside services are checked at most every 5 minutes, however often this is polled
+
+
+def _groq_status():
+    import os
+    import urllib.request
+    key = os.getenv('GROQ_API_KEY')
+    if not key:
+        return 'not_configured'
+    try:
+        req = urllib.request.Request('https://api.groq.com/openai/v1/models', headers={
+            'Authorization': f'Bearer {key}',
+            'User-Agent': 'ReViveCare-health/1.0',  # Groq's edge rejects Python's default urllib agent with 403
+        })
+        with urllib.request.urlopen(req, timeout=3) as response:
+            return 'ok' if response.status == 200 else 'error'
+    except Exception as e:
+        logger.warning('Health check: Groq unreachable: %s', e)
+        return 'error'
+
+
+def _email_status():
+    from django.conf import settings
+    from django.core.mail import get_connection
+    if not settings.EMAIL_HOST_PASSWORD:
+        return 'not_configured'  # emails only print to the console
+    try:
+        connection = get_connection(timeout=3)
+        connection.open()
+        connection.close()
+        return 'ok'
+    except Exception as e:
+        logger.warning('Health check: SMTP unreachable: %s', e)
+        return 'error'
+
+
 @require_http_methods(["GET"])
 def api_health(request):
-    """Health check endpoint - verifies backend and database are running"""
+    """Health check: the database (live), plus Groq and email (cached). Only a database failure returns 503;
+    Groq or email trouble reports "degraded" so uptime monitors can tell the difference."""
     db_ok = False
     db_error = None
     try:
@@ -346,10 +383,17 @@ def api_health(request):
         logger.warning('Health check: database unreachable: %s', e)
         db_error = str(e)
 
+    services = cache.get('health:services')
+    if services is None:
+        services = {'groq': _groq_status(), 'email': _email_status()}
+        cache.set('health:services', services, HEALTH_CACHE_SECONDS)
+    status = 'error' if not db_ok else 'degraded' if 'error' in services.values() else 'ok'
+
     return JsonResponse({
         'success': db_ok,
-        'status': 'ok' if db_ok else 'error',
+        'status': status,
         'db_connected': db_ok,
+        **services,
         'db_error': db_error,
         'message': 'ReviveCare API is running' if db_ok else 'Database connection error',
         'authenticated': bool(request.session.get('patient_id'))

@@ -1265,3 +1265,27 @@ class RequestLogTests(TestCase):
                          {'method': 'GET', 'path': '/doctor/', 'status': 200, 'request_id': 'bom1::abc', 'doctor': doctor.id})
         self.assertNotIn('Asha', logs.output[0])
         self.assertEqual((missing['status'], logs.records[1].levelname), (404, 'WARNING'))
+
+
+class HealthCheckTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_reports_services_and_caches_them(self):
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {'GROQ_API_KEY': 'k'}), \
+                mock.patch('urllib.request.urlopen', side_effect=OSError('down')) as urlopen:
+            r = self.client.get('/api/health/').json()
+            self.client.get('/api/health/')
+        self.assertEqual((r['status'], r['db_connected'], r['groq'], r['email']), ('degraded', True, 'error', 'not_configured'))
+        self.assertEqual(urlopen.call_count, 1)  # second call came from the cache
+
+    def test_ok_when_groq_answers(self):
+        import os
+        from unittest import mock
+        response = mock.MagicMock(status=200)
+        response.__enter__.return_value = response
+        with mock.patch.dict(os.environ, {'GROQ_API_KEY': 'k'}), mock.patch('urllib.request.urlopen', return_value=response):
+            r = self.client.get('/api/health/')
+        self.assertEqual((r.status_code, r.json()['status'], r.json()['groq']), (200, 'ok', 'ok'))
