@@ -1289,3 +1289,13 @@ class HealthCheckTests(TestCase):
         with mock.patch.dict(os.environ, {'GROQ_API_KEY': 'k'}), mock.patch('urllib.request.urlopen', return_value=response):
             r = self.client.get('/api/health/')
         self.assertEqual((r.status_code, r.json()['status'], r.json()['groq']), (200, 'ok', 'ok'))
+
+
+class HstsTests(TestCase):
+    def test_header_only_when_enabled_over_https(self):
+        from django.test import override_settings
+        self.assertNotIn('Strict-Transport-Security', self.client.get('/', secure=True))
+        with override_settings(SECURE_HSTS_SECONDS=3600, SECURE_HSTS_INCLUDE_SUBDOMAINS=True):
+            client = Client()  # SecurityMiddleware reads the setting when the client builds its middleware
+            self.assertEqual(client.get('/', secure=True)['Strict-Transport-Security'], 'max-age=3600; includeSubDomains')
+            self.assertNotIn('Strict-Transport-Security', client.get('/'))  # never over plain http

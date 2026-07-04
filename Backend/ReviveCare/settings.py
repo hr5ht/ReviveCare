@@ -81,6 +81,13 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 2 * 60 * 60
 SESSION_SAVE_EVERY_REQUEST = True
 
+# HSTS: browsers refuse plain http for this domain for HSTS_SECONDS. Off until the custom domain serves HTTPS
+# everywhere (a long max-age is hard to take back). Start small, e.g. 3600, then 31536000 once all is well;
+# HSTS_PRELOAD only when the domain is about to be submitted to hstspreload.org.
+SECURE_HSTS_SECONDS = int(os.getenv('HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0 and os.getenv('HSTS_INCLUDE_SUBDOMAINS', 'True') == 'True'
+SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0 and os.getenv('HSTS_PRELOAD', 'False') == 'True'
+
 ROOT_URLCONF = 'ReviveCare.urls'
 
 TEMPLATES = [
