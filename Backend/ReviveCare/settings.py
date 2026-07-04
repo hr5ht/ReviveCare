@@ -169,6 +169,20 @@ LOGGING = {
     'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
 }
 
+# Error monitoring: unhandled exceptions and logged errors go to Sentry when SENTRY_DSN is set.
+# This is health data, so nothing personal leaves: no request bodies, cookies, users or local variables.
+if os.getenv('SENTRY_DSN'):
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=os.environ['SENTRY_DSN'],
+        environment=os.getenv('VERCEL_ENV', 'development'),
+        release=os.getenv('VERCEL_GIT_COMMIT_SHA') or None,
+        send_default_pii=False,
+        max_request_body_size='never',
+        include_local_variables=False,
+        traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0')),
+    )
+
 # Doctor accounts are Django users
 LOGIN_URL = 'doctor_login'
 LOGIN_REDIRECT_URL = 'doctor_dashboard'
