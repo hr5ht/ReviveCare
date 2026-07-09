@@ -6,27 +6,39 @@ This application leverages computer vision to provide real-time feedback on phys
 
 ## Features
 
-### For Patients
-*   **AI-Powered Exercise Tracking**: Real-time monitoring of rehabilitation exercises (such as Bicep Curls) using computer vision. The system provides immediate feedback on form and counts repetitions automatically via webcam.
-*   **Intelligent Chat Assistant**: An integrated AI chatbot capable of answering health-related queries and providing guidance, powered by advanced language models.
-*   **Personalized Dashboard**: A clear, accessible interface to view assigned exercises, track progress, and manage personal health data.
+### For patients
+*   **Camera-guided exercises**: pose tracking runs in the browser (MediaPipe Pose), counts reps, grades each one (excellent, good or partial) and coaches out loud. The camera feed never leaves the device.
+*   **Today's plan**: the exercises, sets and reps the doctor assigned, today's medicine doses to tick off, goals with progress bars and achievement badges.
+*   **Recovery assistant**: an AI chat (Groq) that knows the patient's plan, recent progress, pain diary and medicines. Replies stream in, and it answers in English, Hindi, Marathi or Tamil, by voice or text. Worrying messages alert the doctor by email, and by SMS when Twilio is set up.
+*   **Pain diary and vitals**: daily pain scores and symptoms, pain checks before and after workouts, and home readings of blood pressure, heart rate and temperature. Rising pain or out-of-range vitals raise an alert.
+*   **Messages and appointments**: a thread with the care team, the next appointment with an *Add to calendar* file, a video-call link and a reschedule request.
+*   **Notifications and reminders**: in-app notifications plus emails for medicines, appointments and a weekly progress summary, each of which can be switched off.
+*   **Works everywhere**: Hindi interface, light and dark themes, phone layouts, keyboard and screen-reader support. It installs as an app (PWA) with an offline page and cached exercise videos.
 
-### For Doctors
-*   **Patient Management Dashboard**: A centralized hub to add new patients, review patient profiles, and assign treatment plans.
-*   **Progress Monitoring**: Tools to track patient adherence to exercise routines and recovery milestones.
+### For doctors
+*   **Dashboard**: every patient with adherence and status, the patients at risk of dropping off, recent vitals (out-of-range first), unread alerts and messages.
+*   **Patient record**: charts of reps, rep quality, pain and vitals, plus the exercise plan, goals, medications with adherence and missed doses, appointments, clinical notes and the assistant chat history.
+*   **Care tools**: assign exercises with per-patient targets, set goals, prescribe medicines, book appointments (clash-checked, with a calendar week view) and message patients.
+*   **Reports**: a printable 30-day progress report, a CSV export of every workout and a weekly digest email.
+*   **Accountability**: every view of and change to a patient record is written to a read-only audit log.
+
+## Screenshots
+
+| Patient dashboard | Doctor dashboard |
+|---|---|
+| ![Patient dashboard](docs/screenshots/patient-dashboard.png) | ![Doctor dashboard](docs/screenshots/doctor-dashboard.png) |
+| **Patient record** | **Progress report (dark mode)** |
+| ![Patient record with charts](docs/screenshots/patient-record.png) | ![Printable progress report in dark mode](docs/screenshots/report-dark.png) |
+| **Landing page** | **On a phone** |
+| ![Landing page](docs/screenshots/landing.png) | <img src="docs/screenshots/mobile.png" alt="Patient dashboard on a phone" width="260"> |
 
 ## Technology Stack
 
-### Frontend
-*   **Django templates** (`Backend/templates/`): Plain HTML, CSS and JavaScript served by Django. No build step.
-*   **Tailwind CSS v4** (browser build via CDN) and **Lucide** icons.
-*   **MediaPipe Pose** (CDN) for in-browser exercise tracking.
-
-### Backend
-*   **Django**: High-level Python web framework for robust backend logic.
-*   **MediaPipe & OpenCV**: Advanced computer vision libraries used for pose detection and real-time exercise tracking.
-*   **LangChain & Sarvam AI**: Integration frameworks for the AI chat assistant capabilities.
-*   **SQLite / PostgreSQL**: SQLite locally, NeonDB (Postgres) in production via `DATABASE_URL`.
+*   **Django 5.1** serves both the pages (`Backend/templates/`) and a small JSON API. Postgres (Neon) is used in production and SQLite locally, both via `DATABASE_URL`.
+*   **Tailwind CSS v4** is compiled to `Backend/static/css/app.css` with the standalone CLI (see the comment in `static/css/input.css`). **Lucide** icons are served locally.
+*   **MediaPipe Pose** runs in the browser for exercise tracking, with the rep logic in `static/js/reps.js`. Charts are hand-written SVG (`static/js/charts.js`).
+*   **Groq** (through `langchain-groq`) powers the recovery assistant, Gmail SMTP sends email, and Twilio sends optional SMS alerts.
+*   **Vercel** hosts the app, with **Sentry** for optional error monitoring.
 
 ## Getting Started
 
@@ -113,10 +125,40 @@ Vercel sets `VERCEL_ENV` and `VERCEL_GIT_COMMIT_SHA` itself; they choose the pre
 
 ## Usage
 
-1.  Start the Django server.
-2.  Open `http://127.0.0.1:8000` in your browser.
-3.  **Doctors**: Navigate to the Doctor Dashboard to manage patients.
-4.  **Patients**: Login to access the exercise tracker. Select an exercise to start the video feed. Ensure your webcam is enabled and you are visible in the frame for the AI tracking to work correctly.
+### Demo data
+
+```bash
+cd Backend
+python manage.py seed_demo
+```
+
+This creates a doctor (`doctor` / `Doctor-demo-2026`) and a patient (`demo@revivecare.com` / `demo1234`) with 30 days of workouts, pain entries, vitals, medicines, messages and an upcoming appointment. It's safe to re-run, and it refuses to run with `DEBUG` off unless you pass `--allow-production`.
+
+*   **Doctors** sign in at `/doctor/login/` to manage patients. Superusers also get `/admin/`, including the audit log and demo requests.
+*   **Patients** sign in at `/patient/login/`. The first sign-in asks for a new password. Exercises need a webcam and enough light to see the whole body.
+
+### Scheduled jobs
+
+Run these with `python manage.py <command>` from a scheduler such as cron or a scheduled GitHub Actions workflow with the production environment variables:
+
+| Command | Suggested schedule | What it does |
+|---|---|---|
+| `send_medication_reminders` | hourly | Emails doses due in the next hour that aren't ticked off yet. |
+| `send_appointment_reminders` | hourly | Emails patients about appointments roughly 24 hours away. |
+| `send_weekly_progress` | Mondays 09:00 | A summary of each patient's last 7 days. |
+| `send_doctor_digest` | Mondays 08:00 | Each doctor's open alerts, unread messages, at-risk patients and week ahead. |
+| `cleanup` | daily | Deletes expired sessions, old read notifications and audit entries past retention (2 years by default). |
+
+### Tests
+
+```bash
+cd Backend
+python manage.py test --settings=ReviveCare.test_settings   # Django tests
+node --test static/js/reps.test.js                          # rep counting on recorded poses
+node tests/smoke.mjs                                        # clicks through the app in headless Chrome (needs seed_demo and a running server)
+```
+
+CI runs all three on every push (`.github/workflows/ci.yml`) and also checks that the compiled CSS is up to date.
 
 ## Contributing
 
