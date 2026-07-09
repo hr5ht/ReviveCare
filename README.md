@@ -70,7 +70,7 @@ vercel        # pick "Django" as the framework; root directory is Backend
 vercel --prod
 ```
 
-Set these environment variables in the Vercel project: `DATABASE_URL` (Neon Postgres), `SECRET_KEY`, `GROQ_API_KEY`, `EMAIL_PASSWORD`, and optionally the `TWILIO_*` values. Leave `DEBUG` and `COOKIE_SECURE` unset in production.
+Set the environment variables below in the Vercel project. In production you need at least `SECRET_KEY` and `DATABASE_URL`. Leave `DEBUG` and `COOKIE_SECURE` unset there.
 
 Production builds run `python manage.py migrate` before going live (`Backend/build.py`, hooked up in `Backend/pyproject.toml`).
 
@@ -83,6 +83,33 @@ Give previews their own database so test data and unmerged migrations never reac
 3. Redeploy a preview. Its build migrates the branch, and the app reads and writes only the branch.
 
 Without `PREVIEW_DATABASE_URL`, previews use `DATABASE_URL` (production) and skip migrations, so code that needs a new migration will fail there instead of changing the production schema. To refresh the branch with current production data, reset it from its parent in the Neon console.
+
+### Environment variables
+
+All are read in `Backend/ReviveCare/settings.py` or where noted. `Backend/.env.example` lists them with local defaults; copy it to `Backend/.env`.
+
+| Variable | Needed | What it does |
+|---|---|---|
+| `SECRET_KEY` | Production | Django's signing key. Without it the app refuses to start unless `DEBUG=True`. |
+| `DEBUG` | Local only | `True` for development: detailed errors and a built-in fallback secret key. |
+| `DATABASE_URL` | Production | Database connection string: Neon Postgres in production, `sqlite:///db.sqlite3` locally. |
+| `PREVIEW_DATABASE_URL` | Optional | Neon branch used by Vercel Preview deployments instead of `DATABASE_URL`. |
+| `COOKIE_SECURE` | Local only | `False` lets session cookies work over plain `http://localhost`. |
+| `SITE_URL` | Recommended | Public address used in links inside emails sent by the scheduled commands. |
+| `LOG_LEVEL` | Optional | Root log level (default `INFO`). Requests are logged as one JSON line each. |
+| `GROQ_API_KEY` | For chat | Key for the recovery assistant (Groq). Without it the chat replies with a fallback message. |
+| `GROQ_MODEL` | Optional | Groq model name (default `openai/gpt-oss-120b`). |
+| `EMAIL_PASSWORD` | For email | SMTP password (a Gmail app password). Without it emails are printed to the console. |
+| `EMAIL_SENDER`, `SMTP_SERVER`, `SMTP_PORT` | Optional | Sending address and SMTP server (default Gmail on port 587). |
+| `DOCTOR_EMAIL` | Optional | Where chat alerts go when a patient has no doctor with an email address. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | For SMS | Text doctors about serious alerts. All three are needed. |
+| `TO_NUMBER` | Optional | SMS fallback when the doctor's profile has no phone number. |
+| `SENTRY_DSN` | Optional | Report errors to Sentry. No request bodies, cookies or personal data are sent. |
+| `SENTRY_TRACES_SAMPLE_RATE` | Optional | Share of requests traced for performance, 0 to 1 (default 0). |
+| `HSTS_SECONDS` | Optional | Turn on HSTS once the custom domain serves HTTPS everywhere. Start at 3600. |
+| `HSTS_INCLUDE_SUBDOMAINS`, `HSTS_PRELOAD` | Optional | HSTS flags (defaults `True` and `False`). |
+
+Vercel sets `VERCEL_ENV` and `VERCEL_GIT_COMMIT_SHA` itself; they choose the preview database, gate build-time migrations and tag Sentry releases.
 
 ## Usage
 
