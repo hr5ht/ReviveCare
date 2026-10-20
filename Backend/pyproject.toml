@@ -1,3 +1,0 @@
-# Vercel build settings only. Dependencies stay in requirements.txt (no [project] table here on purpose).
-[tool.vercel.scripts]
-build = "python build.py"

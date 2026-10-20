@@ -84,7 +84,9 @@ vercel --prod
 
 Set the environment variables below in the Vercel project. In production you need at least `SECRET_KEY` and `DATABASE_URL`. Leave `DEBUG` and `COOKIE_SECURE` unset there.
 
-Production builds run `python manage.py migrate` before going live (`Backend/build.py`, hooked up in `Backend/pyproject.toml`).
+Deploys don't migrate the database. After pushing a change with new migrations, run them against Neon from `Backend/`:
+
+    DATABASE_URL='<Neon connection string>' python manage.py migrate
 
 #### Preview deployments on a Neon branch
 
@@ -92,9 +94,9 @@ Give previews their own database so test data and unmerged migrations never reac
 
 1. In the Neon console, create a branch from `main` (for example `preview`) and copy its connection string.
 2. In Vercel → Settings → Environment Variables, add `PREVIEW_DATABASE_URL` with that string, scoped to **Preview** only.
-3. Redeploy a preview. Its build migrates the branch, and the app reads and writes only the branch.
+3. Migrate the branch (`DATABASE_URL='<branch connection string>' python manage.py migrate`) and redeploy a preview. It reads and writes only the branch.
 
-Without `PREVIEW_DATABASE_URL`, previews use `DATABASE_URL` (production) and skip migrations, so code that needs a new migration will fail there instead of changing the production schema. To refresh the branch with current production data, reset it from its parent in the Neon console.
+Without `PREVIEW_DATABASE_URL`, previews use `DATABASE_URL`, the production database. To refresh the branch with current production data, reset it from its parent in the Neon console.
 
 ### Environment variables
 
@@ -121,7 +123,7 @@ All are read in `Backend/ReviveCare/settings.py` or where noted. `Backend/.env.e
 | `HSTS_SECONDS` | Optional | Turn on HSTS once the custom domain serves HTTPS everywhere. Start at 3600. |
 | `HSTS_INCLUDE_SUBDOMAINS`, `HSTS_PRELOAD` | Optional | HSTS flags (defaults `True` and `False`). |
 
-Vercel sets `VERCEL_ENV` and `VERCEL_GIT_COMMIT_SHA` itself; they choose the preview database, gate build-time migrations and tag Sentry releases.
+Vercel sets `VERCEL_ENV` and `VERCEL_GIT_COMMIT_SHA` itself; they choose the preview database and tag Sentry releases.
 
 ## Usage
 
