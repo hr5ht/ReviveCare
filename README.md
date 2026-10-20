@@ -34,7 +34,7 @@ This application leverages computer vision to provide real-time feedback on phys
 
 ## Technology Stack
 
-*   **Django 5.1** serves both the pages (`Backend/templates/`) and a small JSON API. Postgres (Neon) is used in production and SQLite locally, both via `DATABASE_URL`.
+*   **Django 5.1** serves both the pages (`Backend/templates/`) and a small JSON API. Postgres on Neon everywhere (`DATABASE_URL`), with **Neon Auth** (managed Better Auth) for sign-in; its accounts live in the same database's `neon_auth` schema.
 *   **Tailwind CSS v4** is compiled to `Backend/static/css/app.css` with the standalone CLI (see the comment in `static/css/input.css`). **Lucide** icons are served locally.
 *   **MediaPipe Pose** runs in the browser for exercise tracking, with the rep logic in `static/js/reps.js`. Charts are hand-written SVG (`static/js/charts.js`).
 *   **Groq** (through `langchain-groq`) powers the recovery assistant, Gmail SMTP sends email, and Twilio sends optional SMS alerts.
@@ -62,7 +62,7 @@ Follow these instructions to set up the project locally on your machine.
     python3.11 -m venv venv
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     pip install -r requirements.txt
-    cp .env.example .env      # then fill in DATABASE_URL, GROQ_API_KEY, etc.
+    cp .env.example .env.local   # then fill in DATABASE_URL, NEON_AUTH_BASE_URL, GROQ_API_KEY, etc.
     ```
 
 3.  **Run**
@@ -82,7 +82,7 @@ vercel        # pick "Django" as the framework; root directory is Backend
 vercel --prod
 ```
 
-Set the environment variables below in the Vercel project. In production you need at least `SECRET_KEY` and `DATABASE_URL`. Leave `DEBUG` and `COOKIE_SECURE` unset there.
+Set the environment variables below in the Vercel project. In production you need at least `SECRET_KEY`, `DATABASE_URL` and `NEON_AUTH_BASE_URL`. Leave `DEBUG` and `COOKIE_SECURE` unset there.
 
 Deploys don't migrate the database. After pushing a change with new migrations, run them against Neon from `Backend/`:
 
@@ -93,22 +93,24 @@ Deploys don't migrate the database. After pushing a change with new migrations, 
 Give previews their own database so test data and unmerged migrations never reach production:
 
 1. In the Neon console, create a branch from `main` (for example `preview`) and copy its connection string.
-2. In Vercel → Settings → Environment Variables, add `PREVIEW_DATABASE_URL` with that string, scoped to **Preview** only.
+2. In Vercel → Settings → Environment Variables, add `PREVIEW_DATABASE_URL` with that string and `PREVIEW_NEON_AUTH_BASE_URL` with the branch's Auth URL, both scoped to **Preview** only.
 3. Migrate the branch (`DATABASE_URL='<branch connection string>' python manage.py migrate`) and redeploy a preview. It reads and writes only the branch.
 
 Without `PREVIEW_DATABASE_URL`, previews use `DATABASE_URL`, the production database. To refresh the branch with current production data, reset it from its parent in the Neon console.
 
 ### Environment variables
 
-All are read in `Backend/ReviveCare/settings.py` or where noted. `Backend/.env.example` lists them with local defaults; copy it to `Backend/.env`.
+All are read in `Backend/ReviveCare/settings.py` or where noted. `Backend/.env.example` lists them with local defaults; copy it to `Backend/.env.local`.
 
 | Variable | Needed | What it does |
 |---|---|---|
 | `SECRET_KEY` | Production | Django's signing key. Without it the app refuses to start unless `DEBUG=True`. |
 | `DEBUG` | Local only | `True` for development: detailed errors and a built-in fallback secret key. |
-| `DATABASE_URL` | Production | Database connection string: Neon Postgres in production, `sqlite:///db.sqlite3` locally. |
-| `PREVIEW_DATABASE_URL` | Optional | Neon branch used by Vercel Preview deployments instead of `DATABASE_URL`. |
+| `DATABASE_URL` | Always | Neon Postgres connection string. The app refuses to start without it. |
+| `NEON_AUTH_BASE_URL` | Always | Neon Auth URL for the same branch (Console → Auth → Configuration). |
+| `PREVIEW_DATABASE_URL`, `PREVIEW_NEON_AUTH_BASE_URL` | Optional | Neon branch and its Auth URL, used by Vercel Preview deployments. |
 | `COOKIE_SECURE` | Local only | `False` lets session cookies work over plain `http://localhost`. |
+| `SETUP_CODE` | First run | Unlocks `/setup/` on a public site to create the first doctor. Remove it afterwards. |
 | `SITE_URL` | Recommended | Public address used in links inside emails sent by the scheduled commands. |
 | `LOG_LEVEL` | Optional | Root log level (default `INFO`). Requests are logged as one JSON line each. |
 | `GROQ_API_KEY` | For chat | Key for the recovery assistant (Groq). Without it the chat replies with a fallback message. |
@@ -134,10 +136,12 @@ cd Backend
 python manage.py seed_demo
 ```
 
-This creates a doctor (`doctor` / `Doctor-demo-2026`) and a patient (`demo@revivecare.com` / `demo1234`) with 30 days of workouts, pain entries, vitals, medicines, messages and an upcoming appointment. It's safe to re-run, and it refuses to run with `DEBUG` off unless you pass `--allow-production`.
+This creates a doctor (`doctor@example.com` / `Doctor-demo-2026`) and a patient (`demo@revivecare.com` / `demo1234`) with 30 days of workouts, pain entries, vitals, medicines, messages and an upcoming appointment. It's safe to re-run, and it refuses to run with `DEBUG` off unless you pass `--allow-production`.
 
-*   **Doctors** sign in at `/doctor/login/` to manage patients. Superusers also get `/admin/`, including the audit log and demo requests.
-*   **Patients** sign in at `/patient/login/`. The first sign-in asks for a new password. Exercises need a webcam and enough light to see the whole body.
+*   **First run:** with no accounts yet, the doctor login links to `/setup/`, where the first doctor creates the clinic and becomes its admin. Off localhost this needs the `SETUP_CODE` environment variable; the page closes for good once an account exists.
+*   **Doctors** sign in at `/doctor/login/` with their email to manage patients. Admins add colleagues under *Doctors* (`/doctor/team/`); each gets a temporary password, shown once and emailed. Admins also get `/admin/`, including the audit log and demo requests.
+*   **Patients** sign in at `/patient/login/`. Adding a patient creates their Neon Auth account with a temporary password, and the first sign-in asks for a new one.
+*   Password resets use a code that Neon Auth emails (*Forgot password?* on either login). Set up your own SMTP under Neon Console → Auth → Configuration for production. Exercises need a webcam and enough light to see the whole body.
 
 ### Scheduled jobs
 
@@ -155,7 +159,7 @@ Run these with `python manage.py <command>` from a scheduler such as cron or a s
 
 ```bash
 cd Backend
-python manage.py test --settings=ReviveCare.test_settings   # Django tests
+python manage.py test                                       # Django tests (creates a test_ database on Neon)
 node --test static/js/reps.test.js                          # rep counting on recorded poses
 node tests/smoke.mjs                                        # clicks through the app in headless Chrome (needs seed_demo and a running server)
 ```

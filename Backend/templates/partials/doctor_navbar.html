@@ -24,6 +24,12 @@
                     {% if unread_alerts %}<span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-rose-500 text-white text-xs font-bold rounded-full ring-2 ring-emerald-500 flex items-center justify-center tabular-nums">{% if unread_alerts > 99 %}99+{% else %}{{ unread_alerts }}{% endif %}</span>{% endif %}
                 </a>
 
+                {% if user.is_superuser %}
+                <a href="/doctor/team/" title="Doctors" aria-label="Doctors" class="max-md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors">
+                    <i data-lucide="users-round" class="w-5 h-5 text-white"></i>
+                </a>
+                {% endif %}
+
                 <a href="/doctor/profile/" title="Profile settings" class="max-md:hidden flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 transition-colors">
                     <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 font-semibold">{{ doctor_initials }}</div>
                     <div class="text-left">
@@ -48,6 +54,7 @@
                         <p class="px-4 py-2 border-b border-slate-100"><span class="block font-semibold text-slate-900">{{ doctor_name }}</span><span class="text-xs text-slate-500">{{ doctor_specialty }}</span></p>
                         <a href="/doctor/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="users" class="w-4 h-4 text-slate-400"></i> Patients</a>
                         <a href="/doctor/calendar/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-400"></i> Calendar</a>
+                        {% if user.is_superuser %}<a href="/doctor/team/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="users-round" class="w-4 h-4 text-slate-400"></i> Doctors</a>{% endif %}
                         <a href="/doctor/profile/" class="flex items-center gap-3 px-4 py-2.5 text-slate-700 hover:bg-slate-50"><i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i> Profile settings</a>
                         <form method="post" action="/doctor/logout/" class="border-t border-slate-100">{% csrf_token %}
                             <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-rose-600 hover:bg-rose-50"><i data-lucide="log-out" class="w-4 h-4"></i> Log out</button>

@@ -9,7 +9,7 @@ class PatientAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'condition', 'surgery_date', 'doctor', 'is_active', 'must_change_password', 'locked_until', 'created_at')
     list_filter = ('is_active', 'must_change_password', 'doctor')
     search_fields = ('name', 'email', 'condition')
-    readonly_fields = ('password', 'failed_login_count', 'locked_until', 'created_at', 'updated_at')
+    readonly_fields = ('failed_login_count', 'locked_until', 'created_at', 'updated_at')
 
 
 @admin.register(Workout)

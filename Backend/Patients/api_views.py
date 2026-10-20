@@ -2,15 +2,14 @@
 # JSON API views
 # These views return JSON responses instead of HTML templates
 
-from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.http import JsonResponse
-from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
 from Doctor.models import AuditLog
+from ReviveCare import neon_auth
 from .goals import update_goals
 from .models import Patient, Workout
 from django.utils import timezone
@@ -90,7 +89,12 @@ def api_patient_login(request):
                     'error': f'This account is locked after too many wrong passwords. Try again in {ACCOUNT_LOCK_MINUTES} minutes or ask your doctor.'
                 }, status=423)
 
-            if not check_password(password, patient.password):
+            try:
+                signed_in = neon_auth.sign_in(email, password)
+            except neon_auth.AuthError:  # Neon Auth down or rate limiting; not the patient's fault, so no lockout count
+                logger.exception('Neon Auth sign-in failed')
+                return JsonResponse({'success': False, 'error': 'Sign-in is busy right now. Try again in a minute.'}, status=503)
+            if not signed_in:
                 _record_login_failure(request)
                 patient.failed_login_count += 1
                 if patient.failed_login_count >= ACCOUNT_LOCK_AFTER:
@@ -155,8 +159,6 @@ def api_patient_change_password(request):
 
     data = json.loads(request.body or '{}')
     current, new = data.get('current_password', ''), data.get('new_password', '')
-    if not check_password(current, patient.password):
-        return JsonResponse({'success': False, 'error': 'Current password is incorrect'}, status=400)
     if new == current:
         return JsonResponse({'success': False, 'error': 'New password must be different from the current one'}, status=400)
     try:
@@ -164,9 +166,13 @@ def api_patient_change_password(request):
     except ValidationError as e:
         return JsonResponse({'success': False, 'error': ' '.join(e.messages)}, status=400)
 
-    patient.password = make_password(new)
+    try:
+        if not neon_auth.change_password(patient.email, current, new):
+            return JsonResponse({'success': False, 'error': 'Current password is incorrect'}, status=400)
+    except neon_auth.AuthError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
     patient.must_change_password = False
-    patient.save(update_fields=['password', 'must_change_password'])
+    patient.save(update_fields=['must_change_password'])
     return JsonResponse({'success': True, 'message': 'Password updated'})
 
 
@@ -295,14 +301,15 @@ def api_add_patient(request):
                 'error': 'Patient with this email already exists'
             }, status=400)
         
-        # No look-alike characters (0/O, 1/l/I) so it's easy to read out to a patient
-        temp_password = get_random_string(10, 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+        temp_password = neon_auth.temp_password()
+        # An email that already has a ReViveCare sign-in keeps its password; the patient signs in with it
+        if not neon_auth.create_user(email, temp_password, name):
+            temp_password = None
         patient = Patient.objects.create(
             name=name,
             email=email,
             info=info,
-            password=make_password(temp_password),
-            must_change_password=True,
+            must_change_password=bool(temp_password),
             doctor=request.user,
             surgery_date=surgery_date,
             **extra,
@@ -319,7 +326,7 @@ def api_add_patient(request):
             },
             # Shown once to the doctor so it can be shared with the patient
             'temporary_password': temp_password,
-            'email_sent': send_welcome_email(request, patient, temp_password),
+            'email_sent': bool(temp_password) and send_welcome_email(request, patient, temp_password),
         })
         
     except json.JSONDecodeError:
@@ -327,6 +334,9 @@ def api_add_patient(request):
             'success': False,
             'error': 'Invalid JSON data'
         }, status=400)
+    except neon_auth.AuthError:
+        logger.exception('Neon Auth account creation failed')
+        return JsonResponse({'success': False, 'error': "Couldn't create the patient's sign-in. Try again in a minute."}, status=503)
 
 
 # ============================================================================

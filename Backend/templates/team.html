@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Doctors · ReviveCare{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-linear-to-br from-slate-50 via-white to-emerald-50/20">
+    {% include "partials/doctor_navbar.html" %}
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <button onclick="location.href='/doctor/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span class="font-medium">Back to Dashboard</span>
+        </button>
+
+        {% for error in form.non_field_errors %}
+        <div class="mb-6 p-3 rounded-lg border bg-rose-50 border-rose-200 text-rose-700 text-sm">{{ error }}</div>
+        {% endfor %}
+        {% for message in messages %}
+        <div class="mb-6 p-3 rounded-lg flex items-center gap-2 border {% if message.level_tag == 'warning' %}bg-amber-50 border-amber-200 text-amber-800{% else %}bg-emerald-50 border-emerald-200 text-emerald-700{% endif %}">
+            <i data-lucide="{% if message.level_tag == 'warning' %}triangle-alert{% else %}circle-check{% endif %}" class="w-5 h-5 flex-shrink-0"></i>
+            <p class="text-sm">{{ message }}</p>
+        </div>
+        {% endfor %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+            <section class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div class="px-6 py-5 border-b border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900">Doctors</h2>
+                    <p class="text-sm text-slate-500">Everyone who can sign in to the doctor portal. Doctors see their own patients; admins see all of them.</p>
+                </div>
+                <ul class="divide-y divide-slate-100">
+                    {% for d in doctors %}
+                    <li class="px-6 py-4 flex items-center gap-4">
+                        <div class="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center font-semibold flex-shrink-0">{{ d.get_full_name|default:d.username|first|upper }}</div>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-semibold text-slate-900 truncate">Dr. {{ d.get_full_name|default:d.username }}{% if d == user %} <span class="text-slate-400 font-normal">(you)</span>{% endif %}</p>
+                            <p class="text-sm text-slate-500 truncate">{{ d.email }}{% if d.doctor_profile.specialty %} · {{ d.doctor_profile.specialty }}{% endif %}</p>
+                        </div>
+                        {% if d.is_superuser %}<span class="text-xs font-medium px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">Admin</span>{% endif %}
+                        {% if not d.is_active %}<span class="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600">Inactive</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Add a doctor</h2>
+                        <p class="text-sm text-slate-500">They get a temporary password by email.</p>
+                    </div>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}{% include "partials/form_field.html" %}{% endfor %}
+                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Add doctor
+                    </button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -15,11 +15,11 @@ import os
 import dj_database_url
 from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Local settings live in Backend/.env.local; on Vercel they come from the project's environment variables
+load_dotenv(BASE_DIR / '.env.local')
 
 
 # Quick-start development settings - unsuitable for production
@@ -115,13 +115,11 @@ WSGI_APPLICATION = 'ReviveCare.wsgi.application'
 # Preview deployments get their own Neon branch (PREVIEW_DATABASE_URL) so test data and unmerged migrations
 # never touch production. Without it a preview falls back to DATABASE_URL, i.e. the production database.
 PREVIEW = os.getenv('VERCEL_ENV') == 'preview' and bool(os.getenv('PREVIEW_DATABASE_URL'))
-DATABASES = {
-    'default': dj_database_url.config(
-        env='PREVIEW_DATABASE_URL' if PREVIEW else 'DATABASE_URL',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+DATABASE_URL = os.getenv('PREVIEW_DATABASE_URL' if PREVIEW else 'DATABASE_URL')
+if not DATABASE_URL:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('Set DATABASE_URL to the Neon Postgres connection string.')
+DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)}
 
 
 # Password validation
@@ -199,7 +197,12 @@ if os.getenv('SENTRY_DSN'):
         traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0')),
     )
 
-# Doctor accounts are Django users
+# Sign-in is Neon Auth (ReviveCare/neon_auth.py); its accounts live in the database's neon_auth schema.
+# Doctor accounts are Django users matched by email. A Neon branch has its own Neon Auth, so previews on one use its URL.
+NEON_AUTH_BASE_URL = os.getenv('PREVIEW_NEON_AUTH_BASE_URL' if PREVIEW else 'NEON_AUTH_BASE_URL', '').rstrip('/')
+AUTHENTICATION_BACKENDS = ['ReviveCare.neon_auth.NeonAuthBackend']
+# Unlocks /setup/ (creating the first doctor) on a public site; localhost with DEBUG doesn't need it
+SETUP_CODE = os.getenv('SETUP_CODE', '')
 LOGIN_URL = 'doctor_login'
 LOGIN_REDIRECT_URL = 'doctor_dashboard'
 

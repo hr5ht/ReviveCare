@@ -2,16 +2,16 @@ import random
 from datetime import datetime, time, timedelta
 
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from Doctor.models import DoctorProfile
+from ReviveCare import neon_auth
 from Patients.models import (Appointment, DiaryEntry, DoseTaken, Exercise, ExercisePlan, Medication, Message, Notification,
                              Patient, RecoveryGoal, Vitals, Workout)
 
-DOCTOR = ('doctor', 'Doctor-demo-2026')
+DOCTOR = ('doctor@example.com', 'Doctor-demo-2026')
 PATIENT = ('demo@revivecare.com', 'demo1234')
 
 
@@ -29,15 +29,18 @@ class Command(BaseCommand):
         rng = random.Random(42)  # same data every run
         now, today = timezone.now(), timezone.localdate()
 
+        for (email, password), name in ((DOCTOR, 'Meera Anderson'), (PATIENT, 'Demo Patient')):  # sign-ins live in Neon Auth
+            if not neon_auth.create_user(email, password, name) and not neon_auth.sign_in(email, password):
+                self.stderr.write(f'{email} already has a Neon Auth account with another password; use Forgot password to reset it.')
         doctor, _ = User.objects.update_or_create(username=DOCTOR[0], defaults={
-            'first_name': 'Meera', 'last_name': 'Anderson', 'email': 'doctor@example.com', 'is_active': True})
-        doctor.set_password(DOCTOR[1])
+            'first_name': 'Meera', 'last_name': 'Anderson', 'email': DOCTOR[0], 'is_active': True})
+        doctor.set_unusable_password()
         doctor.save()
         DoctorProfile.objects.update_or_create(user=doctor, defaults={'specialty': 'Orthopedic Surgeon', 'phone': '+91 98765 00000'})
 
         Patient.objects.filter(email=PATIENT[0]).delete()  # start clean; cascades to all of their records
         patient = Patient.objects.create(
-            name='Demo Patient', email=PATIENT[0], password=make_password(PATIENT[1]), doctor=doctor,
+            name='Demo Patient', email=PATIENT[0], doctor=doctor,
             info='Right total knee replacement. Walking with a stick, building quad strength and range of motion.',
             condition='Total knee replacement (right)', surgery_date=today - timedelta(days=36),
             phone='+91 91234 56789', emergency_contact_name='Ravi (son)', emergency_contact_phone='+91 99887 76655',

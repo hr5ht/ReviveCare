@@ -1,11 +1,17 @@
 import csv
+import logging
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LoginView
+from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.db.models import Count, Max, Min, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -15,8 +21,12 @@ from Home.views import (VITAL_LIMITS, _initials, daily_charts, days_in_recovery,
                         medication_adherence, notify_new_message, notify_patient, pain_by_day, vitals_by_day)
 from Patients.models import Alert, Appointment, DoseTaken, Exercise, ExercisePlan, Message, Patient, RecoveryGoal, Vitals, Workout
 
-from .forms import AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm
+from ReviveCare import neon_auth
+
+from .forms import AddDoctorForm, AppointmentForm, DoctorProfileForm, MedicationForm, PatientForm, RecoveryGoalForm, SetupForm
 from .models import AuditLog, ClinicalNote, DoctorProfile
+
+logger = logging.getLogger(__name__)
 
 
 STATUSES = ['active', 'inactive', 'new']
@@ -105,6 +115,83 @@ def doctor_dashboard(request):
         'page_query': urlencode({k: v for k, v in (('q', q), ('status', status)) if v}),
         'q': q, 'status': status if status in STATUSES else '', 'statuses': STATUSES,
     })
+
+
+class DoctorLoginView(LoginView):
+    """The sign-in page; while there are no accounts yet it also offers the one-time clinic setup."""
+    template_name = 'doctor_login.html'
+    redirect_authenticated_user = True
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), 'setup_open': not User.objects.exists()}
+
+
+def setup(request):
+    """First run: create the clinic's first doctor, an admin who then adds the others. Closed once any account exists.
+    Off localhost it also needs SETUP_CODE, so nobody else can claim an empty site first."""
+    if User.objects.exists():
+        return redirect('doctor_login')
+    need_code = not settings.DEBUG
+    form = SetupForm(request.POST or None, need_code=need_code)
+    if request.method == 'POST' and form.is_valid():
+        d = form.cleaned_data
+        name = f"{d['first_name']} {d['last_name']}".strip()
+        try:
+            # an email that already has a Neon Auth sign-in keeps it, if this is its password
+            if not neon_auth.create_user(d['email'], d['password'], name) and not neon_auth.sign_in(d['email'], d['password']):
+                form.add_error('email', 'This email already has a sign-in with a different password.')
+        except neon_auth.AuthError as e:
+            form.add_error(None, str(e))
+        if not form.errors:
+            user = User.objects.create_superuser(d['email'], d['email'], None, first_name=d['first_name'], last_name=d['last_name'])
+            DoctorProfile.objects.create(user=user, specialty=d['specialty'])
+            login(request, user, backend='ReviveCare.neon_auth.NeonAuthBackend')
+            messages.success(request, 'Your clinic is set up. Add your colleagues under Doctors.')
+            return redirect('doctor_dashboard')
+    return render(request, 'setup.html', {'form': form, 'locked': need_code and not settings.SETUP_CODE})
+
+
+def send_doctor_welcome(request, user, password):
+    """Email a new doctor how to sign in. True if it went out."""
+    body = (f"Hi Dr. {user.get_full_name()},\n\n{_doctor(request.user)} added you to ReViveCare.\n\n"
+            f"Sign in at {request.build_absolute_uri(reverse('doctor_login'))}\nEmail: {user.email}\nTemporary password: {password}\n\n"
+            "To choose your own password, use \"Forgot password?\" on the sign-in page.\n\n— The ReViveCare team")
+    try:
+        send_mail('Your ReViveCare doctor account', body, None, [user.email])
+        return True
+    except Exception:
+        logger.exception('Welcome email to doctor %s failed', user.id)
+        return False
+
+
+@login_required
+def team(request):
+    """Clinic admins see every doctor account and add new ones. A new doctor gets a temporary password, shown here
+    once and emailed to them."""
+    if not request.user.is_superuser:
+        raise Http404
+    form = AddDoctorForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        d = form.cleaned_data
+        name = f"{d['first_name']} {d['last_name']}".strip()
+        password = neon_auth.temp_password()
+        try:
+            created = neon_auth.create_user(d['email'], password, name)
+        except neon_auth.AuthError as e:
+            form.add_error(None, f"Couldn't create the sign-in: {e}")
+        else:
+            user = User.objects.create_user(d['email'], d['email'], first_name=d['first_name'], last_name=d['last_name'],
+                                            is_staff=d['admin'], is_superuser=d['admin'])
+            DoctorProfile.objects.create(user=user, specialty=d['specialty'])
+            if not created:  # this email already had a sign-in, which they keep
+                messages.success(request, f"Dr. {name} added. {d['email']} already has a ReViveCare sign-in, so they use that password.")
+            elif send_doctor_welcome(request, user, password):
+                messages.success(request, f"Dr. {name} added. Temporary password: {password} (also emailed to {d['email']}).")
+            else:
+                messages.warning(request, f"Dr. {name} added, but the email didn't go out. Share their temporary password: {password}")
+            return redirect('team')
+    doctors = User.objects.select_related('doctor_profile').order_by('-is_superuser', 'first_name', 'username')
+    return render(request, 'team.html', {'form': form, 'doctors': doctors})
 
 
 @login_required

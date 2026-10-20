@@ -1,0 +1,25 @@
+{% extends "registration/_card.html" %}
+{% block title %}Set Up Your Clinic · ReviveCare{% endblock %}
+{% block icon %}building-2{% endblock %}
+{% block heading %}Set up your clinic{% endblock %}
+{% block subtitle %}{% if locked %}Setup is locked on this site.{% else %}Create the first doctor account. You'll be the clinic admin and can add your colleagues next.{% endif %}{% endblock %}
+{% block card %}
+{% if locked %}
+<p class="text-sm text-slate-600 text-center">Add a <code class="px-1 bg-slate-100 rounded">SETUP_CODE</code> environment variable and redeploy, then enter it here. Or set up from localhost, which shares this database.</p>
+{% else %}
+<form method="post">
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}
+    <div class="mb-5 p-3 bg-rose-50 border border-rose-200 rounded-lg"><p class="text-sm text-rose-700">{{ error }}</p></div>
+    {% endfor %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+        {% for field in form %}
+        {% if field.name == 'first_name' or field.name == 'last_name' %}{% include "partials/form_field.html" %}{% else %}{% include "partials/form_field.html" with cls="sm:col-span-2" %}{% endif %}
+        {% endfor %}
+    </div>
+    <button type="submit" class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 px-8 py-4 text-lg w-full">
+        <i data-lucide="rocket" class="w-5 h-5"></i> Create clinic
+    </button>
+</form>
+{% endif %}
+{% endblock %}

@@ -32,10 +32,10 @@
                 <input type="hidden" name="next" value="{{ next }}">
 
                 <div class="mb-5">
-                    <label for="id_username" class="block text-sm font-medium text-slate-700 mb-2">Username<span class="text-rose-500 ml-1">*</span></label>
+                    <label for="id_username" class="block text-sm font-medium text-slate-700 mb-2">Email<span class="text-rose-500 ml-1">*</span></label>
                     <div class="relative">
-                        <div class="absolute left-3 top-1/2 -translate-y-1/2"><i data-lucide="user" class="w-5 h-5 text-slate-400"></i></div>
-                        <input id="id_username" type="text" name="username" value="{{ form.username.value|default:'' }}" placeholder="Your username" autocomplete="username" autofocus required
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2"><i data-lucide="mail" class="w-5 h-5 text-slate-400"></i></div>
+                        <input id="id_username" type="email" name="username" value="{{ form.username.value|default:'' }}" placeholder="you@clinic.com" autocomplete="email" autofocus required
                             class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 focus:border-emerald-400 focus:ring-emerald-500/20 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition-all" />
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                 {% if form.errors %}
                 <div class="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2">
                     <i data-lucide="circle-alert" class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"></i>
-                    <p class="text-sm text-rose-700">Wrong username or password. Please try again.</p>
+                    <p class="text-sm text-rose-700">Wrong email or password. Please try again.</p>
                 </div>
                 {% endif %}
 
@@ -72,6 +72,14 @@
                         <button type="button" onclick="location.href='/patient/login/'" class="text-emerald-600 hover:text-emerald-700 font-medium">Go to the patient portal</button>
                     </p>
                 </div>
+
+                {% if setup_open %}
+                <a href="{% url 'setup' %}" class="flex items-center gap-3 p-4 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50 transition-colors">
+                    <i data-lucide="building-2" class="w-5 h-5 text-emerald-600 flex-shrink-0"></i>
+                    <span class="text-sm text-slate-700"><span class="block font-semibold text-slate-900">New to ReViveCare?</span>Set up your clinic and create the first doctor account</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-emerald-600 ml-auto"></i>
+                </a>
+                {% endif %}
             </form>
         </div>
     </div>

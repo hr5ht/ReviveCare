@@ -1,7 +1,11 @@
 import datetime
 
 from django import forms
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 
 from Patients.models import Appointment, Exercise, Medication, Patient, RecoveryGoal
 
@@ -13,6 +17,51 @@ class DoctorProfileForm(forms.Form):
     specialty = forms.CharField(max_length=100, required=False)
     phone = forms.RegexField(regex=r'^\+?[0-9 ()-]{7,20}$', max_length=20, required=False,
                              error_messages={'invalid': 'Enter a valid phone number.'})
+
+
+class AddDoctorForm(forms.Form):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150, required=False)
+    email = forms.EmailField(max_length=150)
+    specialty = forms.CharField(max_length=100, required=False)
+    admin = forms.BooleanField(required=False, label='Clinic admin (can add doctors and see every patient)')
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()
+        if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username=email).exists():
+            raise forms.ValidationError('A doctor with this email already exists.')
+        return email
+
+
+class SetupForm(AddDoctorForm):
+    """The clinic's first doctor, who becomes its admin and chooses a password here."""
+    admin = None
+    password = forms.CharField(widget=forms.PasswordInput)
+    confirm = forms.CharField(widget=forms.PasswordInput, label='Confirm password')
+    setup_code = forms.CharField(required=False, help_text='The SETUP_CODE set in the environment')
+
+    def __init__(self, *args, need_code=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.need_code = need_code
+        if not need_code:
+            del self.fields['setup_code']
+
+    def clean_setup_code(self):
+        code = self.cleaned_data['setup_code']
+        if not (settings.SETUP_CODE and constant_time_compare(code, settings.SETUP_CODE)):
+            raise forms.ValidationError('Wrong setup code.')
+        return code
+
+    def clean(self):
+        data = super().clean()
+        if data.get('password') and data['password'] != data.get('confirm'):
+            self.add_error('confirm', "The passwords don't match.")
+        elif data.get('password'):
+            try:
+                validate_password(data['password'])
+            except forms.ValidationError as e:
+                self.add_error('password', e)
+        return data
 
 
 class RecoveryGoalForm(forms.Form):

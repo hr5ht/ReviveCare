@@ -11,7 +11,6 @@ class Patient(models.Model):
     email = models.EmailField(unique=True)
     doctor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                related_name='patients')
-    password = models.CharField(max_length=128, default='1234321')  # Added password field
     must_change_password = models.BooleanField(default=False)  # set while the password is a temporary one
     failed_login_count = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)

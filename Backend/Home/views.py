@@ -6,9 +6,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
-from django.core import signing
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
@@ -18,6 +16,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from Doctor.models import DoctorProfile
+from ReviveCare import neon_auth
 from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Notification, Patient, Workout
 
@@ -692,56 +691,50 @@ def chat(request):
     return render(request, 'chat.html', {'history': history, 'doctor_phone': (profile and profile.phone) or ''})
 
 
-RESET_SALT = 'patient-password-reset'
-RESET_MAX_AGE = 24 * 60 * 60  # seconds
+def _account_name(portal, email):
+    """Name of the active patient or doctor with this email, or None (no reset code is sent then)."""
+    if portal == 'patient':
+        patient = Patient.objects.filter(email=email, is_active=True).first()
+        return patient and patient.name
+    from django.contrib.auth.models import User
+    doctor = User.objects.filter(email__iexact=email, is_active=True).first()
+    return doctor and (doctor.get_full_name() or doctor.username)
 
 
-def _reset_token(patient):
-    # Includes a slice of the current password hash, so the link stops working once the password changes
-    return signing.dumps({'id': patient.id, 'h': patient.password[-16:]}, salt=RESET_SALT)
-
-
-def _patient_from_token(token):
-    try:
-        data = signing.loads(token, salt=RESET_SALT, max_age=RESET_MAX_AGE)
-    except signing.BadSignature:
-        return None
-    patient = Patient.objects.filter(id=data.get('id')).first()
-    return patient if patient and patient.password[-16:] == data.get('h') else None
-
-
-def patient_forgot_password(request):
-    sent = False
+def forgot_password(request, portal):
     if request.method == 'POST':
-        patient = Patient.objects.filter(email=request.POST.get('email', '').strip().lower(), is_active=True).first()
-        if patient:
-            link = request.build_absolute_uri(f'/patient/reset-password/{_reset_token(patient)}/')
+        email = request.POST.get('email', '').strip().lower()
+        name = _account_name(portal, email)
+        if name:
             try:
-                send_mail('Reset your ReViveCare password',
-                          f"Hi {patient.name},\n\nChoose a new ReViveCare password here (the link expires in 24 hours):\n\n"
-                          f"{link}\n\nIf you didn't ask for this, you can ignore this email.\n\n— The ReViveCare team",
-                          None, [patient.email])
+                neon_auth.send_reset_code(email, name)
             except Exception:
-                logger.exception('Patient reset email failed for %s', patient.id)
-        sent = True  # same response either way, so the page doesn't reveal which emails exist
-    return render(request, 'patient_forgot_password.html', {'sent': sent})
+                logger.exception('Password reset code failed (%s)', portal)
+        # on to the code page either way, so this doesn't reveal which emails have accounts
+        request.session['reset_email'] = email
+        return redirect(f'/reset-password/?portal={portal}')
+    return render(request, 'forgot_password.html', {'portal': portal})
 
 
-def patient_reset_password(request, token):
-    patient = _patient_from_token(token)
-    error = None
-    if patient and request.method == 'POST':
-        new, confirm = request.POST.get('new_password', ''), request.POST.get('confirm', '')
+def reset_password(request):
+    portal = 'doctor' if (request.POST.get('portal') or request.GET.get('portal')) == 'doctor' else 'patient'
+    email = request.session.get('reset_email')
+    if not email:
+        return redirect('password_reset' if portal == 'doctor' else 'patient_forgot_password')
+    context = {'email': email, 'portal': portal}
+    if request.method == 'POST':
+        code, new, confirm = request.POST.get('code', '').strip(), request.POST.get('new_password', ''), request.POST.get('confirm', '')
         try:
             if new != confirm:
                 raise ValidationError("The passwords don't match.")
             validate_password(new)
+            if not neon_auth.reset_with_code(email, code, new):
+                raise ValidationError('That code is wrong or has expired. Check the latest email, or send a new code.')
         except ValidationError as e:
-            error = ' '.join(e.messages)
-        else:
-            patient.password = make_password(new)
-            patient.must_change_password = False
-            patient.failed_login_count, patient.locked_until = 0, None
-            patient.save(update_fields=['password', 'must_change_password', 'failed_login_count', 'locked_until'])
-            return render(request, 'patient_reset_password.html', {'done': True})
-    return render(request, 'patient_reset_password.html', {'valid': bool(patient), 'error': error})
+            return render(request, 'reset_password.html', {**context, 'error': ' '.join(e.messages)})
+        except neon_auth.AuthError as e:
+            return render(request, 'reset_password.html', {**context, 'error': str(e)})
+        del request.session['reset_email']
+        Patient.objects.filter(email=email).update(must_change_password=False, failed_login_count=0, locked_until=None)
+        return render(request, 'reset_password.html', {**context, 'done': True})
+    return render(request, 'reset_password.html', context)
