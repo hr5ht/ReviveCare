@@ -13,7 +13,7 @@ This application leverages computer vision to provide real-time feedback on phys
 *   **Pain diary and vitals**: daily pain scores and symptoms, pain checks before and after workouts, and home readings of blood pressure, heart rate and temperature. Rising pain or out-of-range vitals raise an alert.
 *   **Messages and appointments**: a thread with the care team, the next appointment with an *Add to calendar* file, a video-call link and a reschedule request.
 *   **Notifications and reminders**: in-app notifications plus emails for medicines, appointments and a weekly progress summary, each of which can be switched off.
-*   **Works everywhere**: Hindi interface, light and dark themes, phone layouts, keyboard and screen-reader support. It installs as an app (PWA) with an offline page and cached exercise videos.
+*   **Works everywhere**: Light and dark themes, phone layouts, keyboard and screen-reader support. It installs as an app (PWA) with an offline page and cached exercise videos.
 
 ### For doctors
 *   **Dashboard**: every patient with adherence and status, the patients at risk of dropping off, recent vitals (out-of-range first), unread alerts and messages.

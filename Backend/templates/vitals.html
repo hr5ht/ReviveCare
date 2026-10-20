@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% block title %}{% translate "Vitals" %} · ReviveCare{% endblock %}
+{% block title %}Vitals · ReviveCare{% endblock %}
 {% block body %}
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
     {% include "partials/patient_header.html" %}
@@ -8,10 +7,10 @@
     <div class="max-w-4xl mx-auto px-6 py-8">
         <button onclick="location.href='/patient/dashboard/'" class="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            <span class="font-medium">{% translate "Back to Dashboard" %}</span>
+            <span class="font-medium">Back to Dashboard</span>
         </button>
-        <h1 class="text-3xl font-bold text-slate-900">{% translate "Vitals" %}</h1>
-        <p class="text-slate-600 mb-6">{% translate "Log readings from your home BP monitor or thermometer. Fill in only what you measured." %}</p>
+        <h1 class="text-3xl font-bold text-slate-900">Vitals</h1>
+        <p class="text-slate-600 mb-6">Log readings from your home BP monitor or thermometer. Fill in only what you measured.</p>
 
         {% for message in messages %}
         <p class="mb-6 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2"><i data-lucide="circle-check" class="w-4 h-4"></i> {{ message }}</p>
@@ -34,15 +33,15 @@
                 {% endfor %}
             </div>
             <button type="submit" class="inline-flex items-center justify-center gap-2 font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 px-6 py-3 transition-all">
-                <i data-lucide="heart-pulse" class="w-5 h-5"></i> {% translate "Save readings" %}
+                <i data-lucide="heart-pulse" class="w-5 h-5"></i> Save readings
             </button>
         </form>
 
-        <h2 class="font-semibold text-slate-900 mb-3">{% translate "Recent readings" %}</h2>
+        <h2 class="font-semibold text-slate-900 mb-3">Recent readings</h2>
         {% if readings %}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-500 text-left"><tr><th class="px-5 py-3 font-medium">{% translate "When" %}</th><th class="px-5 py-3 font-medium text-right">{% translate "Blood pressure" %}</th><th class="px-5 py-3 font-medium text-right">{% translate "Heart rate" %}</th><th class="px-5 py-3 font-medium text-right">{% translate "Temperature" %}</th></tr></thead>
+                <thead class="bg-slate-50 text-slate-500 text-left"><tr><th class="px-5 py-3 font-medium">When</th><th class="px-5 py-3 font-medium text-right">Blood pressure</th><th class="px-5 py-3 font-medium text-right">Heart rate</th><th class="px-5 py-3 font-medium text-right">Temperature</th></tr></thead>
                 <tbody class="divide-y divide-slate-100 tabular-nums">
                     {% for r in readings %}
                     <tr>
@@ -56,7 +55,7 @@
             </table>
         </div>
         {% else %}
-        <p class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-8 text-center text-slate-500">{% translate "No readings yet." %}</p>
+        <p class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-8 text-center text-slate-500">No readings yet.</p>
         {% endif %}
     </div>
 </div>

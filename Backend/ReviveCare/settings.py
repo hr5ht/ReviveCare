@@ -62,7 +62,6 @@ MIDDLEWARE = [
     'ReviveCare.middleware.security_headers',
     'ReviveCare.middleware.request_log',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -148,8 +147,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en'
-LANGUAGES = [('en', 'English'), ('hi', 'हिन्दी')]  # patient pages; picked from the browser's Accept-Language
-LOCALE_PATHS = [BASE_DIR / 'locale']
 
 TIME_ZONE = 'Asia/Kolkata'
 

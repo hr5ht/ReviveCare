@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% block title %}{% translate "My Recovery" %} · ReviveCare{% endblock %}
+{% block title %}My Recovery · ReviveCare{% endblock %}
 {% block body %}
 {% if not patient %}
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center">
@@ -9,10 +8,10 @@
             <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="heart" class="w-8 h-8 text-rose-600"></i>
             </div>
-            <h2 class="text-xl font-bold text-slate-900 mb-2">{% translate "Unable to Load Dashboard" %}</h2>
-            <p class="text-slate-600 mb-4">{% translate "Please sign in again." %}</p>
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Unable to Load Dashboard</h2>
+            <p class="text-slate-600 mb-4">Please sign in again.</p>
             <button onclick="location.href='/patient/login/'" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
-                {% translate "Go to Login" %}
+                Go to Login
             </button>
         </div>
     </div>
@@ -24,8 +23,8 @@
     <div class="max-w-7xl mx-auto px-6 py-8">
         <!-- Welcome Section -->
         <div class="mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">{% blocktranslate with name=patient.name|default:"Patient" %}Welcome back, {{ name }}{% endblocktranslate %}</h1>
-            <p class="text-lg text-slate-600">{% translate "Your personalized recovery support dashboard" %}</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Welcome back, {{ patient.name|default:"Patient" }}</h1>
+            <p class="text-lg text-slate-600">Your personalized recovery support dashboard</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -39,12 +38,12 @@
                                 <i data-lucide="dumbbell" class="w-8 h-8 text-emerald-600"></i>
                             </div>
                             <div class="flex-1 mb-6">
-                                <h3 class="text-2xl font-bold text-slate-900 mb-3">{% translate "Exercises" %}</h3>
-                                <p class="text-slate-600 leading-relaxed">{% translate "Access your personalized exercise routines designed for your recovery journey. Follow guided videos and track your progress." %}</p>
+                                <h3 class="text-2xl font-bold text-slate-900 mb-3">Exercises</h3>
+                                <p class="text-slate-600 leading-relaxed">Access your personalized exercise routines designed for your recovery journey. Follow guided videos and track your progress.</p>
                             </div>
                             <button onclick="location.href='/patient/exercises/'"
                                 class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 px-6 py-3 text-base w-full">
-                                {% translate "Start Exercises" %}
+                                Start Exercises
                             </button>
                         </div>
                     </div>
@@ -56,12 +55,12 @@
                                 <i data-lucide="message-square" class="w-8 h-8 text-blue-600"></i>
                             </div>
                             <div class="flex-1 mb-6">
-                                <h3 class="text-2xl font-bold text-slate-900 mb-3">{% translate "Chatbot" %}</h3>
-                                <p class="text-slate-600 leading-relaxed">{% translate "Get instant answers to your recovery questions. Our AI assistant is available 24/7 to provide support and guidance." %}</p>
+                                <h3 class="text-2xl font-bold text-slate-900 mb-3">Chatbot</h3>
+                                <p class="text-slate-600 leading-relaxed">Get instant answers to your recovery questions. Our AI assistant is available 24/7 to provide support and guidance.</p>
                             </div>
                             <button onclick="location.href='/patient/chat/'"
                                 class="group inline-flex items-center justify-center gap-3 font-semibold transition-all rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-6 py-3 text-base w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200">
-                                {% translate "Start Chat" %}
+                                Start Chat
                             </button>
                         </div>
                     </div>
@@ -70,8 +69,8 @@
                 <!-- Today's Tasks -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-slate-900">{% translate "Today's Tasks" %}</h3>
-                        <span class="text-sm text-slate-500">{% blocktranslate with done=tasks_done total=tasks|length %}{{ done }} of {{ total }} completed{% endblocktranslate %}</span>
+                        <h3 class="text-xl font-bold text-slate-900">Today's Tasks</h3>
+                        <span class="text-sm text-slate-500">{{ tasks_done }} of {{ tasks|length }} completed</span>
                     </div>
 
                     <div class="space-y-3">
@@ -90,8 +89,8 @@
                         </a>
                         {% empty %}
                         <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center">
-                            <p class="font-medium text-slate-700 mb-1">{% translate "No exercises assigned yet" %}</p>
-                            <p class="text-sm text-slate-500">{% translate "Your doctor will add your plan. Meanwhile you can" %} <a href="/patient/exercises/" class="text-emerald-600 font-medium hover:text-emerald-700">{% translate "browse the exercise library" %}</a>.</p>
+                            <p class="font-medium text-slate-700 mb-1">No exercises assigned yet</p>
+                            <p class="text-sm text-slate-500">Your doctor will add your plan. Meanwhile you can <a href="/patient/exercises/" class="text-emerald-600 font-medium hover:text-emerald-700">browse the exercise library</a>.</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -101,8 +100,8 @@
                 <!-- Today's medicines -->
                 <div id="medicines" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-slate-900">{% translate "Today's Medicines" %}</h3>
-                        <span class="text-sm text-slate-500">{% blocktranslate with taken=doses_taken total=doses|length %}{{ taken }} of {{ total }} taken{% endblocktranslate %}</span>
+                        <h3 class="text-xl font-bold text-slate-900">Today's Medicines</h3>
+                        <span class="text-sm text-slate-500">{{ doses_taken }} of {{ doses|length }} taken</span>
                     </div>
                     <div class="space-y-3">
                         {% for d in doses %}
@@ -116,7 +115,7 @@
                                     {% if d.med.instructions %}<span class="block text-xs text-slate-500">{{ d.med.instructions }}</span>{% endif %}
                                 </span>
                                 <span class="flex items-center gap-1 text-sm tabular-nums {% if d.late %}text-amber-700 font-semibold{% else %}text-slate-500{% endif %}">
-                                    <i data-lucide="{% if d.late %}alarm-clock{% else %}clock{% endif %}" class="w-4 h-4"></i>{{ d.time }}{% if d.late %} · {% translate "due" %}{% endif %}
+                                    <i data-lucide="{% if d.late %}alarm-clock{% else %}clock{% endif %}" class="w-4 h-4"></i>{{ d.time }}{% if d.late %} · due{% endif %}
                                 </span>
                             </button>
                         </form>
@@ -128,8 +127,8 @@
                 <!-- Achievements -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-xl font-bold text-slate-900">{% translate "Achievements" %}</h3>
-                        <span class="text-sm text-slate-500">{% blocktranslate with earned=badges_earned total=badges|length %}{{ earned }} of {{ total }} earned{% endblocktranslate %}</span>
+                        <h3 class="text-xl font-bold text-slate-900">Achievements</h3>
+                        <span class="text-sm text-slate-500">{{ badges_earned }} of {{ badges|length }} earned</span>
                     </div>
                     <ul class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                         {% for b in badges %}
@@ -138,7 +137,7 @@
                                 <i data-lucide="{% if b.earned %}{{ b.icon }}{% else %}lock{% endif %}" class="w-6 h-6"></i>
                             </span>
                             <span class="text-xs font-semibold {% if b.earned %}text-slate-900{% else %}text-slate-400{% endif %}">{{ b.name }}</span>
-                            {% if not b.earned %}<span class="sr-only">{% translate "Locked" %}: {{ b.how }}</span>{% endif %}
+                            {% if not b.earned %}<span class="sr-only">Locked: {{ b.how }}</span>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -149,24 +148,24 @@
             <div class="space-y-6">
                 <!-- Quick Actions -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
-                    <h3 class="text-xl font-bold text-slate-900 mb-4">{% translate "Quick Actions" %}</h3>
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">Quick Actions</h3>
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="location.href='/patient/exercises/'"
                             class="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl transition-all hover:scale-105 shadow-lg flex flex-col items-center justify-center">
                             <i data-lucide="activity" class="w-6 h-6 mb-2"></i>
-                            <div class="text-sm font-semibold">{% translate "Start Exercising" %}</div>
+                            <div class="text-sm font-semibold">Start Exercising</div>
                         </button>
                         <button onclick="location.href='/patient/chat/'"
                             class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all hover:scale-105 shadow-lg flex flex-col items-center justify-center">
                             <i data-lucide="message-square" class="w-6 h-6 mb-2"></i>
-                            <div class="text-sm font-semibold">{% translate "Chat with AI" %}</div>
+                            <div class="text-sm font-semibold">Chat with AI</div>
                         </button>
                     </div>
                 </div>
 
                 <!-- Recovery Summary -->
                 <div class="bg-white rounded-2xl border transition-all duration-300 border-slate-200 shadow-sm p-8 hover:shadow-md">
-                    <h3 class="text-xl font-bold text-slate-900 mb-6">{% translate "Recovery Summary" %}</h3>
+                    <h3 class="text-xl font-bold text-slate-900 mb-6">Recovery Summary</h3>
                     <div class="space-y-4">
                         {% for s in recovery_stats %}
                         <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
@@ -185,18 +184,18 @@
                 {% if goals %}
                 <!-- Goals set by the doctor -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-                    <h3 class="text-xl font-bold text-slate-900 mb-5">{% translate "Your goals" %}</h3>
+                    <h3 class="text-xl font-bold text-slate-900 mb-5">Your goals</h3>
                     <ul class="space-y-4">
                         {% for g in goals %}
                         <li>
                             <div class="flex items-center justify-between gap-3 mb-1.5 text-sm">
                                 <span class="font-medium text-slate-800 flex items-center gap-1.5">{% if g.achieved %}<i data-lucide="circle-check" class="w-4 h-4 text-emerald-600"></i>{% endif %}{{ g.text }}</span>
-                                <span class="text-slate-500 tabular-nums">{% if g.achieved %}{% translate "Done" %}{% else %}{{ g.percent }}%{% endif %}</span>
+                                <span class="text-slate-500 tabular-nums">{% if g.achieved %}Done{% else %}{{ g.percent }}%{% endif %}</span>
                             </div>
                             <div class="h-2 rounded-full bg-emerald-100 overflow-hidden" role="progressbar" aria-valuenow="{{ g.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ g.text }}">
                                 <div class="h-full rounded-full bg-emerald-500" style="width: {{ g.percent }}%"></div>
                             </div>
-                            {% if g.due and not g.achieved %}<p class="mt-1 text-xs text-slate-400">{% translate "Due" %} {{ g.due|date:"d M" }}{% if g.current is not None %} · {% translate "now" %} {{ g.current }}{% endif %}</p>{% endif %}
+                            {% if g.due and not g.achieved %}<p class="mt-1 text-xs text-slate-400">Due {{ g.due|date:"d M" }}{% if g.current is not None %} · now {{ g.current }}{% endif %}</p>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -206,43 +205,43 @@
                 <!-- This week -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-xl font-bold text-slate-900">{% translate "This week" %}</h3>
-                        <a href="/patient/history/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">{% translate "Progress" %} →</a>
+                        <h3 class="text-xl font-bold text-slate-900">This week</h3>
+                        <a href="/patient/history/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Progress →</a>
                     </div>
-                    <p class="text-sm text-slate-500 mb-1">{% translate "Reps in the last 7 days" %}</p>
+                    <p class="text-sm text-slate-500 mb-1">Reps in the last 7 days</p>
                     <div class="flex items-baseline gap-3 mb-5">
                         <span class="text-4xl font-bold text-slate-900">{{ week.reps }}</span>
                         {% if week.change is not None %}
                         <span class="inline-flex items-center gap-1 text-sm font-medium {% if week.change >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
                             <i data-lucide="{% if week.change >= 0 %}trending-up{% else %}trending-down{% endif %}" class="w-4 h-4"></i>
-                            {% if week.change >= 0 %}+{% endif %}{{ week.change }}% {% translate "vs last week" %}
+                            {% if week.change >= 0 %}+{% endif %}{{ week.change }}% vs last week
                         </span>
                         {% endif %}
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">{% translate "Active days" %}</p><p class="text-lg font-bold text-slate-900">{{ week.active_days }}/7</p></div>
-                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">{% translate "Avg quality" %}</p><p class="text-lg font-bold text-slate-900">{% if week.quality is not None %}{{ week.quality }}{% else %}—{% endif %}</p></div>
+                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">Active days</p><p class="text-lg font-bold text-slate-900">{{ week.active_days }}/7</p></div>
+                        <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-500 mb-1">Avg quality</p><p class="text-lg font-bold text-slate-900">{% if week.quality is not None %}{{ week.quality }}{% else %}—{% endif %}</p></div>
                     </div>
                 </div>
 
                 <!-- Pain trend from the diary -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-xl font-bold text-slate-900">{% translate "Pain" %}</h3>
-                        <a href="/patient/diary/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">{% translate "Diary" %} →</a>
+                        <h3 class="text-xl font-bold text-slate-900">Pain</h3>
+                        <a href="/patient/diary/" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Diary →</a>
                     </div>
                     {% if pain.this_week is not None or pain.change is not None %}
-                    <p class="text-sm text-slate-500 mb-1">{% translate "Average this week (0–10)" %}</p>
+                    <p class="text-sm text-slate-500 mb-1">Average this week (0–10)</p>
                     <div class="flex items-baseline gap-3 mb-5">
                         <span class="text-4xl font-bold text-slate-900">{{ pain.this_week|default_if_none:"—" }}</span>
                         {% if pain.change is not None %}
                         <span class="inline-flex items-center gap-1 text-sm font-medium {% if pain.change <= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
                             <i data-lucide="{% if pain.change <= 0 %}trending-down{% else %}trending-up{% endif %}" class="w-4 h-4"></i>
-                            {% if pain.change > 0 %}+{% endif %}{{ pain.change }} {% translate "vs last week" %}
+                            {% if pain.change > 0 %}+{% endif %}{{ pain.change }} vs last week
                         </span>
                         {% endif %}
                     </div>
-                    <div class="flex items-end gap-1 h-16" role="img" aria-label="{% translate "Daily average pain over the last 14 days" %}">
+                    <div class="flex items-end gap-1 h-16" role="img" aria-label="Daily average pain over the last 14 days">
                         {% for d in pain.days %}
                         <div class="flex-1 h-full flex items-end" title="{{ d.date|date:'D d M' }}: {% if d.pain is None %}not logged{% else %}pain {{ d.pain }}{% endif %}">
                             {% if d.pain is None %}<div class="w-full h-1 rounded-full bg-slate-100"></div>
@@ -250,10 +249,10 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <div class="flex justify-between text-xs text-slate-400 mt-1"><span>{{ pain.days.0.date|date:"d M" }}</span><span>{% translate "Today" %}</span></div>
+                    <div class="flex justify-between text-xs text-slate-400 mt-1"><span>{{ pain.days.0.date|date:"d M" }}</span><span>Today</span></div>
                     {% else %}
-                    <p class="text-sm text-slate-600 mb-4">{% translate "Track how your pain changes as you recover. It takes a few seconds." %}</p>
-                    <a href="/patient/diary/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-semibold text-sm"><i data-lucide="notebook-pen" class="w-4 h-4"></i> {% translate "Log pain" %}</a>
+                    <p class="text-sm text-slate-600 mb-4">Track how your pain changes as you recover. It takes a few seconds.</p>
+                    <a href="/patient/diary/" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-semibold text-sm"><i data-lucide="notebook-pen" class="w-4 h-4"></i> Log pain</a>
                     {% endif %}
                 </div>
 
@@ -264,42 +263,42 @@
                             <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-semibold mb-1">{% translate "Next Appointment" %}</h4>
+                            <h4 class="font-semibold mb-1">Next Appointment</h4>
                             {% if next_appointment %}
-                            <p class="text-emerald-50 text-sm">{% if next_appointment.reason %}{{ next_appointment.reason }}{% else %}{% translate "Appointment" %}{% endif %}{% if next_appointment.doctor %} {% blocktranslate with doctor=next_appointment.doctor.get_full_name|default:next_appointment.doctor.username %}with Dr. {{ doctor }}{% endblocktranslate %}{% endif %}</p>
+                            <p class="text-emerald-50 text-sm">{% if next_appointment.reason %}{{ next_appointment.reason }}{% else %}Appointment{% endif %}{% if next_appointment.doctor %} with Dr. {{ next_appointment.doctor.get_full_name|default:next_appointment.doctor.username }}{% endif %}</p>
                             {% else %}
-                            <p class="text-emerald-50 text-sm">{% translate "Nothing booked yet. Your doctor will schedule your next visit." %}</p>
+                            <p class="text-emerald-50 text-sm">Nothing booked yet. Your doctor will schedule your next visit.</p>
                             {% endif %}
                         </div>
                     </div>
                     {% if next_appointment %}
                     <div class="pt-4 border-t border-white/20 space-y-2 text-sm">
                         <div class="flex items-center justify-between gap-4">
-                            <span class="text-emerald-50">{% translate "Date & Time" %}</span>
+                            <span class="text-emerald-50">Date & Time</span>
                             <span class="font-semibold tabular-nums">{{ next_appointment.starts_at|date:"D d M, H:i" }}</span>
                         </div>
                         {% if next_appointment.location %}
                         <div class="flex items-center justify-between gap-4">
-                            <span class="text-emerald-50">{% translate "Where" %}</span>
+                            <span class="text-emerald-50">Where</span>
                             <span class="font-semibold text-right">{{ next_appointment.location }}</span>
                         </div>
                         {% endif %}
                     </div>
                     {% if next_appointment.meeting_url %}
-                    <a href="{{ next_appointment.meeting_url }}" target="_blank" rel="noopener" class="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors"><i data-lucide="video" class="w-4 h-4"></i> {% translate "Join video call" %}</a>
+                    <a href="{{ next_appointment.meeting_url }}" target="_blank" rel="noopener" class="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors"><i data-lucide="video" class="w-4 h-4"></i> Join video call</a>
                     {% endif %}
-                    <a href="/patient/appointments/{{ next_appointment.id }}/calendar.ics" download class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-50 hover:text-white"><i data-lucide="calendar-plus" class="w-4 h-4"></i> {% translate "Add to my calendar" %}</a>
+                    <a href="/patient/appointments/{{ next_appointment.id }}/calendar.ics" download class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-50 hover:text-white"><i data-lucide="calendar-plus" class="w-4 h-4"></i> Add to my calendar</a>
                     {% if next_appointment.reschedule_request %}
-                    <p class="mt-4 text-sm bg-white/20 rounded-lg px-3 py-2">{% translate "You asked to reschedule. Your doctor will confirm a new time." %}</p>
+                    <p class="mt-4 text-sm bg-white/20 rounded-lg px-3 py-2">You asked to reschedule. Your doctor will confirm a new time.</p>
                     {% else %}
                     <details class="mt-4">
-                        <summary class="cursor-pointer text-sm font-semibold text-emerald-50 hover:text-white">{% translate "Can't make it?" %}</summary>
+                        <summary class="cursor-pointer text-sm font-semibold text-emerald-50 hover:text-white">Can't make it?</summary>
                         <form method="post" action="/patient/appointments/{{ next_appointment.id }}/reschedule/" class="mt-3 space-y-2">
                             {% csrf_token %}
-                            <label for="reschedule-note" class="block text-sm text-emerald-50">{% translate "Which days or times suit you?" %}</label>
-                            <textarea id="reschedule-note" name="note" rows="2" maxlength="300" required placeholder="{% translate "e.g. any weekday after 4 pm" %}"
+                            <label for="reschedule-note" class="block text-sm text-emerald-50">Which days or times suit you?</label>
+                            <textarea id="reschedule-note" name="note" rows="2" maxlength="300" required placeholder="e.g. any weekday after 4 pm"
                                 class="w-full px-3 py-2 rounded-lg bg-white text-slate-800 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/30 resize-none"></textarea>
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors">{% translate "Ask to reschedule" %}</button>
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors">Ask to reschedule</button>
                         </form>
                     </details>
                     {% endif %}
@@ -313,9 +312,9 @@
                             <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-slate-900 mb-2 text-sm">{% translate "Daily Health Tip" %}</h4>
+                            <h4 class="font-semibold text-slate-900 mb-2 text-sm">Daily Health Tip</h4>
                             <p class="text-sm text-slate-600 leading-relaxed">
-                                {% translate "Remember to stay hydrated throughout the day. Aim for 8 glasses of water to support your recovery process." %}
+                                Remember to stay hydrated throughout the day. Aim for 8 glasses of water to support your recovery process.
                             </p>
                         </div>
                     </div>

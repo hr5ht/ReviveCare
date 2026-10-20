@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 class Patient(models.Model):
     name = models.CharField(max_length=100)
@@ -230,15 +229,15 @@ class ChatMessage(models.Model):
 class DiaryEntry(models.Model):
     """A patient's own note on how they feel: pain 0-10 plus any symptoms."""
     SYMPTOMS = [
-        ('swelling', _('Swelling')), ('stiffness', _('Stiffness')), ('redness', _('Redness or warmth')), ('fever', _('Fever')),
-        ('numbness', _('Numbness or tingling')), ('nausea', _('Nausea')), ('fatigue', _('Tiredness')), ('poor_sleep', _('Poor sleep')),
+        ('swelling', 'Swelling'), ('stiffness', 'Stiffness'), ('redness', 'Redness or warmth'), ('fever', 'Fever'),
+        ('numbness', 'Numbness or tingling'), ('nausea', 'Nausea'), ('fatigue', 'Tiredness'), ('poor_sleep', 'Poor sleep'),
     ]
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='diary')
     pain = models.PositiveSmallIntegerField()  # 0 (none) to 10 (worst imaginable)
     symptoms = models.JSONField(default=list, blank=True)  # keys from SYMPTOMS
     notes = models.TextField(max_length=1000, blank=True)
     context = models.CharField(max_length=10, default='diary',
-                               choices=[('diary', _('Diary')), ('before', _('Before a workout')), ('after', _('After a workout'))])
+                               choices=[('diary', 'Diary'), ('before', 'Before a workout'), ('after', 'After a workout')])
     exercise = models.CharField(max_length=40, blank=True)  # exercise slug for before/after checks
     created_at = models.DateTimeField(auto_now_add=True)
 

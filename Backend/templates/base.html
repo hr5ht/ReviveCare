@@ -1,6 +1,6 @@
-{% load static i18n %}{% get_current_language as LANGUAGE_CODE %}
+{% load static %}
 <!doctype html>
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
@@ -32,11 +32,11 @@
   {% block body %}{% endblock %}
 
   <!-- Shown by the browser's install event (Chrome, Edge, Android); hidden once installed or dismissed -->
-  <div id="install-banner" hidden role="region" aria-label="{% translate "Install app" %}" class="fixed bottom-4 inset-x-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 flex items-center gap-3">
+  <div id="install-banner" hidden role="region" aria-label="Install app" class="fixed bottom-4 inset-x-4 sm:left-auto sm:right-4 sm:w-96 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 flex items-center gap-3">
     <img src="{% static 'icons/icon-192.png' %}" alt="" width="40" height="40" class="rounded-xl flex-shrink-0">
-    <p class="flex-1 text-sm text-slate-700"><span class="block font-semibold text-slate-900">{% translate "Install ReViveCare" %}</span>{% translate "Open it from your home screen like an app." %}</p>
-    <button type="button" id="install-btn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">{% translate "Install" %}</button>
-    <button type="button" id="install-close" aria-label="{% translate "Not now" %}" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <p class="flex-1 text-sm text-slate-700"><span class="block font-semibold text-slate-900">Install ReViveCare</span>Open it from your home screen like an app.</p>
+    <button type="button" id="install-btn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">Install</button>
+    <button type="button" id="install-close" aria-label="Not now" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i></button>
   </div>
 
   <script>

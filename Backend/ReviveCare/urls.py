@@ -54,7 +54,6 @@ urlpatterns = [
     path('demo-request/', pages.demo_request, name='demo_request'),
     path('sw.js', pages.service_worker, name='service_worker'),
     path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
-    path('i18n/', include('django.conf.urls.i18n')),
     path('privacy/', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
     path('terms/', TemplateView.as_view(template_name='terms.html'), name='terms'),
     path('patient/', RedirectView.as_view(url='/patient/login/')),

@@ -17,7 +17,6 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from django.utils.translation import gettext as _
 from Doctor.models import DoctorProfile
 from Patients.goals import LOWER_IS_BETTER, progress
 from Patients.models import Alert, DiaryEntry, DoseTaken, Exercise, Message, Notification, Patient, Workout
@@ -119,8 +118,8 @@ def todays_tasks(request):
             continue
         done, reps = today.get(e.slug, (False, 0))
         total = p.total_sets * p.reps
-        detail = (_('%(sets)s × %(reps)s reps') % {'sets': p.total_sets, 'reps': p.reps} if done or not reps
-                  else _('%(done)s/%(total)s reps today') % {'done': min(reps, total), 'total': total})
+        detail = (f'{p.total_sets} × {p.reps} reps' if done or not reps
+                  else f'{min(reps, total)}/{total} reps today')
         tasks.append({'name': e.name, 'detail': detail, 'icon': e.icon, 'url': f'/patient/exercises/{e.slug}/', 'completed': done})
     return tasks
 
@@ -176,13 +175,13 @@ def achievements(patient, tasks):
     streak = best_streak(patient)
     perfect = workouts.filter(total_reps__gte=10).filter(excellent_reps=models.F('total_reps')).exists()
     return [
-        {'name': _('First workout'), 'how': _('Finish any exercise session'), 'icon': 'play', 'earned': workouts.exists()},
-        {'name': _('3-day streak'), 'how': _('Exercise 3 days in a row'), 'icon': 'flame', 'earned': streak >= 3},
-        {'name': _('7-day streak'), 'how': _('Exercise 7 days in a row'), 'icon': 'flame', 'earned': streak >= 7},
-        {'name': _('100 reps'), 'how': _('Reach 100 reps in total'), 'icon': 'dumbbell', 'earned': total_reps >= 100},
-        {'name': _('500 reps'), 'how': _('Reach 500 reps in total'), 'icon': 'trophy', 'earned': total_reps >= 500},
-        {'name': _('Perfect session'), 'how': _('10+ reps, every one excellent'), 'icon': 'star', 'earned': perfect},
-        {'name': _('Full day'), 'how': _("Complete every task in today's plan"), 'icon': 'circle-check',
+        {'name': 'First workout', 'how': 'Finish any exercise session', 'icon': 'play', 'earned': workouts.exists()},
+        {'name': '3-day streak', 'how': 'Exercise 3 days in a row', 'icon': 'flame', 'earned': streak >= 3},
+        {'name': '7-day streak', 'how': 'Exercise 7 days in a row', 'icon': 'flame', 'earned': streak >= 7},
+        {'name': '100 reps', 'how': 'Reach 100 reps in total', 'icon': 'dumbbell', 'earned': total_reps >= 100},
+        {'name': '500 reps', 'how': 'Reach 500 reps in total', 'icon': 'trophy', 'earned': total_reps >= 500},
+        {'name': 'Perfect session', 'how': '10+ reps, every one excellent', 'icon': 'star', 'earned': perfect},
+        {'name': 'Full day', 'how': "Complete every task in today's plan", 'icon': 'circle-check',
          'earned': bool(tasks) and all(t['completed'] for t in tasks)},
     ]
 
@@ -392,11 +391,11 @@ def patient_dashboard(request):
         'tasks': tasks,
         'tasks_done': sum(t['completed'] for t in tasks),
         'recovery_stats': [
-            {'label': _('Days in Recovery'), 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
-            {'label': _('Progress Score'), 'value': progress_score(patient), 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
-            {'label': _('Workouts This Week'), 'value': str(workouts_this_week(patient)), 'icon': 'dumbbell', 'cls': 'bg-purple-100 text-purple-600'},
-            {'label': _('Exercise Streak'), 'value': _('%(n)s days') % {'n': exercise_streak(patient)}, 'icon': 'flame', 'cls': 'bg-orange-100 text-orange-600'},
-            {'label': _('Goals Achieved'), 'value': f"{sum(g['achieved'] for g in goals)}/{len(goals)}" if goals else '—', 'icon': 'target', 'cls': 'bg-purple-100 text-purple-600'},
+            {'label': 'Days in Recovery', 'value': days_in_recovery(patient), 'icon': 'calendar', 'cls': 'bg-emerald-100 text-emerald-600'},
+            {'label': 'Progress Score', 'value': progress_score(patient), 'icon': 'trending-up', 'cls': 'bg-blue-100 text-blue-600'},
+            {'label': 'Workouts This Week', 'value': str(workouts_this_week(patient)), 'icon': 'dumbbell', 'cls': 'bg-purple-100 text-purple-600'},
+            {'label': 'Exercise Streak', 'value': f'{exercise_streak(patient)} days', 'icon': 'flame', 'cls': 'bg-orange-100 text-orange-600'},
+            {'label': 'Goals Achieved', 'value': f"{sum(g['achieved'] for g in goals)}/{len(goals)}" if goals else '—', 'icon': 'target', 'cls': 'bg-purple-100 text-purple-600'},
         ],
     })
 
@@ -415,7 +414,7 @@ def patient_profile(request):
         patient.email_reminders = 'email_reminders' in request.POST
         patient.email_updates = 'email_updates' in request.POST
         patient.save(update_fields=['email_reminders', 'email_updates'])
-        messages.success(request, _('Email preferences saved.'))
+        messages.success(request, 'Email preferences saved.')
         return redirect('patient_profile')
     if request.method == 'POST':
         form = PatientContactForm(request.POST)
@@ -423,7 +422,7 @@ def patient_profile(request):
             for f in fields:
                 setattr(patient, f, form.cleaned_data[f])
             patient.save(update_fields=fields)
-            messages.success(request, _('Contact details saved.'))
+            messages.success(request, 'Contact details saved.')
             return redirect('patient_profile')
     else:
         form = PatientContactForm(initial={f: getattr(patient, f) for f in fields})
@@ -442,7 +441,7 @@ def patient_diary(request):
     form = DiaryForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         flag_rising_pain(patient, DiaryEntry.objects.create(patient=patient, **form.cleaned_data))
-        messages.success(request, _('Saved to your diary.'))
+        messages.success(request, 'Saved to your diary.')
         return redirect('patient_diary')
     return render(request, 'diary.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                           'pain_scale': range(11), 'symptoms': DiaryEntry.SYMPTOMS, 'entries': patient.diary.all()[:30]})
@@ -458,7 +457,7 @@ def patient_vitals(request):
     if request.method == 'POST' and form.is_valid():
         form.instance.patient = patient
         flag_vitals(patient, form.save())
-        messages.success(request, _('Readings saved.'))
+        messages.success(request, 'Readings saved.')
         return redirect('patient_vitals')
     return render(request, 'vitals.html', {'patient': patient, 'initials': _initials(patient.name), 'form': form,
                                            'readings': patient.vitals.all()[:30]})
