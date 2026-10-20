@@ -28,4 +28,5 @@ venv/lib/python3.12/site-packages/cv2/gapi/onnx/ep/__init__.pyi
 .vercel/
 .env.local
 Backend/staticfiles/
-Backend/tests/
+tests/
+tests.py
